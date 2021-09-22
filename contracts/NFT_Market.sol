@@ -7,21 +7,40 @@ import '@openzeppelin/contracts/access/Ownable.sol';
 
 contract NFT_Market is Ownable{
 
-    mapping(address => lot_sell [] ) public user_sells; // user address - contract address - ID - amount
-    mapping(address => string) private _token_uri;
+    uint256 immutable public m_comission;
 
-    struct lot_sell{
+    lot_info [] public lots; 
+
+    mapping(address => string) public _token_uri;
+    mapping(uint256 => address) public lot_owner;
+    mapping(address => uint8) public all_comission;
+
+    enum type_sell{
+        None,
+        Fixed_price,
+        Auction,
+        Exchange
+    }
+
+    struct lot_info{
         address contract_add;
         uint256 id;
         uint256 amount;
-        uint256 price;
+        type_sell selling; 
+        uint256 seller_price;
+        uint256 buyer_price;
+        uint256 Added;
+        uint256 start_auction;
+        uint256 end_auction;
+        uint256 step;
     }
 
     event Sell(address indexed nft_contranct, uint256 indexed ID, address indexed user, uint256  amount, uint256 price);
     event Buy(address indexed nft_contranct, uint256 indexed ID, address indexed user, uint256  amount, uint256 price);
     event return_NFT(address indexed nft_contranct, uint256 indexed ID, address indexed user, uint256  amount);
 
-    constructor (){
+    constructor (uint256 commision){
+        m_comission = commision;
     }
 
     function set_uri(address contract_, string memory uri_) external onlyOwner{
@@ -32,30 +51,28 @@ contract NFT_Market is Ownable{
         return _token_uri[contract_];
     }
 
-    function sell (address contract_, uint256 ID_, uint256 amount_, uint256 price_, bytes memory data_) external {
-        ERC1155 nft_contract = ERC1155(contract_);
-        nft_contract.safeTransferFrom(msg.sender, address(this), ID_, amount_, data_);
-        user_sells[msg.sender].push(lot_sell(contract_, ID_, amount_, price_));
-        emit Sell(contract_, ID_, msg.sender, amount_, price_);
+    function sell() public pure returns(uint256){
+        return 0;
     }
 
-    function get_back (uint256 lot_, bytes memory data_) external {
-        lot_sell memory lot_info = user_sells[msg.sender][lot_];
-        ERC1155 nft_contract = ERC1155(lot_info.contract_add);
-        delete user_sells[msg.sender][lot_];
-        nft_contract.safeTransferFrom(address(this), msg.sender, lot_info.id, lot_info.amount, data_);
-        emit return_NFT(lot_info.contract_add, lot_info.id, msg.sender, lot_info.amount);
+    function get_back (uint256 index, bytes memory data_) external {
+        lot_info memory lot = lots[index];
+        require(lot_owner[index] == msg.sender, "You are not the owner!");
+        ERC1155 nft_contract = ERC1155(lot.contract_add);
+        delete lots[index];
+        nft_contract.safeTransferFrom(address(this), msg.sender, lot.id, lot.amount, data_);
+        emit return_NFT(lot.contract_add, lot.id, msg.sender, lot.amount);
     }
 
-    function buy (address owner_, uint256 lot_, bytes memory data_) payable external {
-        lot_sell memory lot_info = user_sells[owner_][lot_];
-        require(lot_info.price == msg.value , "Not enough payment");
-        delete user_sells[owner_][lot_];
-        ERC1155 nft_contract = ERC1155(lot_info.contract_add);
-        nft_contract.safeTransferFrom(address(this), msg.sender, lot_info.id, lot_info.amount, data_);
-        payable(owner_).send(lot_info.price);
-        emit Buy(lot_info.contract_add, lot_info.id, msg.sender, lot_info.amount, lot_info.price);
-    }
+    // function buy (uint256 lot_, bytes memory data_) payable external {
+    //     lot_sell memory lot_info = user_sells[lot_];
+    //     require(lot_info.price == msg.value && lot_info.owner != msg.sender, "Not enough payment");
+    //     delete user_sells[lot_];
+    //     ERC1155 nft_contract = ERC1155(lot_info.contract_add);
+    //     nft_contract.safeTransferFrom(address(this), msg.sender, lot_info.id, lot_info.amount, data_);
+    //     payable(lot_info.owner).send(lot_info.price);
+    //     emit Buy(lot_info.contract_add, lot_info.id, msg.sender, lot_info.amount, lot_info.price);
+    // }
 
     function onERC1155Received(
         address operator,
@@ -63,7 +80,22 @@ contract NFT_Market is Ownable{
         uint256 id,
         uint256 value,
         bytes calldata data
-    ) external pure returns (bytes4){
+    ) external returns (bytes4){
+        lots.push(
+            lot_info(
+                msg.sender, 
+                id, 
+                value, 
+                type_sell.None,
+                0,
+                0,
+                block.timestamp,
+                0,
+                0,
+                0
+            ));
+        lot_owner[lots.length] = operator;
+        //emit Sell(contract_, ID_, msg.sender, amount_, price_);
       return bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"));
     }
 
