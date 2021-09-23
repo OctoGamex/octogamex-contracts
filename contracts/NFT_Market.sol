@@ -7,7 +7,7 @@ import '@openzeppelin/contracts/access/Ownable.sol';
 
 contract NFT_Market is Ownable{
 
-    uint256 immutable public m_comission;
+    uint8 immutable public m_comission;
 
     lot_info [] public lots; 
 
@@ -39,7 +39,7 @@ contract NFT_Market is Ownable{
     event Buy(address indexed nft_contranct, uint256 indexed ID, address indexed user, uint256  amount, uint256 price);
     event return_NFT(address indexed nft_contranct, uint256 indexed ID, address indexed user, uint256  amount);
 
-    constructor (uint256 commision){
+    constructor (uint8 commision){
         m_comission = commision;
     }
 
@@ -97,7 +97,7 @@ contract NFT_Market is Ownable{
                 0,
                 0
             ));
-        lot_owner[lots.length] = operator;
+        lot_owner[lots.length - 1] = operator;
         //emit Sell(contract_, ID_, msg.sender, amount_, price_);
       return bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"));
     }
