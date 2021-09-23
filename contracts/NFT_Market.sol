@@ -10,10 +10,13 @@ contract NFT_Market is Ownable{
     uint8 immutable public m_comission;
 
     lot_info [] public lots; 
+    proposal [] public proposals;
 
-    mapping(uint256 => address) public lot_owner;
+    mapping(address => uint256 []) public lot_owner;
+    mapping(address => uint256 []) public proposal_owner;
     mapping(address => string) public _token_uri;
     mapping(address => uint8) public all_comission;
+    address [] public erc20_address;
 
     enum type_sell{
         None,
@@ -23,6 +26,7 @@ contract NFT_Market is Ownable{
     }
 
     struct lot_info{
+        address owner;
         address contract_add;
         uint256 id;
         uint256 amount;
@@ -33,6 +37,18 @@ contract NFT_Market is Ownable{
         uint256 start_auction;
         uint256 end_auction;
         uint256 step;
+        bool can_proposal;
+    }
+
+    struct currency{
+        uint256 id_contract;
+        uint256 seller_price;
+        uint256 buyer_price;
+    }
+
+    struct proposal{
+        lot_info [] nft_props;
+        currency crypto_proposal;
     }
 
     event Sell(address indexed nft_contranct, uint256 indexed ID, address indexed user, uint256  amount, uint256 price);
@@ -52,15 +68,16 @@ contract NFT_Market is Ownable{
     }
 
     function sell(uint256 index, uint256 new_price) external{
-        require(lot_owner[index] == msg.sender, "You are not the owner!");
+        require(lots[index].owner == msg.sender, "You are not the owner!");
         lots[index].seller_price = new_price;
         lots[index].buyer_price = new_price + (new_price * m_comission) / 100;
         lots[index].selling = type_sell.Fixed_price;
+        emit Sell(lots[index].contract_add, lots[index].id, msg.sender, lots[index].amount, lots[index].buyer_price);
     }
 
     function get_back (uint256 index, bytes memory data_) external {
         lot_info memory lot = lots[index];
-        require(lot_owner[index] == msg.sender, "You are not the owner!");
+        require(lot.owner == msg.sender, "You are not the owner!");
         ERC1155 nft_contract = ERC1155(lot.contract_add);
         delete lots[index];
         nft_contract.safeTransferFrom(address(this), msg.sender, lot.id, lot.amount, data_);
@@ -69,13 +86,26 @@ contract NFT_Market is Ownable{
 
     function buy (uint256 index, bytes memory data_) payable external {
         lot_info memory lot = lots[index];
-        require(lot.buyer_price == msg.value && lot_owner[index] != msg.sender, "Not enough payment");
+        require(lot.buyer_price == msg.value && lot.owner != msg.sender && lot.selling == type_sell.Fixed_price, "Not enough payment");
         delete lots[index];
         ERC1155 nft_contract = ERC1155(lot.contract_add);
         nft_contract.safeTransferFrom(address(this), msg.sender, lot.id, lot.amount, data_);
-        payable(lot_owner[index]).send(lot.seller_price);
+        payable(lot.owner).send(lot.seller_price);
         emit Buy(lot.contract_add, lot.id, msg.sender, lot.amount, lot.buyer_price);
     }
+
+    // function make_offer(uint256 [] lot_index, uint256 payment_index, uint256 payment, bytes [] data_) external payable {
+    //     for (i=0; i< lot_index.length; i++){
+    //         require(lot_owner[i] == msg.sender, "You are not the owner");
+
+    //     }
+    //     if (msg.value == 0){
+    //         uint256 b = payment;
+    //         throw;
+    //     } else {
+    //         proposal new_prop = proposal();
+    //     }
+    // }
 
     function onERC1155Received(
         address operator,
@@ -86,6 +116,7 @@ contract NFT_Market is Ownable{
     ) external returns (bytes4){
         lots.push(
             lot_info(
+                operator,
                 msg.sender, 
                 id, 
                 value, 
@@ -95,9 +126,10 @@ contract NFT_Market is Ownable{
                 block.timestamp,
                 0,
                 0,
-                0
+                0,
+                false
             ));
-        lot_owner[lots.length - 1] = operator;
+        lot_owner[operator].push(lots.length - 1);
         //emit Sell(contract_, ID_, msg.sender, amount_, price_);
       return bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"));
     }
