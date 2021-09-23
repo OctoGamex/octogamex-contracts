@@ -20,8 +20,8 @@ contract("NFT Exchanger", accounts => {
     await ERC.mint(account_one, 1, 1, 0, { from: account_one });
     await ERC.safeTransferFrom(account_one, Mar.address, 1, 1, 0, {from: account_one});
     await ERC.safeTransferFrom(account_one, Mar.address, 1, 1, 0, {from: account_one});
-    const owner = await Mar.lot_owner.call(0, { from: account_one });
-    assert.equal(owner, account_one, "Sell not working");
+    const lot = await Mar.lot_owner.call(account_one, 0, { from: account_one });
+    assert.equal(parseInt(lot), 0, "Sell not working");
 
 });
 
