@@ -11,8 +11,8 @@ contract NFT_Market is Ownable{
 
     lot_info [] public lots; 
 
-    mapping(address => string) public _token_uri;
     mapping(uint256 => address) public lot_owner;
+    mapping(address => string) public _token_uri;
     mapping(address => uint8) public all_comission;
 
     enum type_sell{
@@ -51,8 +51,11 @@ contract NFT_Market is Ownable{
         return _token_uri[contract_];
     }
 
-    function sell() public pure returns(uint256){
-        return 0;
+    function sell(uint256 index, uint256 new_price) external{
+        require(lot_owner[index] == msg.sender, "You are not the owner!");
+        lots[index].seller_price = new_price;
+        lots[index].buyer_price = new_price + (new_price * m_comission) / 100;
+        lots[index].selling = type_sell.Fixed_price;
     }
 
     function get_back (uint256 index, bytes memory data_) external {
@@ -64,15 +67,15 @@ contract NFT_Market is Ownable{
         emit return_NFT(lot.contract_add, lot.id, msg.sender, lot.amount);
     }
 
-    // function buy (uint256 lot_, bytes memory data_) payable external {
-    //     lot_sell memory lot_info = user_sells[lot_];
-    //     require(lot_info.price == msg.value && lot_info.owner != msg.sender, "Not enough payment");
-    //     delete user_sells[lot_];
-    //     ERC1155 nft_contract = ERC1155(lot_info.contract_add);
-    //     nft_contract.safeTransferFrom(address(this), msg.sender, lot_info.id, lot_info.amount, data_);
-    //     payable(lot_info.owner).send(lot_info.price);
-    //     emit Buy(lot_info.contract_add, lot_info.id, msg.sender, lot_info.amount, lot_info.price);
-    // }
+    function buy (uint256 index, bytes memory data_) payable external {
+        lot_info memory lot = lots[index];
+        require(lot.buyer_price == msg.value && lot_owner[index] != msg.sender, "Not enough payment");
+        delete lots[index];
+        ERC1155 nft_contract = ERC1155(lot.contract_add);
+        nft_contract.safeTransferFrom(address(this), msg.sender, lot.id, lot.amount, data_);
+        payable(lot_owner[index]).send(lot.seller_price);
+        emit Buy(lot.contract_add, lot.id, msg.sender, lot.amount, lot.buyer_price);
+    }
 
     function onERC1155Received(
         address operator,
