@@ -7,6 +7,7 @@ contract("NFT Exchanger", accounts => {
   const my_ether = web3.utils.toWei('1', "ether");
   const [account_one, account_two, account_three] = accounts;
   let ERC1155, Mar;
+  const zero_address = "0x0000000000000000000000000000000000000000";
 
   const [id_one, id_two] = [1, 2];
 
@@ -82,24 +83,46 @@ contract("NFT Exchanger", accounts => {
     assert.equal(parseInt(lot), 1, "Proposal token not working");
     const balance = await ERC20.balanceOf.call(Mar.address, { from: account_one });
     assert.equal(parseInt(balance), 200, "Proposal token not working");
-    const nft = await ERC1155.balanceOf.call(Mar.address, 2, { from: account_one });
-    assert.equal(parseInt(nft), 1, "Proposal token not working");
+
 
   });
 
-  // it("Make proposal (NFT)", async () => {
+  it("Make proposal (NFT)", async () => {
 
-  //   await ERC20.mint(account_one, 1000, { from: account_one });
-  //   await ERC1155.mint(account_two, 1, 1, 0, { from: account_one });
-  //   await ERC1155.safeTransferFrom(account_two, Mar.address, 1, 1, 0, { from: account_two });
-  //   await Mar.sell(2, my_ether, { from: account_two });
-  //   await ERC20.increaseAllowance(Mar.address, 100, { from: account_one });
-  //   await Mar.make_offer(0, [4], ERC20.address, 100, [], { from: account_one, value: 2 });
-  //   const lot = await Mar.proposal_owner.call(account_one, 0, { from: account_one });
-  //   assert.equal(parseInt(lot), 0, "Proposal token not working");
-  //   const balance = await ERC20.balanceOf.call(Mar.address, { from: account_one });
-  //   assert.equal(parseInt(balance), 100, "Proposal token not working");
+    await ERC1155.mint(account_one, 3, 1, 0, { from: account_one });
+    await ERC1155.safeTransferFrom(account_one, Mar.address, 3, 1, 0, { from: account_one });
+    await Mar.make_offer(0, [4], zero_address, 0, [], { from: account_one, value: 2 });
+    const lot = await Mar.proposal_owner.call(account_one, 2, { from: account_one });
+    assert.equal(parseInt(lot), 2, "Proposal token not working");
 
-  // });
+
+  });
+
+  it("Make proposal (crypto + NFT)", async () => {
+
+    await ERC1155.mint(account_one, 5, 1, 0, { from: account_one });
+    await ERC1155.safeTransferFrom(account_one, Mar.address, 5, 1, 0, { from: account_one });
+    await Mar.make_offer(0, [5], zero_address, 0, [], { from: account_one, value: 5 });
+    const lot = await Mar.proposal_owner.call(account_one, 3, { from: account_one });
+    assert.equal(parseInt(lot), 3, "Proposal token not working");
+
+
+  });
+
+  it("Make proposal (crypto)", async () => {
+
+    await Mar.make_offer(0, [], zero_address, 0, [], { from: account_one, value: 5 });
+    const lot = await Mar.proposal_owner.call(account_one, 4, { from: account_one });
+    assert.equal(parseInt(lot), 4, "Proposal token not working");
+
+  });
+
+  it("Cancel proposal (crypto)", async () => {
+
+    await Mar.cancel_offer(4, { from: account_one});
+    const prop = await Mar.proposals.call(4, { from: account_one });
+    assert.equal(parseInt(prop.owner), zero_address, "Proposal token not working");
+
+  });
 
 });
