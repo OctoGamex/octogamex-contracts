@@ -227,7 +227,7 @@ contract NFT_Market is Ownable {
                 //crypto and nft with payment
                 for (uint256 i = 0; i < lot_index.length; i++) {
                     require(
-                        lots[i].owner == msg.sender,
+                        lots[lot_index[i]].owner == msg.sender,
                         "You are not the owner"
                     );
                 }
