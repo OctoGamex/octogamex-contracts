@@ -42,7 +42,7 @@ contract("NFT Exchanger", accounts => {
 
     await Mar.sell(1, my_ether, { from: account_one });
     const amount = await Mar.lots.call(1, { from: account_one });
-    assert.equal(parseInt(amount.seller_price), my_ether, "Sell not working");
+    assert.equal(parseInt(amount.buyer_price), my_ether, "Sell not working");
     assert.equal(parseInt(amount.selling), 1, "Sell not working");
 
   });
@@ -74,7 +74,6 @@ contract("NFT Exchanger", accounts => {
 
   it("Make proposal (token + NFT)", async () => {
 
-    await ERC20.mint(account_one, 1000, { from: account_one });
     await ERC1155.mint(account_one, 2, 1, 0, { from: account_one });
     await ERC1155.safeTransferFrom(account_one, Mar.address, 2, 1, 0, { from: account_one });
     await ERC20.increaseAllowance(Mar.address, 100, { from: account_one });
@@ -94,7 +93,6 @@ contract("NFT Exchanger", accounts => {
     await Mar.make_offer(0, [4], zero_address, 0, [], { from: account_one, value: 2 });
     const lot = await Mar.proposal_owner.call(account_one, 2, { from: account_one });
     assert.equal(parseInt(lot), 2, "Proposal token not working");
-
 
   });
 
@@ -117,11 +115,26 @@ contract("NFT Exchanger", accounts => {
 
   });
 
-  it("Cancel proposal (crypto)", async () => {
+  it("Cancel proposal", async () => {
 
-    await Mar.cancel_offer(4, { from: account_one});
-    const prop = await Mar.proposals.call(4, { from: account_one });
-    assert.equal(parseInt(prop.owner), zero_address, "Proposal token not working");
+
+    await Mar.cancel_offer(0, { from: account_one });
+    const balance = await ERC20.balanceOf.call(account_one, { from: account_one });
+    assert.equal(parseInt(balance), 900, "Wrong cancel token");
+
+    await Mar.cancel_offer(1, { from: account_one });
+    const balance1 = await ERC20.balanceOf.call(account_one, { from: account_one });
+    assert.equal(parseInt(balance1), 1000, "Wrong cancel token + NFT");
+    const balance2 = await ERC1155.balanceOf.call(Mar.address, 2, { from: account_one });
+    assert.equal(parseInt(balance2), 0, "Wrong cancel token + NFT");
+
+    await Mar.cancel_offer(2, { from: account_one });
+    const balance3 = await ERC1155.balanceOf.call(Mar.address, 3, { from: account_one });
+    assert.equal(parseInt(balance3), 0, "Wrong cancel token");
+
+    await Mar.cancel_offer(3, { from: account_one });
+    const balance4 = await ERC1155.balanceOf.call(Mar.address, 4, { from: account_one });
+    assert.equal(parseInt(balance4), 0, "Wrong cancel token");
 
   });
 
