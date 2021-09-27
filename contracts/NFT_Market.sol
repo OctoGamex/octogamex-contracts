@@ -90,8 +90,8 @@ contract NFT_Market is Ownable {
 
     function sell(uint256 index, uint256 new_price) external {
         require(lots[index].owner == msg.sender, "You are not the owner!");
-        lots[index].seller_price = new_price;
-        lots[index].buyer_price = new_price + (new_price * m_comission) / 100;
+        lots[index].seller_price = new_price - (new_price * m_comission) / 100;
+        lots[index].buyer_price = new_price;
         lots[index].selling = type_sell.Fixed_price;
         emit Sell(
             lots[index].contract_add,
@@ -109,7 +109,7 @@ contract NFT_Market is Ownable {
         delete lots[index];
         nft_contract.safeTransferFrom(
             address(this),
-            msg.sender,
+            lot.owner,
             lot.id,
             lot.amount,
             data_
@@ -168,7 +168,6 @@ contract NFT_Market is Ownable {
                         )
                     )
                 );
-                proposal_owner[msg.sender].push(proposals.length - 1);
             } else {
                 for (uint256 i = 0; i < lot_index.length; i++) {
                     require(
@@ -195,7 +194,6 @@ contract NFT_Market is Ownable {
                             )
                         )
                     );
-                    proposal_owner[msg.sender].push(proposals.length - 1);
                 } else {
                     //nft
                     proposals.push(
@@ -205,7 +203,6 @@ contract NFT_Market is Ownable {
                             currency(address(0), 0, 0)
                         )
                     );
-                    proposal_owner[msg.sender].push(proposals.length - 1);
                 }
             }
         } else {
@@ -222,7 +219,6 @@ contract NFT_Market is Ownable {
                         )
                     )
                 );
-                proposal_owner[msg.sender].push(proposals.length - 1);
             } else {
                 //crypto and nft with payment
                 for (uint256 i = 0; i < lot_index.length; i++) {
@@ -242,9 +238,10 @@ contract NFT_Market is Ownable {
                         )
                     )
                 );
-                proposal_owner[msg.sender].push(proposals.length - 1);
             }
         }
+        proposal_owner[msg.sender].push(proposals.length - 1);
+        lot_prop[index].push(proposals.length - 1);
     }
 
     function cancel_offer(uint256 index) external {
