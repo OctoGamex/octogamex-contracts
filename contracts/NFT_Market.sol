@@ -401,6 +401,7 @@ contract NFT_Market is Ownable {
                 )
             );
             lot_owner[operator].push(lots.length - 1);
+            emit Add_NFT(operator, msg.sender, id, lots.length - 1, block.timestamp);
         }
         return
             bytes4(
