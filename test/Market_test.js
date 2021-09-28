@@ -43,7 +43,7 @@ contract("NFT Exchanger", accounts => {
 
   it("Sell token", async () => {
 
-    await Mar.sell(1, my_ether, { from: account_one });
+    await Mar.sell(1, zero_address, my_ether, { from: account_one });
     const amount = await Mar.lots.call(1, { from: account_one });
     assert.equal(parseInt(amount.price.buyer_price), my_ether, "Sell not working");
     assert.equal(parseInt(amount.selling), 1, "Sell not working");
@@ -65,7 +65,7 @@ contract("NFT Exchanger", accounts => {
     await ERC20.mint(account_one, 1000, { from: account_one });
     await ERC1155.mint(account_two, 1, 1, 0, { from: account_one });
     await ERC1155.safeTransferFrom(account_two, Mar.address, 1, 1, 0, { from: account_two });
-    await Mar.sell(2, my_ether, { from: account_two });
+    await Mar.sell(2, ERC20.address, my_ether, { from: account_two });
     await ERC20.increaseAllowance(Mar.address, 100, { from: account_one });
     await Mar.make_offer(0, [], ERC20.address, 100, [], { from: account_one, value: 2 });
     const lot = await Mar.proposal_owner.call(account_one, 0, { from: account_one });
