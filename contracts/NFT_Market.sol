@@ -62,14 +62,35 @@ contract NFT_Market is Ownable {
         currency crypto_proposal;
     }
 
-    event Add_NFT(address user, address contract_address, uint256 NFT_id, uint256 lot_id, uint256 datetime);
-    event Sell_NFT(address indexed user, uint256 indexed lot_id, uint256 indexed datetime);
-    event Buy_NFT(address indexed user, uint256 indexed lot_id, uint256 indexed datetime);
+    event Add_NFT(
+        address user,
+        address contract_address,
+        uint256 NFT_id,
+        uint256 lot_id,
+        uint256 datetime
+    );
+    event Sell_NFT(
+        address indexed user,
+        uint256 indexed lot_id,
+        uint256 indexed datetime
+    );
+    event Buy_NFT(
+        address indexed user,
+        uint256 indexed lot_id,
+        uint256 indexed datetime
+    );
     event Get_Back(uint256 indexed lot_id, uint256 indexed datetime);
-    event Make_Offer(uint256 indexed lot_id, uint256 indexed offer_id, uint256 indexed datetime);
-    event Choosed_Offer(uint256 indexed lot_id, uint256 indexed offer_id, uint256 indexed datetime);
+    event Make_Offer(
+        uint256 indexed lot_id,
+        uint256 indexed offer_id,
+        uint256 indexed datetime
+    );
+    event Choosed_Offer(
+        uint256 indexed lot_id,
+        uint256 indexed offer_id,
+        uint256 indexed datetime
+    );
     event Reverted_Offer(uint256 indexed offer_id, uint256 indexed datetime); // ???   uint256 indexed lot_id,
-    
 
     constructor(
         uint8 comission,
@@ -115,23 +136,30 @@ contract NFT_Market is Ownable {
             value,
             data_
         );
-        lots.push(lot_info(
-            lot_start(
+        lots.push(
+            lot_info(
+                lot_start(msg.sender, l_contract, id, value, block.timestamp),
+                lot_type.None,
+                currency(address(0), 0, 0),
+                auction_info(0, 0, 0, address(0)),
+                false
+            )
+        );
+        lot_owner[msg.sender].push(lots.length - 1);
+        emit Add_NFT(
             msg.sender,
             l_contract,
             id,
-            value,
-            block.timestamp),
-            lot_type.None,
-            currency(address(0), 0, 0),
-            auction_info(0, 0, 0, address(0)),
-            false)
+            lots.length - 1,
+            block.timestamp
         );
-        lot_owner[msg.sender].push(lots.length - 1);
-        emit Add_NFT(msg.sender, l_contract, id, lots.length - 1, block.timestamp);
     }
 
-    function sell(uint256 index, address t_contract, uint256 new_price) external {
+    function sell(
+        uint256 index,
+        address t_contract,
+        uint256 new_price
+    ) external {
         require(
             lots[index].creation_info.owner == msg.sender,
             "You are not the owner!"
@@ -143,7 +171,11 @@ contract NFT_Market is Ownable {
         lots[index].price.buyer_price = new_price;
         lots[index].price.contract_add = t_contract;
         lots[index].selling = lot_type.Fixed_price;
-        emit Sell_NFT(msg.sender, lots[index].creation_info.id, block.timestamp);
+        emit Sell_NFT(
+            msg.sender,
+            lots[index].creation_info.id,
+            block.timestamp
+        );
     }
 
     function get_back(uint256 index, bytes memory data_) public {
@@ -172,11 +204,15 @@ contract NFT_Market is Ownable {
             "Not enough payment"
         );
         delete lots[index];
-        if (lot.price.contract_add == address(0)){
+        if (lot.price.contract_add == address(0)) {
             payable(lot.creation_info.owner).transfer(lot.price.seller_price);
         } else {
             ERC20 token_contract = ERC20(lot.price.contract_add);
-            token_contract.transferFrom(msg.sender, lot.creation_info.owner, lot.price.seller_price);
+            token_contract.transferFrom(
+                msg.sender,
+                lot.creation_info.owner,
+                lot.price.seller_price
+            );
         }
         ERC1155 nft_contract = ERC1155(lot.creation_info.contract_add);
         nft_contract.safeTransferFrom(
@@ -354,20 +390,17 @@ contract NFT_Market is Ownable {
         uint256 value,
         bytes calldata data
     ) external returns (bytes4) {
-        if (operator != address(this)){
-        lots.push(lot_info(
-            lot_start(
-            operator,
-            msg.sender,
-            id,
-            value,
-            block.timestamp),
-            lot_type.None,
-            currency(address(0), 0, 0),
-            auction_info(0, 0, 0, address(0)),
-            false)
-        );
-        lot_owner[operator].push(lots.length - 1);
+        if (operator != address(this)) {
+            lots.push(
+                lot_info(
+                    lot_start(operator, msg.sender, id, value, block.timestamp),
+                    lot_type.None,
+                    currency(address(0), 0, 0),
+                    auction_info(0, 0, 0, address(0)),
+                    false
+                )
+            );
+            lot_owner[operator].push(lots.length - 1);
         }
         return
             bytes4(
