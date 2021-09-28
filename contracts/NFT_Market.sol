@@ -19,8 +19,6 @@ contract NFT_Market is Ownable {
     mapping(uint256 => uint256[]) public lot_prop; // mapping index lot => array of index proposals
     mapping(address => string) public _token_uri; // smart-contract => API
     mapping(address => uint8) public all_comission; // address => comission
-    mapping(uint256 => mapping(address => currency)) public lot_bid;
-    mapping(address => bid[]) user_bids;
 
     enum lot_type {
         None,
@@ -28,11 +26,6 @@ contract NFT_Market is Ownable {
         Auction,
         Exchange
     } // lot type
-
-    struct bid {
-        uint256 id;
-        currency price;
-    }
 
     struct lot_info {
         lot_start creation_info;
@@ -69,28 +62,14 @@ contract NFT_Market is Ownable {
         currency crypto_proposal;
     }
 
-    event Sell(
-        address indexed nft_contranct,
-        uint256 indexed ID,
-        address indexed user,
-        uint256 amount,
-        uint256 price
-    );
-
-    event Buy(
-        address indexed nft_contranct,
-        uint256 indexed ID,
-        address indexed user,
-        uint256 amount,
-        uint256 price
-    );
-
-    event return_NFT(
-        address indexed nft_contranct,
-        uint256 indexed ID,
-        address indexed user,
-        uint256 amount
-    );
+    event Add_NFT(address user, address contract_address, uint256 NFT_id, uint256 lot_id, uint256 datetime);
+    event Sell_NFT(address indexed user, uint256 indexed lot_id, uint256 indexed datetime);
+    event Buy_NFT(address indexed user, uint256 indexed lot_id, uint256 indexed datetime);
+    event Get_Back(uint256 indexed lot_id, uint256 indexed datetime);
+    event Make_Offer(uint256 indexed lot_id, uint256 indexed offer_id, uint256 indexed datetime);
+    event Choosed_Offer(uint256 indexed lot_id, uint256 indexed offer_id, uint256 indexed datetime);
+    event Reverted_Offer(uint256 indexed offer_id, uint256 indexed datetime); // ???   uint256 indexed lot_id,
+    
 
     constructor(
         uint8 comission,
@@ -149,9 +128,10 @@ contract NFT_Market is Ownable {
             false)
         );
         lot_owner[msg.sender].push(lots.length - 1);
+        emit Add_NFT(msg.sender, l_contract, id, lots.length - 1, block.timestamp);
     }
 
-    function sell(uint256 index, uint256 new_price) external {
+    function sell(uint256 index, address t_contract, uint256 new_price) external {
         require(
             lots[index].creation_info.owner == msg.sender,
             "You are not the owner!"
@@ -161,7 +141,9 @@ contract NFT_Market is Ownable {
             (new_price * m_comission) /
             100;
         lots[index].price.buyer_price = new_price;
+        lots[index].price.contract_add = t_contract;
         lots[index].selling = lot_type.Fixed_price;
+        emit Sell_NFT(msg.sender, lots[index].creation_info.id, block.timestamp);
     }
 
     function get_back(uint256 index, bytes memory data_) public {
@@ -179,6 +161,7 @@ contract NFT_Market is Ownable {
             lot.creation_info.amount,
             data_
         );
+        emit Get_Back(lot.creation_info.id, block.timestamp);
     }
 
     function buy(uint256 index, bytes memory data_) external payable {
@@ -189,11 +172,12 @@ contract NFT_Market is Ownable {
             "Not enough payment"
         );
         delete lots[index];
-        // if (lot.price.contract_add == address(0)){
-
-        // } else {
-
-        // }
+        if (lot.price.contract_add == address(0)){
+            payable(lot.creation_info.owner).transfer(lot.price.seller_price);
+        } else {
+            ERC20 token_contract = ERC20(lot.price.contract_add);
+            token_contract.transferFrom(msg.sender, lot.creation_info.owner, lot.price.seller_price);
+        }
         ERC1155 nft_contract = ERC1155(lot.creation_info.contract_add);
         nft_contract.safeTransferFrom(
             address(this),
@@ -202,7 +186,7 @@ contract NFT_Market is Ownable {
             lot.creation_info.amount,
             data_
         );
-        payable(lot.creation_info.owner).transfer(lot.price.seller_price);
+        emit Buy_NFT(msg.sender, lot.creation_info.id, block.timestamp);
     }
 
     function make_offer(
@@ -210,7 +194,7 @@ contract NFT_Market is Ownable {
         uint256[] memory lot_index,
         address token_address,
         uint256 payment,
-        bytes[] memory data_
+        bytes memory data_
     ) external payable {
         require(lots[index].creation_info.owner != msg.sender, "You are owner");
         if (msg.value == prop_comission) {
@@ -303,6 +287,7 @@ contract NFT_Market is Ownable {
         }
         proposal_owner[msg.sender].push(proposals.length - 1);
         lot_prop[index].push(proposals.length - 1);
+        emit Make_Offer(index, proposals.length - 1, block.timestamp);
     }
 
     function cancel_offer(uint256 index) external {
@@ -347,6 +332,7 @@ contract NFT_Market is Ownable {
                 get_back(l_proposal.lots_prop[i], "");
             }
         }
+        emit Reverted_Offer(index, block.timestamp);
     }
 
     function get_lots(uint256[] memory indexes)
