@@ -1,12 +1,13 @@
-//SPDX-License-Identifier: none
-pragma solidity ^0.8.7;
+//SPDX-License-Identifier: MIT
+
+pragma solidity >=0.8.9;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract NFTMarketplace is Ownable {
-    uint8 public market_comission; // Market comission in persent
+    uint8 public market_comission; // Market comission in persents
     uint256 public offer_comission; // Fixed comission for create proposition
 
     address public Market_wallet; // Address for transfer comission
@@ -20,7 +21,7 @@ contract NFTMarketplace is Ownable {
 
     enum lot_type {
         None,
-        Fixed_price,
+        FixedPrice,
         Auction,
         Exchange
     } // lot type
@@ -96,26 +97,32 @@ contract NFTMarketplace is Ownable {
         uint256 proposal_comission,
         address wallet
     ) {
-        set_market_com(comission);
+        set_market_comission(comission);
         set_offer_comission(proposal_comission);
         set_wallet(wallet);
     }
 
-    function set_market_com(uint8 comission) public onlyOwner {
+    function set_market_comission(uint8 comission) public onlyOwner {
+        //TODO: if comission should be grater than zero - add require
+
         market_comission = comission;
     }
 
     function set_offer_comission(uint256 comission) public onlyOwner {
+        //TODO: if comission should be grater than zero - add require
+
         offer_comission = comission;
     }
 
     function set_wallet(address new_wallet) public onlyOwner {
+        require(new_wallet != address(0x0) && new_wallet != Market_wallet, "Invalid market address");
+
         Market_wallet = new_wallet;
     }
 
     // add nft to contract
     function add(
-        address l_contract,
+        address l_contract, //TODO: call variables with understandable names
         uint256 id,
         uint256 value,
         bytes memory data_
@@ -132,8 +139,8 @@ contract NFTMarketplace is Ownable {
             lot_info(
                 lot_start(msg.sender, l_contract, id, value, block.timestamp),
                 lot_type.None,
-                currency(address(0), 0, 0),
-                auction_info(0, 0, 0, address(0)),
+                currency(address(0x0), 0, 0),
+                auction_info(0, 0, 0, address(0x0)),
                 false
             )
         ); // add lot to array
@@ -164,7 +171,7 @@ contract NFTMarketplace is Ownable {
             100; // set value what send to seller
         lots[index].price.buyer_price = new_price; // set value what send buyer
         lots[index].price.contract_add = t_contract;
-        lots[index].selling = lot_type.Fixed_price;
+        lots[index].selling = lot_type.FixedPrice;
         emit Sell_NFT(
             msg.sender,
             lots[index].creation_info.id,
@@ -200,7 +207,7 @@ contract NFTMarketplace is Ownable {
 
     function buy(uint256 index, bytes memory data_) external payable {
         lot_info memory lot = lots[index];
-        require(lot.selling == lot_type.Fixed_price, "Not enough payment");
+        require(lot.selling == lot_type.FixedPrice, "Not enough payment");
         delete lots[index];
         if (lot.price.contract_add == address(0)) {
             // buy by crypto
