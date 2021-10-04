@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract NFT_Market is Ownable {
     uint8 public market_comission; // Market comission in persent
-    uint8 public offer_comission; // Fixed comission for create proposition
+    uint256 public offer_comission; // Fixed comission for create proposition
 
     address public Market_wallet; // Address for transfer comission
 
@@ -93,7 +93,7 @@ contract NFT_Market is Ownable {
 
     constructor(
         uint8 comission,
-        uint8 proposal_comission,
+        uint256 proposal_comission,
         address wallet
     ) {
         set_market_com(comission);
@@ -105,7 +105,7 @@ contract NFT_Market is Ownable {
         market_comission = comission;
     }
 
-    function set_offer_comission(uint8 comission) public onlyOwner {
+    function set_offer_comission(uint256 comission) public onlyOwner {
         offer_comission = comission;
     }
 
