@@ -44,6 +44,10 @@ contract("NFT Exchanger", accounts => {
     await Market.add(ERC1155.address, 1, 1, 0, { from: account_one });
     await Market.add(ERC1155.address, 1, 1, 0, { from: account_two });
     await Market.add(ERC1155.address, 1, 1, 0, { from: account_one });
+    await Market.add(ERC1155.address, 1, 1, 0, { from: account_two });
+    await Market.add(ERC1155.address, 1, 1, 0, { from: account_two });
+    await Market.add(ERC1155.address, 1, 1, 0, { from: account_two });
+    await Market.add(ERC1155.address, 1, 1, 0, { from: account_one });
 
     const balanceERC_after = await ERC1155.balanceOf.call(Market.address, 1, { from: account_one });
     const lot1 = await Market.lot_owner.call(account_one, 0, { from: account_one });
@@ -79,6 +83,7 @@ contract("NFT Exchanger", accounts => {
     await Market.sell(6, zero_address, my_ether, { from: account_one });
     await Market.sell(8, ERC20.address, my_ether, { from: account_one });
     await Market.sell(10, zero_address, my_ether, { from: account_one });
+    await Market.sell(14, zero_address, my_ether, { from: account_one });
 
     const amount1 = await Market.lots.call(1, { from: account_one });
     assert.equal(parseInt(amount1.price.buyer_price), my_ether, "Sell crypto not working");
@@ -206,29 +211,47 @@ contract("NFT Exchanger", accounts => {
 
   });
 
-  // it("Cancel proposal", async () => {
+  it("Make proposals for cancels", async () => {
 
-  //   const balance1_1 = await ERC20.balanceOf.call(account_two, { from: account_one });
-  //   await Market.cancel_offer(0, { from: account_two });
-  //   const balance2_2 = await ERC20.balanceOf.call(account_two, { from: account_one });
-  //   assert.notEqual(balance1_1, balance2_2, "Wrong cancel token");
+    await Market.make_offer(14, [], ERC20.address, 100, [], { from: account_two, value: my_ether/20 });
 
-  //   console.log(await Market.offers.call(1));
-  //   await Market.cancel_offer(1, { from: account_one });
-  //   const balance1 = await ERC20.balanceOf.call(account_one, { from: account_one });
-  //   assert.equal(parseInt(balance1), 1000, "Wrong cancel token + NFT");
-  //   const balance2 = await ERC1155.balanceOf.call(Market.address, 2, { from: account_one });
-  //   assert.equal(parseInt(balance2), 0, "Wrong cancel token + NFT");
+    await Market.make_offer(14, [11], ERC20.address, 100, [], { from: account_two, value: my_ether/20 });
 
-  //   await Market.cancel_offer(2, { from: account_one });
-  //   const balance3 = await ERC1155.balanceOf.call(Market.address, 3, { from: account_one });
-  //   assert.equal(parseInt(balance3), 0, "Wrong cancel token");
+    await Market.make_offer(14, [12], zero_address, 0, [], { from: account_two, value: my_ether/20 });
 
-  //   console.log(await Market.offers.call(3));
-  //   await Market.cancel_offer(3, { from: account_one });
-  //   const balance4 = await ERC1155.balanceOf.call(Market.address, 4, { from: account_one });
-  //   assert.equal(parseInt(balance4), 0, "Wrong cancel token");
+    await Market.make_offer(14, [13], zero_address, 0, [], { from: account_two, value: my_ether });
 
-  // });
+    await Market.make_offer(14, [], zero_address, 0, [], { from: account_two, value: my_ether });
+
+  });
+
+  it("Cancel proposal", async () => {
+
+    const balance_token_before = await ERC20.balanceOf.call(Market.address, { from: account_two });
+    await Market.cancel_offer(5, { from: account_two });
+    const balance_token_after = await ERC20.balanceOf.call(Market.address, { from: account_two });
+    assert.notEqual(parseInt(balance_token_after), parseInt(balance_token_before), "Wrong cancel token");
+
+    const balance_token_nft_before = await ERC20.balanceOf.call(account_two, { from: account_one });
+    const balance_nft_token_before = await ERC1155.balanceOf.call(Market.address, 1, { from: account_one });
+    await Market.cancel_offer(6, { from: account_two });
+    const balance_token_nft_after = await ERC20.balanceOf.call(account_two, { from: account_one });
+    assert.notEqual(parseInt(balance_token_nft_after), parseInt(balance_token_nft_before), "Tokens not transfered");
+    const balance_nft_token_after = await ERC1155.balanceOf.call(Market.address, 1, { from: account_one });
+    assert.notEqual(parseInt(balance_nft_token_after), parseInt(balance_nft_token_before), "NFT not transfered");
+
+    const balance_nft_before = await ERC1155.balanceOf.call(Market.address, 1, { from: account_one });
+    await Market.cancel_offer(7, { from: account_two });
+    const balance_nft_after = await ERC1155.balanceOf.call(Market.address, 1, { from: account_one });
+    assert.notEqual(parseInt(balance_nft_after), parseInt(balance_nft_before), "NFT not transfered");
+
+    const balance_nft_crypto_before = await ERC1155.balanceOf.call(Market.address, 1, { from: account_one });
+    await Market.cancel_offer(8, { from: account_two });
+    const balance_nft_crypto_after = await ERC1155.balanceOf.call(Market.address, 1, { from: account_one });
+    assert.notEqual(parseInt(balance_nft_crypto_after), parseInt(balance_nft_crypto_before), "Wrong cancel token");
+
+    await Market.cancel_offer(9, { from: account_two });
+
+  });
 
 });
