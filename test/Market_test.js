@@ -115,7 +115,7 @@ contract("NFT Exchanger", accounts => {
   it("Make proposal (token)", async () => {
 
     await Market.make_offer(3, [], ERC20.address, 100, [], { from: account_two, value: 2 });
-    const lot = await Market.proposals.call(0, { from: account_two });
+    const lot = await Market.offers.call(0, { from: account_two });
     assert.equal(lot.crypto_proposal.contract_add, ERC20.address, "Proposal token not working");
     const balance = await ERC20.balanceOf.call(Market.address, { from: account_two });
     assert.equal(parseInt(balance), 100, "Proposal token not working");
@@ -125,7 +125,7 @@ contract("NFT Exchanger", accounts => {
   it("Make proposal (token + NFT)", async () => {
 
     await Market.make_offer(4, [5], ERC20.address, 100, [], { from: account_two, value: 2 });
-    const lot = await Market.proposals.call(1, { from: account_two });
+    const lot = await Market.offers.call(1, { from: account_two });
     assert.equal(lot.crypto_proposal.contract_add, ERC20.address, "Proposal token not working");
     const balance = await ERC20.balanceOf.call(Market.address, { from: account_two });
     assert.equal(parseInt(balance), 200, "Proposal token not working");
@@ -135,7 +135,7 @@ contract("NFT Exchanger", accounts => {
   it("Make proposal (NFT)", async () => {
 
     await Market.make_offer(6, [7], zero_address, 0, [], { from: account_two, value: 2 });
-    const lot = await Market.proposals.call(2, { from: account_two });
+    const lot = await Market.offers.call(2, { from: account_two });
     //assert.equal(lot[1], 1, "Proposal NFT not working");
 
   });
@@ -143,7 +143,7 @@ contract("NFT Exchanger", accounts => {
   it("Make proposal (crypto + NFT)", async () => {
 
     await Market.make_offer(8, [9], zero_address, 0, [], { from: account_two, value: my_ether });
-    const lot = await Market.proposals.call( 3, { from: account_two });
+    const lot = await Market.offers.call( 3, { from: account_two });
     //assert.equal(parseInt(lot), 2, "Proposal token not working");
 
 
@@ -152,7 +152,7 @@ contract("NFT Exchanger", accounts => {
   it("Make proposal (crypto)", async () => {
 
     await Market.make_offer(10, [], zero_address, 0, [], { from: account_two, value: my_ether });
-    const offer = await Market.proposals.call(4, { from: account_two });
+    const offer = await Market.offers.call(4, { from: account_two });
     assert.equal(parseInt(offer.crypto_proposal.buyer_price), parseInt(my_ether), "Proposal token not working");
 
   });
@@ -201,7 +201,7 @@ contract("NFT Exchanger", accounts => {
   });
 
   it("Choose offer (crypto)", async () => {
-
+    
   await Market.choose_offer(10, 4, 0, { from: account_one });
 
   });
@@ -213,7 +213,7 @@ contract("NFT Exchanger", accounts => {
   //   const balance2_2 = await ERC20.balanceOf.call(account_two, { from: account_one });
   //   assert.notEqual(balance1_1, balance2_2, "Wrong cancel token");
 
-  //   console.log(await Market.proposals.call(1));
+  //   console.log(await Market.offers.call(1));
   //   await Market.cancel_offer(1, { from: account_one });
   //   const balance1 = await ERC20.balanceOf.call(account_one, { from: account_one });
   //   assert.equal(parseInt(balance1), 1000, "Wrong cancel token + NFT");
@@ -224,7 +224,7 @@ contract("NFT Exchanger", accounts => {
   //   const balance3 = await ERC1155.balanceOf.call(Market.address, 3, { from: account_one });
   //   assert.equal(parseInt(balance3), 0, "Wrong cancel token");
 
-  //   console.log(await Market.proposals.call(3));
+  //   console.log(await Market.offers.call(3));
   //   await Market.cancel_offer(3, { from: account_one });
   //   const balance4 = await ERC1155.balanceOf.call(Market.address, 4, { from: account_one });
   //   assert.equal(parseInt(balance4), 0, "Wrong cancel token");

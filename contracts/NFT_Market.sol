@@ -327,7 +327,7 @@ contract NFT_Market is Ownable {
                         currency(
                             address(0),
                             (msg.value - offer_comission) -
-                                (msg.value * market_comission) /
+                                ((msg.value - offer_comission) * market_comission) /
                                 100,
                             msg.value
                         )
@@ -425,10 +425,6 @@ contract NFT_Market is Ownable {
                 user_proposal.crypto_proposal.seller_price
             );
         }
-        payable(Market_wallet).transfer(
-            user_proposal.crypto_proposal.buyer_price -
-                user_proposal.crypto_proposal.seller_price
-        );
         emit Choosed_Offer(lot_id, offer_id, block.timestamp);
     }
 
