@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract NFT_Market is Ownable {
+contract NFTMarketplace is Ownable {
     uint8 public market_comission; // Market comission in persent
     uint256 public offer_comission; // Fixed comission for create proposition
 
@@ -444,17 +444,17 @@ contract NFT_Market is Ownable {
         emit Choosed_Offer(lot_id, offer_id, block.timestamp);
     }
 
-    // function get_lots(uint256[] memory indexes)
-    //     external
-    //     view
-    //     returns (lot_info[] memory)
-    // {
-    //     lot_info[] memory get_lot;
-    //     for (uint256 i = 0; i < indexes.length; i++) {
-    //         get_lot[i] = lots[indexes[i]];
-    //     }
-    //     return get_lot;
-    // }
+    function get_lots(uint256[] memory indexes)
+        external
+        view
+        returns (lot_info[] memory)
+    {
+        lot_info[] memory get_lot;
+        for (uint256 i = 0; i < indexes.length; i++) {
+            get_lot[i] = lots[indexes[i]];
+        }
+        return get_lot;
+    }
 
     function onERC1155Received(
         address operator,
