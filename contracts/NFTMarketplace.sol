@@ -91,7 +91,11 @@ contract NFTMarketplace is Ownable {
         uint256 indexed offerID,
         uint256 indexed datetime
     );
-    event REVERTED_OFFER(uint256 indexed lotID, uint256 indexed offerID, uint256 indexed datetime); 
+    event REVERTED_OFFER(
+        uint256 indexed lotID,
+        uint256 indexed offerID,
+        uint256 indexed datetime
+    );
 
     constructor(
         uint8 comission,
@@ -103,28 +107,55 @@ contract NFTMarketplace is Ownable {
         setWallet(wallet);
     }
 
+    /**
+     * @param comission, percents what pay users of ERC20 tokens and cryptocurrency.
+     * 100 = 0,1 %.
+     * 1000 = 1 %.
+     */
     function setMarketComission(uint8 comission) public onlyOwner {
-        //TODO: if comission should be grater than zero - add require
         marketComission = comission;
     }
 
+    /**
+     * @param comission, amount of cryptocurrency what users pay for offers.
+     */
     function setOfferComission(uint256 comission) public onlyOwner {
-        //TODO: if comission should be grater than zero - add require
         offerComission = comission;
     }
 
+    /**
+     * @param newWallet, user address who takes all comission.
+     * @notice setter user address (recipient comission).
+     * Requirements:
+     *
+     * - wallet address not 0.
+     * - the wallet is not the same as it was.
+     */
     function setWallet(address newWallet) public onlyOwner {
-        require(newWallet != address(0x0) && newWallet != marketWallet, "Invalid market address");
+        require(
+            newWallet != address(0x0) && newWallet != marketWallet,
+            "Invalid market address"
+        );
         marketWallet = newWallet;
     }
 
-    // add nft to contract
+    /**
+     * @param contractAddress, contract address with NFT.
+     * @param id, NFT id.
+     * @param value, NFT amount.
+     * @param data, data what can be added to transaction.
+     * @notice add NFT to contract.
+     * Requirements:
+     *
+     * - sended NFT value not 0.
+     */
     function add(
-        address contractAddress, //TODO: call variables with understandable names
+        address contractAddress,
         uint256 id,
         uint256 value,
         bytes memory data
     ) external {
+        require(value > 0, "Value is 0");
         ERC1155 NFT_Contract = ERC1155(contractAddress);
         NFT_Contract.safeTransferFrom(
             msg.sender,
@@ -135,7 +166,13 @@ contract NFTMarketplace is Ownable {
         );
         lots.push(
             lotInfo(
-                lotStart(msg.sender, contractAddress, id, value, block.timestamp),
+                lotStart(
+                    msg.sender,
+                    contractAddress,
+                    id,
+                    value,
+                    block.timestamp
+                ),
                 lotType.None,
                 0,
                 currency(address(0x0), 0, 0),
@@ -153,7 +190,17 @@ contract NFTMarketplace is Ownable {
         );
     }
 
-    // set lot sell
+    /**
+     * @param index, lot index what user want sell.
+     * @param contractAddress, ERC20 token contract address, zero address, if user want get cryptocurrency for NFT.
+     * @param price, NFT price in ERC20 or cryptocurrency.
+     * @param date, date when selling start.
+     * @notice start NFT selling.
+     * Requirements:
+     *
+     * - `lot owner` and `transcation creator` it's one person.
+     * - NFT not added to any offer.
+     */
     function sell(
         uint256 index,
         address contractAddress,
@@ -168,16 +215,12 @@ contract NFTMarketplace is Ownable {
         lots[index].price.sellerPrice =
             price -
             (price * marketComission) /
-            100; // set value what send to seller
+            1000; // set value what send to seller
         lots[index].sellStart = date;
         lots[index].price.buyerPrice = price; // set value what send buyer
         lots[index].price.contractAdd = contractAddress;
         lots[index].selling = lotType.FixedPrice;
-        emit SELL_NFT(
-            msg.sender,
-            lots[index].creationInfo.id,
-            block.timestamp
-        );
+        emit SELL_NFT(msg.sender, lots[index].creationInfo.id, block.timestamp);
     }
 
     function getBack(uint256 index, bytes memory data) public {
@@ -206,9 +249,22 @@ contract NFTMarketplace is Ownable {
         emit GET_BACK(lot.creationInfo.id, block.timestamp);
     }
 
+    /**
+     * @param index, lot index what user want buy.
+     * @param data, data what can be added to transaction.
+     * @notice NFT buying.
+     * Requirements:
+     *
+     * - NFT is selling.
+     * - user send transaction after start selling.
+     */
     function buy(uint256 index, bytes memory data) external payable {
         lotInfo memory lot = lots[index];
-        require(lot.selling == lotType.FixedPrice && lot.sellStart <= block.timestamp, "Not enough amount");
+        require(
+            lot.selling == lotType.FixedPrice &&
+                lot.sellStart <= block.timestamp,
+            "Not enough amount"
+        );
         delete lots[index];
         if (lot.price.contractAdd == address(0)) {
             // buy by crypto
@@ -241,23 +297,41 @@ contract NFTMarketplace is Ownable {
         emit BUY_NFT(msg.sender, lot.creationInfo.id, block.timestamp);
     }
 
+    /**
+     * @param index, lot index what user want.
+     * @param lotIndex, array of NFT index what user want exchange for lot.
+     * @param tokenAddress, ERC20 token contract address, zero address if user want give only nft or give cryptocurrency.
+     * @param amount, amount of ERC20 token.
+     * @notice Create offer for lot, offer can be: NFT, NFT + ERC20, NFT + cryptocurrency, ERC20, cryptocurrency.
+     * Requirements:
+     *
+     * - NFT open for buy or exchange.
+     * - sended cryptocurrency equal to or greater then offer comission
+     * - lot still exists
+     * - can't add to offer cryptocurrency and ERC20
+     */
     function makeOffer(
         uint256 index,
         uint256[] memory lotIndex,
         address tokenAddress,
-        uint256 amount,
-        bytes memory data
+        uint256 amount
     ) external payable {
         // create offer
         require(
+            !(msg.value > offerComission && amount > 0),
+            "You send more then needed"
+        );
+        require(
             msg.value >= offerComission &&
                 lots[index].creationInfo.contractAdd != address(0) &&
-                lots[index].selling != lotType.None,
+                lots[index].selling != lotType.None &&
+                lots[index].selling != lotType.Auction,
             "You not send comission or lot not valid"
         );
         if (msg.value == offerComission) {
             if (lotIndex.length == 0) {
                 // token
+                require(amount > 1, "You send 0 tokens");
                 ERC20 tokenContract = ERC20(tokenAddress);
                 tokenContract.transferFrom(msg.sender, address(this), amount);
                 offers.push(
@@ -267,7 +341,7 @@ contract NFTMarketplace is Ownable {
                         lotIndex,
                         currency(
                             tokenAddress,
-                            amount - (amount * marketComission) / 100,
+                            amount - (amount * marketComission) / 1000,
                             amount
                         )
                     )
@@ -284,6 +358,7 @@ contract NFTMarketplace is Ownable {
                 }
                 if (tokenAddress != address(0)) {
                     // nft + token
+                    require(amount > 1, "You send 0 tokens");
                     ERC20 tokenContract = ERC20(tokenAddress);
                     tokenContract.transferFrom(
                         msg.sender,
@@ -297,7 +372,7 @@ contract NFTMarketplace is Ownable {
                             lotIndex,
                             currency(
                                 tokenAddress,
-                                amount - (amount * marketComission) / 100,
+                                amount - (amount * marketComission) / 1000,
                                 amount
                             )
                         )
@@ -326,7 +401,7 @@ contract NFTMarketplace is Ownable {
                             address(0),
                             (msg.value - offerComission) -
                                 (msg.value * marketComission) /
-                                100,
+                                1000,
                             msg.value
                         )
                     )
@@ -343,7 +418,7 @@ contract NFTMarketplace is Ownable {
                             (msg.value - offerComission) -
                                 ((msg.value - offerComission) *
                                     marketComission) /
-                                100,
+                                1000,
                             msg.value
                         )
                     )
@@ -355,6 +430,13 @@ contract NFTMarketplace is Ownable {
         emit MAKE_OFFER(index, offers.length - 1, block.timestamp);
     }
 
+    /**
+     * @param index, offer index what user want cancel.
+     * @notice Cancel offer and return NFT, cryptocurrency, ERC20.
+     * Requirements:
+     *
+     * - `offer owner` and `transcation creator` it's one person.
+     */
     function cancelOffer(uint256 index) external {
         require(
             offers[index].owner == msg.sender,
@@ -372,9 +454,7 @@ contract NFTMarketplace is Ownable {
             }
         } else {
             payable(localOffer.owner).transfer(offerComission);
-            ERC20 tokenContract = ERC20(
-                localOffer.cryptoOffer.contractAdd
-            );
+            ERC20 tokenContract = ERC20(localOffer.cryptoOffer.contractAdd);
             tokenContract.transfer(
                 localOffer.owner,
                 localOffer.cryptoOffer.buyerPrice
@@ -388,6 +468,16 @@ contract NFTMarketplace is Ownable {
         emit REVERTED_OFFER(localOffer.lotID, index, block.timestamp);
     }
 
+    /**
+     * @param lotID, lot index what user want exchange to offer.
+     * @param offerID, offer index what user accepted.
+     * @param data, data what can be added to transaction.
+     * @notice Accept offer, offer (NFT, cryptocurrency, ERC20) transfer to seller, lot transfer to buyer.
+     * Requirements:
+     *
+     * - `lot owner` and `transcation creator` it's one person.
+     * - `lot index` and `lot index in offer` the same.
+     */
     function chooseOffer(
         uint256 lotID,
         uint256 offerID,
@@ -441,9 +531,7 @@ contract NFTMarketplace is Ownable {
             }
         } else {
             // token
-            ERC20 tokenContract = ERC20(
-                userOffer.cryptoOffer.contractAdd
-            );
+            ERC20 tokenContract = ERC20(userOffer.cryptoOffer.contractAdd);
             tokenContract.transfer(
                 lot.creationInfo.owner,
                 userOffer.cryptoOffer.sellerPrice
@@ -452,6 +540,11 @@ contract NFTMarketplace is Ownable {
         emit CHOOSED_OFFER(lotID, offerID, block.timestamp);
     }
 
+    /**
+     * @param indexes, array of NFT index.
+     * @return array of object with info about NFT
+     * @notice Get info about NFT by index.
+     */
     function getLots(uint256[] memory indexes)
         external
         view
@@ -464,6 +557,14 @@ contract NFTMarketplace is Ownable {
         return getLot;
     }
 
+    /**
+     * @param operator, user address who transfer NFT to contract.
+     * @param from, user address from which NFT was sended.
+     * @param id, id of NFT which were sent.
+     * @param value, value of NFT which were sent.
+     * @param data, data what can be added to transaction.
+     * @notice Need for receive NFT1155.
+     */
     function onERC1155Received(
         address operator,
         address from,
@@ -499,6 +600,14 @@ contract NFTMarketplace is Ownable {
             );
     }
 
+    /**
+     * @param operator, user address who transfer NFT to contract.
+     * @param from, user address from which NFT was sended.
+     * @param ids, array of id of NFT which were sent.
+     * @param values, array of value of NFT which were sent.
+     * @param data, data what can be added to transaction.
+     * @notice Need for receive many NFT1155 with difference id.
+     */
     function onERC1155BatchReceived(
         address operator,
         address from,
