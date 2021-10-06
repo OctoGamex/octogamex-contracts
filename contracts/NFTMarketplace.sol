@@ -29,6 +29,7 @@ contract NFTMarketplace is Ownable {
     struct lotInfo {
         lotStart creationInfo;
         lotType selling;
+        uint256 sellStart;
         currency price;
         auctionInfo auction;
         bool offered; // added to offer
@@ -136,6 +137,7 @@ contract NFTMarketplace is Ownable {
             lotInfo(
                 lotStart(msg.sender, contractAddress, id, value, block.timestamp),
                 lotType.None,
+                0,
                 currency(address(0x0), 0, 0),
                 auctionInfo(0, 0, 0, address(0x0)),
                 false
@@ -155,7 +157,8 @@ contract NFTMarketplace is Ownable {
     function sell(
         uint256 index,
         address contractAddress,
-        uint256 price
+        uint256 price,
+        uint256 date
     ) external {
         require(
             lots[index].creationInfo.owner == msg.sender &&
@@ -166,6 +169,7 @@ contract NFTMarketplace is Ownable {
             price -
             (price * marketComission) /
             100; // set value what send to seller
+        lots[index].sellStart = date;
         lots[index].price.buyerPrice = price; // set value what send buyer
         lots[index].price.contractAdd = contractAddress;
         lots[index].selling = lotType.FixedPrice;
@@ -204,7 +208,7 @@ contract NFTMarketplace is Ownable {
 
     function buy(uint256 index, bytes memory data) external payable {
         lotInfo memory lot = lots[index];
-        require(lot.selling == lotType.FixedPrice, "Not enough amount");
+        require(lot.selling == lotType.FixedPrice && lot.sellStart <= block.timestamp, "Not enough amount");
         delete lots[index];
         if (lot.price.contractAdd == address(0)) {
             // buy by crypto
@@ -472,6 +476,7 @@ contract NFTMarketplace is Ownable {
                 lotInfo(
                     lotStart(operator, msg.sender, id, value, block.timestamp),
                     lotType.None,
+                    0,
                     currency(address(0), 0, 0),
                     auctionInfo(0, 0, 0, address(0)),
                     false
