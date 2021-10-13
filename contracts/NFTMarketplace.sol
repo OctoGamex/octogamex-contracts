@@ -616,7 +616,7 @@ contract NFTMarketplace is Ownable {
     function makeBid(uint256 lotID, uint256 amount) external payable {
         require(
             lots[lotID].selling == lotType.Auction &&
-                lots[lotID].auction.endAuction > block.timestamp,
+                lots[lotID].auction.endAuction > block.timestamp && lots[lotID].auction.startAuction <= block.timestamp,
             "Lot not on auction"
         );
         if (lots[lotID].price.contractAddress == address(0x0)) {
