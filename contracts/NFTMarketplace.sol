@@ -108,6 +108,11 @@ contract NFTMarketplace is Ownable {
         address indexed user
     );
     event AuctionEnd(uint256 indexed dateTime, uint256 indexed lotID);
+    event ExchangeNFT(
+        uint256 indexed dateTime,
+        uint256 indexed lotID,
+        address indexed owner
+    );
 
     constructor(
         uint8 comission,
@@ -224,15 +229,25 @@ contract NFTMarketplace is Ownable {
                 lots[index].offered == false, // user must be owner and not added to offer
             "You are not the owner!(sell)"
         );
-        lots[index].price.sellerPrice =
-            price -
-            (price * marketComission) /
-            1000; // set value what send to seller
-        lots[index].sellStart = date;
-        lots[index].price.buyerPrice = price; // set value what send buyer
-        lots[index].price.contractAddress = contractAddress;
-        lots[index].selling = lotType.FixedPrice;
-        emit SellNFT(msg.sender, lots[index].creationInfo.id, block.timestamp);
+        if (price == 0) {
+            lots[index].sellStart = date;
+            lots[index].selling = lotType.FixedPrice;
+            emit ExchangeNFT(block.timestamp, index, msg.sender);
+        } else {
+            lots[index].price.sellerPrice =
+                price -
+                (price * marketComission) /
+                1000; // set value what send to seller
+            lots[index].sellStart = date;
+            lots[index].price.buyerPrice = price; // set value what send buyer
+            lots[index].price.contractAddress = contractAddress;
+            lots[index].selling = lotType.FixedPrice;
+            emit SellNFT(
+                msg.sender,
+                lots[index].creationInfo.id,
+                block.timestamp
+            );
+        }
     }
 
     function getBack(uint256 index, bytes memory data) external {
@@ -616,7 +631,8 @@ contract NFTMarketplace is Ownable {
     function makeBid(uint256 lotID, uint256 amount) external payable {
         require(
             lots[lotID].selling == lotType.Auction &&
-                lots[lotID].auction.endAuction > block.timestamp && lots[lotID].auction.startAuction <= block.timestamp,
+                lots[lotID].auction.endAuction > block.timestamp &&
+                lots[lotID].auction.startAuction <= block.timestamp,
             "Lot not on auction"
         );
         if (lots[lotID].price.contractAddress == address(0x0)) {
@@ -625,7 +641,10 @@ contract NFTMarketplace is Ownable {
                     msg.value >= lots[lotID].auction.nextStep,
                     "Not enought payment"
                 );
-                lots[lotID].auction.nextStep = msg.value + (msg.value * lots[lotID].auction.step) / 1000;
+                lots[lotID].auction.nextStep =
+                    msg.value +
+                    (msg.value * lots[lotID].auction.step) /
+                    1000;
                 if (lots[lotID].price.sellerPrice != 0) {
                     payable(lots[lotID].auction.lastBid).transfer(
                         lots[lotID].price.buyerPrice
@@ -644,7 +663,10 @@ contract NFTMarketplace is Ownable {
                     newPrice - (newPrice * marketComission) / 1000,
                     newPrice
                 );
-                lots[lotID].auction.nextStep = newPrice + (newPrice * lots[lotID].auction.step) / 1000;
+                lots[lotID].auction.nextStep =
+                    newPrice +
+                    (newPrice * lots[lotID].auction.step) /
+                    1000;
             }
         } else {
             require(amount != 0, "You send 0 tokens!");
@@ -666,7 +688,10 @@ contract NFTMarketplace is Ownable {
                     amount -
                     (amount * marketComission) /
                     1000;
-                lots[lotID].auction.nextStep = amount + amount * lots[lotID].auction.step / 1000;
+                lots[lotID].auction.nextStep =
+                    amount +
+                    (amount * lots[lotID].auction.step) /
+                    1000;
                 lots[lotID].auction.lastBid = msg.sender;
             } else {
                 uint256 newPrice = lots[lotID].price.buyerPrice + amount;
@@ -675,7 +700,10 @@ contract NFTMarketplace is Ownable {
                     newPrice -
                     (newPrice * marketComission) /
                     1000;
-                lots[lotID].auction.nextStep = newPrice + newPrice * lots[lotID].auction.step / 1000;
+                lots[lotID].auction.nextStep =
+                    newPrice +
+                    (newPrice * lots[lotID].auction.step) /
+                    1000;
             }
         }
         emit BidMaked(block.timestamp, lotID, msg.sender);
@@ -687,9 +715,11 @@ contract NFTMarketplace is Ownable {
      * @notice Send bid to NFT owner, NFT to auction winner.
      */
     function endAuction(uint256 lotID, bytes memory data) external {
+        require(lots[lotID].selling == lotType.Auction, "It's not auction");
         require(
-            lots[lotID].selling == lotType.Auction, "It's not auction");
-        require(lots[lotID].auction.endAuction <= block.timestamp, "Auction not ended");
+            lots[lotID].auction.endAuction <= block.timestamp,
+            "Auction not ended"
+        );
         lotInfo memory lot = lots[lotID];
         delete lots[lotID];
         ERC1155 nft_contract = ERC1155(lot.creationInfo.contractAddress);
