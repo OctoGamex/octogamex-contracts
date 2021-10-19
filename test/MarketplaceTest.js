@@ -31,6 +31,7 @@ contract("NFT Marketplace", accounts => {
 
     const balanceERC_Before = await ERC1155.balanceOf.call(Marketplace.address, 1, { from: accountOne });
 
+    await Marketplace.setNFT_Collection(ERC1155.address, true, { from: accountOne });
     await ERC1155.safeTransferFrom(accountOne, Marketplace.address, 1, 1, data, { from: accountOne });
     await Marketplace.add(ERC1155.address, 1, 1, data, { from: accountOne });
     await Marketplace.add(ERC1155.address, 1, 1, data, { from: accountOne });
@@ -47,6 +48,7 @@ contract("NFT Marketplace", accounts => {
     await Marketplace.add(ERC1155.address, 1, 1, data, { from: accountTwo });
     await Marketplace.add(ERC1155.address, 1, 1, data, { from: accountOne });
     await Marketplace.add(ERC1155.address, 1, 1, data, { from: accountOne }); // 15
+    await Marketplace.add(ERC1155.address, 1, 1, data, { from: accountOne });
     await Marketplace.add(ERC1155.address, 1, 1, data, { from: accountOne });
 
     const balanceERC_After = await ERC1155.balanceOf.call(Marketplace.address, 1, { from: accountOne });
@@ -336,6 +338,15 @@ contract("NFT Marketplace", accounts => {
     assert.notEqual(parseInt(tokens_1_After), parseInt(tokens_1_Before), "Tokens not sended");
     assert.equal(parseInt(tokens_2_Before), parseInt(tokens_2_After), "Tokens not sended")
     assert.notEqual(parseInt(NFT_16_After), parseInt(NFT_16_Before), "NFT not sended");
+  });
+
+  it("Exchange NFT", async () => {
+
+    await Marketplace.sell(17, zeroAddress, 0, data, { from: accountOne });
+    const exchangeNFT = await Marketplace.lots.call(17);
+    assert.equal(parseInt(exchangeNFT.selling), 3, "Not setted to exchange");
+    await Marketplace.makeOffer(17, [], ERC20.address, 100, { from: accountTwo, value: myEther/20 });
+    // can create offer to this lot
   });
 
 });

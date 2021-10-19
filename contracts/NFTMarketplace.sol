@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract NFTMarketplace is Ownable {
-    uint8 public marketComission; // Market comission in persents
+    uint8 public marketComission; // Market comission in percents
     uint256 public offerComission; // Fixed comission for create proposition
 
     address public marketWallet; // Address for transfer comission
@@ -18,6 +18,7 @@ contract NFTMarketplace is Ownable {
     mapping(address => uint256[]) public lotOwner; // mapping user address to array of index lots created by user
     mapping(address => uint256[]) public offerOwner; // mapping user address to array of index offer created by user
     mapping(uint256 => uint256[]) public lotOffers; // mapping index lot => array of index offers
+    mapping(address => bool) public NFT_Collections; // if return true, then NFT stay on this contract, else revert transaction
 
     enum lotType {
         None,
@@ -126,8 +127,8 @@ contract NFTMarketplace is Ownable {
 
     /**
      * @param comission, percents what pay users of ERC20 tokens and cryptocurrency.
-     * 100 = 0,1 %.
-     * 1000 = 1 %.
+     * 100 = 10 %.
+     * 1000 = 100 %.
      */
     function setMarketComission(uint8 comission) public onlyOwner {
         marketComission = comission;
@@ -157,6 +158,18 @@ contract NFTMarketplace is Ownable {
     }
 
     /**
+     * @param contractAddress, NFT contract address which transfer NFT.
+     * @param canTransfer, if true, then we can take NFT from this contract, else revert transaction.
+     * @notice setter for NFT collection support.
+     */
+    function setNFT_Collection(address contractAddress, bool canTransfer)
+        external
+        onlyOwner
+    {
+        NFT_Collections[contractAddress] = canTransfer;
+    }
+
+    /**
      * @param contractAddress, contract address with NFT.
      * @param id, NFT id.
      * @param value, NFT amount.
@@ -172,7 +185,7 @@ contract NFTMarketplace is Ownable {
         uint256 value,
         bytes memory data
     ) external {
-        require(value > 0, "Value is 0");
+        require(value > 0 && contractAddress != address(0x0), "Value is 0");
         ERC1155 NFT_Contract = ERC1155(contractAddress);
         NFT_Contract.safeTransferFrom(
             msg.sender,
@@ -226,12 +239,13 @@ contract NFTMarketplace is Ownable {
     ) external {
         require(
             lots[index].creationInfo.owner == msg.sender &&
-                lots[index].offered == false, // user must be owner and not added to offer
+                lots[index].offered == false &&
+                lots[index].selling == lotType.None, // user must be owner and not added to offer
             "You are not the owner!(sell)"
         );
         if (price == 0) {
             lots[index].sellStart = date;
-            lots[index].selling = lotType.FixedPrice;
+            lots[index].selling = lotType.Exchange;
             emit ExchangeNFT(block.timestamp, index, msg.sender);
         } else {
             lots[index].price.sellerPrice =
@@ -251,19 +265,11 @@ contract NFTMarketplace is Ownable {
     }
 
     function getBack(uint256 index, bytes memory data) external {
-        returnNFT(index, msg.sender, data);
+        returnNFT(index, data);
     }
 
-    function returnNFT(
-        uint256 index,
-        address user,
-        bytes memory data
-    ) internal {
+    function returnNFT(uint256 index, bytes memory data) internal {
         lotInfo memory lot = lots[index];
-        require(
-            lot.creationInfo.owner == user,
-            "You are not the owner!(return NFT)"
-        );
         ERC1155 NFT_Contract = ERC1155(lot.creationInfo.contractAddress);
         delete lots[index];
         NFT_Contract.safeTransferFrom(
@@ -290,11 +296,12 @@ contract NFTMarketplace is Ownable {
         require(
             lot.selling == lotType.FixedPrice &&
                 lot.sellStart <= block.timestamp,
-            "Not enough amount"
+            "Not selling or selling not started"
         );
         delete lots[index];
         if (lot.price.contractAddress == address(0)) {
             // buy by crypto
+            require(msg.value == lot.price.buyerPrice, "Not enought payment");
             payable(lot.creationInfo.owner).transfer(lot.price.sellerPrice);
             payable(marketWallet).transfer(
                 lot.price.buyerPrice - lot.price.sellerPrice
@@ -343,11 +350,12 @@ contract NFTMarketplace is Ownable {
         address tokenAddress,
         uint256 amount
     ) external payable {
+        //не отримані nft (transferFrom) ???
         // create offer
-        require(
-            !(msg.value > offerComission && amount > 0),
-            "You send more then needed"
-        );
+        // require(
+        //     !(msg.value > offerComission && amount > 0), //asdasdasd
+        //     "You send more then needed"
+        // );
         require(
             msg.value >= offerComission &&
                 lots[index].creationInfo.contractAddress != address(0) &&
@@ -358,7 +366,7 @@ contract NFTMarketplace is Ownable {
         if (msg.value == offerComission) {
             if (lotIndex.length == 0) {
                 // token
-                require(amount > 1, "You send 0 tokens");
+                require(amount > 0, "You send 0 tokens");
                 ERC20 tokenContract = ERC20(tokenAddress);
                 tokenContract.transferFrom(msg.sender, address(this), amount);
                 offers.push(
@@ -385,7 +393,7 @@ contract NFTMarketplace is Ownable {
                 }
                 if (tokenAddress != address(0)) {
                     // nft + token
-                    require(amount > 1, "You send 0 tokens");
+                    require(amount > 0, "You send 0 tokens");
                     ERC20 tokenContract = ERC20(tokenAddress);
                     tokenContract.transferFrom(
                         msg.sender,
@@ -489,7 +497,7 @@ contract NFTMarketplace is Ownable {
         }
         if (localOffer.lotsOffer.length != 0) {
             for (uint256 i = 0; i < localOffer.lotsOffer.length; i++) {
-                returnNFT(localOffer.lotsOffer[i], msg.sender, "");
+                returnNFT(localOffer.lotsOffer[i], "");
             }
         }
         emit RevertedOffer(localOffer.lotID, index, block.timestamp);
@@ -550,11 +558,10 @@ contract NFTMarketplace is Ownable {
                 );
                 payable(marketWallet).transfer(
                     userOffer.cryptoOffer.buyerPrice -
-                        userOffer.cryptoOffer.sellerPrice -
-                        marketComission
+                        userOffer.cryptoOffer.sellerPrice
                 );
             } else {
-                payable(marketWallet).transfer(marketComission);
+                payable(marketWallet).transfer(offerComission);
             }
         } else {
             // token
@@ -562,6 +569,11 @@ contract NFTMarketplace is Ownable {
             tokenContract.transfer(
                 lot.creationInfo.owner,
                 userOffer.cryptoOffer.sellerPrice
+            );
+            tokenContract.transfer(
+                marketWallet,
+                userOffer.cryptoOffer.buyerPrice -
+                    userOffer.cryptoOffer.sellerPrice
             );
         }
         emit ChoosedOffer(lotID, offerID, block.timestamp);
@@ -669,7 +681,7 @@ contract NFTMarketplace is Ownable {
                     1000;
             }
         } else {
-            require(amount != 0, "You send 0 tokens!");
+            require(amount > 0, "You send 0 tokens!");
             ERC20 tokenContract = ERC20(lots[lotID].price.contractAddress);
             tokenContract.transferFrom(msg.sender, address(this), amount);
             if (lots[lotID].auction.lastBid != msg.sender) {
@@ -774,6 +786,9 @@ contract NFTMarketplace is Ownable {
         uint256 value,
         bytes calldata data
     ) external returns (bytes4) {
+        if (NFT_Collections[msg.sender] == false) {
+            revert("This collection not supported");
+        }
         if (operator != address(this)) {
             lots.push(
                 lotInfo(
