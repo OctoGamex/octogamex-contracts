@@ -321,7 +321,7 @@ contract("NFT Marketplace", accounts => {
 
   it("End auction", async () => {
 
-    await sleep(10000);
+    await sleep(15000);
 
     const NFT_15_Before = await ERC1155.balanceOf.call(accountOne, 1);
     await Marketplace.endAuction(15, data, { from: accountOne});
