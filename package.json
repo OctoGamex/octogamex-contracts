@@ -1,0 +1,30 @@
+{
+  "name": "nft-marketplace-dapp",
+  "version": "1.0.0",
+  "description": "",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.3.2"
+  },
+  "devDependencies": {
+    "sol-merger": "^3.1.0"
+  },
+  "scripts": {
+    "compile": "truffle compile --all",
+    "build": "sol-merger -c \"./contracts/**/*.sol\" ./build/dist",
+    "test": "truffle compile --all && truffle test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ElephantsLab/nft-marketplace-contracts.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ElephantsLab/nft-marketplace-contracts/issues"
+  },
+  "homepage": "https://github.com/ElephantsLab/nft-marketplace-contracts#readme"
+}
