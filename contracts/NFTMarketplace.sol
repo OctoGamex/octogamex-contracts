@@ -862,7 +862,10 @@ contract NFTMarketplace is Ownable {
         uint256 value,
         bytes calldata data
     ) external returns (bytes4) {
-        require(NFT_Collections[msg.sender] == true, "This collection not supported");
+        require(
+            NFT_Collections[msg.sender] == true,
+            "This collection not supported"
+        );
         if (operator != address(this)) {
             lots.push(
                 lotInfo(
@@ -890,6 +893,40 @@ contract NFTMarketplace is Ownable {
                     "onERC1155Received(address,address,uint256,uint256,bytes)"
                 )
             );
+    }
+
+    function onERC721Received(
+        address operator,
+        address from,
+        uint256 id,
+        bytes calldata data
+    ) public virtual returns (bytes4) {
+        require(
+            NFT_Collections[msg.sender] == true,
+            "This collection not supported"
+        );
+        if (operator != address(this)) {
+            lots.push(
+                lotInfo(
+                    lotStart(operator, msg.sender, id, 1, block.timestamp),
+                    lotType.None,
+                    0,
+                    currency(address(0), 0, 0),
+                    auctionInfo(0, 0, 0, 0, address(0)),
+                    false,
+                    false
+                )
+            );
+            lotOwner[operator].push(lots.length - 1);
+            emit AddNFT(
+                operator,
+                msg.sender,
+                id,
+                lots.length - 1,
+                block.timestamp
+            );
+        }
+        return bytes4(keccak256("onERC721Received(address,uint256,bytes)"));
     }
 
     /**
