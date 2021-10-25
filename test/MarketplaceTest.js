@@ -25,31 +25,31 @@ contract("NFT Marketplace", accounts => {
     await ERC20.mint(accountOne, createERC.toString(), { from: accountOne });
     await ERC20.increaseAllowance(Marketplace.address, createERC.toString(), { from: accountOne });
     await ERC1155.safeTransferFrom(accountOne, accountTwo, 1, 10, data, { from: accountOne });
+    await Marketplace.setNFT_Collection(ERC1155.address, true, { from: accountOne });
   });
 
   it("Add NFT", async () => {
 
     const balanceERC_Before = await ERC1155.balanceOf.call(Marketplace.address, 1, { from: accountOne });
 
-    await Marketplace.setNFT_Collection(ERC1155.address, true, { from: accountOne });
     await ERC1155.safeTransferFrom(accountOne, Marketplace.address, 1, 1, data, { from: accountOne });
-    await Marketplace.add(ERC1155.address, 1, 1, data, { from: accountOne });
-    await Marketplace.add(ERC1155.address, 1, 1, data, { from: accountOne });
-    await Marketplace.add(ERC1155.address, 1, 1, data, { from: accountOne });
-    await Marketplace.add(ERC1155.address, 1, 1, data, { from: accountOne });
-    await Marketplace.add(ERC1155.address, 1, 1, data, { from: accountTwo });
-    await Marketplace.add(ERC1155.address, 1, 1, data, { from: accountOne });
-    await Marketplace.add(ERC1155.address, 1, 1, data, { from: accountTwo });
-    await Marketplace.add(ERC1155.address, 1, 1, data, { from: accountOne });
-    await Marketplace.add(ERC1155.address, 1, 1, data, { from: accountTwo });
-    await Marketplace.add(ERC1155.address, 1, 1, data, { from: accountOne });
-    await Marketplace.add(ERC1155.address, 1, 1, data, { from: accountTwo });
-    await Marketplace.add(ERC1155.address, 1, 1, data, { from: accountTwo });
-    await Marketplace.add(ERC1155.address, 1, 1, data, { from: accountTwo });
-    await Marketplace.add(ERC1155.address, 1, 1, data, { from: accountOne });
-    await Marketplace.add(ERC1155.address, 1, 1, data, { from: accountOne }); // 15
-    await Marketplace.add(ERC1155.address, 1, 1, data, { from: accountOne });
-    await Marketplace.add(ERC1155.address, 1, 1, data, { from: accountOne });
+    await Marketplace.add(ERC1155.address, 1, 1, true, data, { from: accountOne });
+    await Marketplace.add(ERC1155.address, 1, 1, true, data, { from: accountOne });
+    await Marketplace.add(ERC1155.address, 1, 1, true, data, { from: accountOne });
+    await Marketplace.add(ERC1155.address, 1, 1, true, data, { from: accountOne });
+    await Marketplace.add(ERC1155.address, 1, 1, true, data, { from: accountTwo });
+    await Marketplace.add(ERC1155.address, 1, 1, true, data, { from: accountOne });
+    await Marketplace.add(ERC1155.address, 1, 1, true, data, { from: accountTwo });
+    await Marketplace.add(ERC1155.address, 1, 1, true, data, { from: accountOne });
+    await Marketplace.add(ERC1155.address, 1, 1, true, data, { from: accountTwo });
+    await Marketplace.add(ERC1155.address, 1, 1, true, data, { from: accountOne });
+    await Marketplace.add(ERC1155.address, 1, 1, true, data, { from: accountTwo });
+    await Marketplace.add(ERC1155.address, 1, 1, true, data, { from: accountTwo });
+    await Marketplace.add(ERC1155.address, 1, 1, true, data, { from: accountTwo });
+    await Marketplace.add(ERC1155.address, 1, 1, true, data, { from: accountOne });
+    await Marketplace.add(ERC1155.address, 1, 1, true, data, { from: accountOne }); // 15
+    await Marketplace.add(ERC1155.address, 1, 1, true, data, { from: accountOne });
+    await Marketplace.add(ERC1155.address, 1, 1, true, data, { from: accountOne });
 
     const balanceERC_After = await ERC1155.balanceOf.call(Marketplace.address, 1, { from: accountOne });
     const lot1 = await Marketplace.lotOwner.call(accountOne, 0, { from: accountOne });
