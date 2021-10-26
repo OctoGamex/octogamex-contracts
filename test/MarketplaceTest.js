@@ -1,12 +1,13 @@
 const NFT = artifacts.require("TestERC1155");
 const Tokens = artifacts.require("TestERC20");
 const Mar = artifacts.require("NFTMarketplace");
+const TestERC721 = artifacts.require("TestERC721");
 
 contract("NFT Marketplace", accounts => {
 
   const myEther = (web3.utils.toWei('1', "ether")).toString();
   const [accountOne, accountTwo] = accounts;
-  let ERC1155, Marketplace, ERC20;
+  let ERC1155, Marketplace, ERC20, ERC721;
   const zeroAddress = "0x0000000000000000000000000000000000000000";
 
   const data = 0;
@@ -15,6 +16,7 @@ contract("NFT Marketplace", accounts => {
     ERC1155 = await NFT.deployed({ from: accountOne });
     Marketplace = await Mar.deployed({ from: accountOne });
     ERC20 = await Tokens.deployed({ from: accountOne });
+    ERC721 = await TestERC721.deployed({ from: accountOne });
 
     await ERC1155.mint(accountOne, 1, 100, data, { from: accountOne });
     await ERC1155.setApprovalForAll(Marketplace.address, true, { from: accountOne });
@@ -26,6 +28,9 @@ contract("NFT Marketplace", accounts => {
     await ERC20.increaseAllowance(Marketplace.address, createERC.toString(), { from: accountOne });
     await ERC1155.safeTransferFrom(accountOne, accountTwo, 1, 10, data, { from: accountOne });
     await Marketplace.setNFT_Collection(ERC1155.address, true, { from: accountOne });
+    await ERC721.mint(accountOne, 1, { from: accountOne });
+    await ERC721.setApprovalForAll(Marketplace.address, true, { from: accountOne });
+    await Marketplace.setNFT_Collection(ERC721.address, true, { from: accountOne });
   });
 
   it("Add NFT", async () => {
@@ -50,6 +55,8 @@ contract("NFT Marketplace", accounts => {
     await Marketplace.add(ERC1155.address, 1, 1, true, data, { from: accountOne }); // 15
     await Marketplace.add(ERC1155.address, 1, 1, true, data, { from: accountOne });
     await Marketplace.add(ERC1155.address, 1, 1, true, data, { from: accountOne });
+
+    await Marketplace.add(ERC721.address, 1, 1, false, data, { from: accountOne });
 
     const balanceERC_After = await ERC1155.balanceOf.call(Marketplace.address, 1, { from: accountOne });
     const lot1 = await Marketplace.lotOwner.call(accountOne, 0, { from: accountOne });
