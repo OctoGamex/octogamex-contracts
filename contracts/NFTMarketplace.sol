@@ -926,7 +926,7 @@ contract NFTMarketplace is Ownable {
                 block.timestamp
             );
         }
-        return bytes4(keccak256("onERC721Received(address,uint256,bytes)"));
+        return bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"));
     }
 
     /**
