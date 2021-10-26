@@ -652,6 +652,20 @@ contract NFTMarketplace is Ownable {
     }
 
     /**
+     *  indexes, array of NFT index.
+     *  array of object with info about NFT
+     * @notice Get info about NFT by index.
+     */
+    function getInfo(address user)
+        external
+        view
+        returns (uint256[] memory userLots, uint256[] memory userOffers)
+    {
+        userLots = lotOwner[user];
+        userOffers = offerOwner[user];
+    }
+
+    /**
      * @param lotID, lot index in array.
      * @param startDate, date when auction start (open).
      * @param endDate, date when auction end.
