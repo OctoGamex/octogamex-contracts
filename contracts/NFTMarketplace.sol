@@ -21,6 +21,7 @@ contract NFTMarketplace is Ownable {
     mapping(address => uint256[]) public offerOwner; // mapping user address to array of index offer created by user
     mapping(uint256 => uint256[]) public lotOffers; // mapping index lot => array of index offers
     mapping(address => bool) public NFT_Collections; // if return true, then NFT stay on this contract, else revert transaction
+    mapping(address => mapping(address => bool)) public NFT_ERC20_Supports; // NFT address => ERC20 tokens address => does supported
 
     enum lotType {
         None,
@@ -174,6 +175,24 @@ contract NFTMarketplace is Ownable {
     }
 
     /**
+     * @param NFT_Address, NFT contract address.
+     * @param ERC20_Address, array of ERC20 address what we want setup.
+     * @param canTransfer, array of bool, which say is this NFT collection supported this ERC20 tokens .
+     * @notice setter for NFT collection ERC20 support.
+     */
+    function setERC20_Support(
+        address NFT_Address,
+        address[] memory ERC20_Address,
+        bool[] memory canTransfer
+    ) external onlyOwner {
+        require(Address.isContract(NFT_Address), "It's not contract");
+        for (uint256 i = 0; i < ERC20_Address.length; i++) {
+            require(Address.isContract(ERC20_Address[i]), "It's not contract");
+            NFT_ERC20_Supports[NFT_Address][ERC20_Address[i]] = canTransfer[i];
+        }
+    }
+
+    /**
      * @param contractAddress, contract address with NFT.
      * @param id, NFT id.
      * @param value, NFT amount.
@@ -254,6 +273,7 @@ contract NFTMarketplace is Ownable {
                 lots[index].selling == lotType.None, // user must be owner and not added to offer
             "You are not the owner!(sell)"
         );
+        require(NFT_ERC20_Supports[lots[index].creationInfo.contractAddress][contractAddress] == true || contractAddress == address(0x0), 'Not supported');
         if (price == 0) {
             lots[index].sellStart = date;
             lots[index].selling = lotType.Exchange;
@@ -381,12 +401,7 @@ contract NFTMarketplace is Ownable {
         address tokenAddress,
         uint256 amount
     ) external payable {
-        //не отримані nft (transferFrom) ???
         // create offer
-        // require(
-        //     !(msg.value > offerComission && amount > 0), //asdasdasd
-        //     "You send more then needed"
-        // );
         require(
             msg.value >= offerComission &&
                 lots[index].creationInfo.contractAddress != address(0) &&
@@ -394,6 +409,7 @@ contract NFTMarketplace is Ownable {
                 lots[index].selling != lotType.Auction,
             "You not send comission or lot not valid"
         );
+        require(NFT_ERC20_Supports[lots[index].creationInfo.contractAddress][tokenAddress] == true || tokenAddress == address(0x0), 'Not Supported');
         if (msg.value == offerComission) {
             if (lotIndex.length == 0) {
                 // token
@@ -688,6 +704,7 @@ contract NFTMarketplace is Ownable {
             "You are not owner or lot in sale"
         );
         require(startDate < endDate, "Auction start ended");
+        require(NFT_ERC20_Supports[lots[lotID].creationInfo.contractAddress][tokenAddress] == true || tokenAddress == address(0x0), 'Not supported');
         lots[lotID].auction = auctionInfo(
             startDate,
             endDate,
@@ -940,7 +957,10 @@ contract NFTMarketplace is Ownable {
                 block.timestamp
             );
         }
-        return bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"));
+        return
+            bytes4(
+                keccak256("onERC721Received(address,address,uint256,bytes)")
+            );
     }
 
     /**
