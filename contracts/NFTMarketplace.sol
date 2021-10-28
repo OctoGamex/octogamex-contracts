@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
 contract NFTMarketplace is Ownable {
-    uint8 public marketComission; // Market comission in percents
+    uint256 public marketComission; // Market comission in percents
     uint256 public offerComission; // Fixed comission for create proposition
 
     address public marketWallet; // Address for transfer comission
@@ -120,7 +120,7 @@ contract NFTMarketplace is Ownable {
     );
 
     constructor(
-        uint8 comission,
+        uint256 comission,
         uint256 comissionOffer,
         address wallet
     ) {
@@ -134,7 +134,7 @@ contract NFTMarketplace is Ownable {
      * 100 = 10 %.
      * 1000 = 100 %.
      */
-    function setMarketComission(uint8 comission) public onlyOwner {
+    function setMarketComission(uint256 comission) public onlyOwner {
         marketComission = comission;
     }
 
@@ -208,7 +208,7 @@ contract NFTMarketplace is Ownable {
         uint256 value,
         bool isERC1155,
         bytes memory data
-    ) external {
+    ) public {
         require(value > 0 && contractAddress != address(0x0), "Value is 0");
         if (isERC1155 == true) {
             ERC1155 NFT_Contract = ERC1155(contractAddress);
@@ -251,6 +251,71 @@ contract NFTMarketplace is Ownable {
     }
 
     /**
+     * @param contractAddress, contract address with NFT.
+     * @param id, NFT id.
+     * @param value, NFT amount.
+     * @param isERC1155, is ERC1155 standart.
+     * @param startDate, date wheb auction start or start sell.
+     * @param endDate, date when auction end.
+     * @param step, step for auction.
+     * @param tokenAddress, ERC20 address.
+     * @param price, amount ERC20.
+     * @param isSell, is this sell or auction.
+     * @param data, data what can be added to transaction.
+     * @notice add NFT to contract and sell or auction.
+     */
+    function NFT_Sale(
+        address contractAddress,
+        uint256 id,
+        uint256 value,
+        bool isERC1155,
+        uint256 startDate,
+        uint256 endDate,
+        uint256 step,
+        address tokenAddress,
+        uint256 price,
+        bool isSell,
+        bytes memory data
+    ) external {
+        add(contractAddress, id, value, isERC1155, data);
+        uint256 lotID = lots.length - 1;
+        if (isSell == true) {
+            sell(lotID, contractAddress, price, startDate);
+        } else {
+            startAuction(lotID, startDate, endDate, step, tokenAddress, price);
+        }
+    }
+
+    /**
+     * @param contractAddress, array of contract address with NFT.
+     * @param id, array of NFT id.
+     * @param value, array of NFT amount.
+     * @param isERC1155, array of is ERC1155 standart.
+     * @param lot, lot id what user want get.
+     * @param tokenAddress, ERC20 address.
+     * @param amount, amount ERC20.
+     * @param data, data what can be added to transaction.
+     * @notice add NFT to contract and make offer.
+     */
+    function NFT_Offer(
+        address[] memory contractAddress,
+        uint256[] memory id,
+        uint256[] memory value,
+        bool[] memory isERC1155,
+        uint256 lot,
+        address tokenAddress,
+        uint256 amount,
+        bytes memory data
+    ) external {
+        uint256[] memory lotIDs;
+        for (uint i = 0; i < contractAddress.length; i++) {
+            add(contractAddress[i], id[i], value[i], isERC1155[i], data);
+            lotIDs[i] = lots.length - 1;
+        }
+        makeOffer(lot, lotIDs, tokenAddress, amount);
+    }
+
+    /**
      * @param index, lot index what user want sell.
      * @param contractAddress, ERC20 token contract address, zero address, if user want get cryptocurrency for NFT.
      * @param price, NFT price in ERC20 or cryptocurrency.
@@ -266,7 +331,7 @@ contract NFTMarketplace is Ownable {
         address contractAddress,
         uint256 price,
         uint256 date
-    ) external {
+    ) public {
         require(
             lots[index].creationInfo.owner == msg.sender &&
                 lots[index].offered == false &&
@@ -299,8 +364,14 @@ contract NFTMarketplace is Ownable {
         returnNFT(index, data);
     }
 
+    /**
+     * @param index, lot index what user want return.
+     * @param data, data what can added to transaction.
+     * @notice return NFT to owner.
+     */
     function returnNFT(uint256 index, bytes memory data) internal {
         lotInfo memory lot = lots[index];
+        require(lot.creationInfo.owner == msg.sender, 'You are not owner');
         delete lots[index];
         if (lot.isERC1155 == true) {
             ERC1155 NFT_Contract = ERC1155(lot.creationInfo.contractAddress);
@@ -400,7 +471,7 @@ contract NFTMarketplace is Ownable {
         uint256[] memory lotIndex,
         address tokenAddress,
         uint256 amount
-    ) external payable {
+    ) public payable {
         // create offer
         require(
             msg.value >= offerComission &&
@@ -697,7 +768,7 @@ contract NFTMarketplace is Ownable {
         uint256 step,
         address tokenAddress,
         uint256 amount
-    ) external {
+    ) public {
         require(
             lots[lotID].creationInfo.owner == msg.sender &&
                 lots[lotID].selling == lotType.None,
@@ -926,6 +997,13 @@ contract NFTMarketplace is Ownable {
             );
     }
 
+    /**
+     * @param operator, user address who transfer NFT to contract.
+     * @param from, user address from which NFT was sended.
+     * @param id, id of NFT which were sent.
+     * @param data, data what can be added to transaction.
+     * @notice Need for receive NFT721.
+     */
     function onERC721Received(
         address operator,
         address from,
