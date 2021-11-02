@@ -74,19 +74,22 @@ contract NFTMarketplace is Ownable {
         address contractAddress,
         uint256 NFT_ID,
         uint256 lotID,
-        uint256 datetime
+        uint256 datetime,
+        uint256 amount
     );
     event SellNFT(
         address indexed user,
         uint256 indexed lotID,
-        uint256 indexed datetime
+        uint256 indexed datetime,
+        uint256 amount
     );
     event BuyNFT(
         address indexed user,
         uint256 indexed lotID,
-        uint256 indexed datetime
+        uint256 indexed datetime,
+        uint256 amount
     );
-    event GetBack(uint256 indexed lotID, uint256 indexed datetime);
+    event GetBack(uint256 indexed lotID, uint256 indexed datetime, uint256 amount);
     event MakeOffer(
         uint256 indexed lotID,
         uint256 indexed offerID,
@@ -105,18 +108,20 @@ contract NFTMarketplace is Ownable {
     event Auction(
         uint256 indexed dateTime,
         uint256 indexed id,
-        address indexed owner
+        address indexed owner,
+        uint256 amount
     );
     event BidMaked(
         uint256 indexed dateTime,
         uint256 indexed lotID,
         address indexed user
     );
-    event AuctionEnd(uint256 indexed dateTime, uint256 indexed lotID);
+    event AuctionEnd(uint256 indexed dateTime, uint256 indexed lotID, uint256 amount);
     event ExchangeNFT(
         uint256 indexed dateTime,
         uint256 indexed lotID,
-        address indexed owner
+        address indexed owner,
+        uint256 amount
     );
 
     constructor(
@@ -202,7 +207,7 @@ contract NFTMarketplace is Ownable {
      *
      * - sended NFT value not 0.
      */
-    function add(
+        function add(
         address contractAddress,
         uint256 id,
         uint256 value,
@@ -219,35 +224,61 @@ contract NFTMarketplace is Ownable {
                 value,
                 data
             );
+            lots.push(
+                lotInfo(
+                    lotStart(
+                        msg.sender,
+                        contractAddress,
+                        id,
+                        value,
+                        block.timestamp
+                    ),
+                    lotType.None,
+                    0,
+                    currency(address(0x0), 0, 0),
+                    auctionInfo(0, 0, 0, 0, address(0x0)),
+                    false,
+                    isERC1155
+                )
+            ); // add lot to array
+            emit AddNFT(
+                msg.sender,
+                contractAddress,
+                id,
+                lots.length - 1,
+                block.timestamp,
+                1
+            );
         } else {
             ERC721 NFT_Contract = ERC721(contractAddress);
             NFT_Contract.safeTransferFrom(msg.sender, address(this), id, data);
+            lots.push(
+                lotInfo(
+                    lotStart(
+                        msg.sender,
+                        contractAddress,
+                        id,
+                        1,
+                        block.timestamp
+                    ),
+                    lotType.None,
+                    0,
+                    currency(address(0x0), 0, 0),
+                    auctionInfo(0, 0, 0, 0, address(0x0)),
+                    false,
+                    isERC1155
+                )
+            ); // add lot to array
+            emit AddNFT(
+                msg.sender,
+                contractAddress,
+                id,
+                lots.length - 1,
+                block.timestamp,
+                1
+            );
         }
-        lots.push(
-            lotInfo(
-                lotStart(
-                    msg.sender,
-                    contractAddress,
-                    id,
-                    value,
-                    block.timestamp
-                ),
-                lotType.None,
-                0,
-                currency(address(0x0), 0, 0),
-                auctionInfo(0, 0, 0, 0, address(0x0)),
-                false,
-                isERC1155
-            )
-        ); // add lot to array
         lotOwner[msg.sender].push(lots.length - 1); // add lot id to owner array
-        emit AddNFT(
-            msg.sender,
-            contractAddress,
-            id,
-            lots.length - 1,
-            block.timestamp
-        );
     }
 
     /**
@@ -342,7 +373,7 @@ contract NFTMarketplace is Ownable {
         if (price == 0) {
             lots[index].sellStart = date;
             lots[index].selling = lotType.Exchange;
-            emit ExchangeNFT(block.timestamp, index, msg.sender);
+            emit ExchangeNFT(block.timestamp, index, msg.sender, lots[index].creationInfo.amount);
         } else {
             lots[index].price.sellerPrice =
                 price -
@@ -355,7 +386,8 @@ contract NFTMarketplace is Ownable {
             emit SellNFT(
                 msg.sender,
                 lots[index].creationInfo.id,
-                block.timestamp
+                block.timestamp,
+                lots[index].creationInfo.amount
             );
         }
     }
@@ -391,7 +423,7 @@ contract NFTMarketplace is Ownable {
                 data
             );
         }
-        emit GetBack(lot.creationInfo.id, block.timestamp);
+        emit GetBack(lot.creationInfo.id, block.timestamp, lots[index].creationInfo.amount);
     }
 
     /**
@@ -450,7 +482,7 @@ contract NFTMarketplace is Ownable {
                 data
             );
         }
-        emit BuyNFT(msg.sender, lot.creationInfo.id, block.timestamp);
+        emit BuyNFT(msg.sender, lot.creationInfo.id, block.timestamp, lots[index].creationInfo.amount);
     }
 
     /**
@@ -721,11 +753,17 @@ contract NFTMarketplace is Ownable {
         emit ChoosedOffer(lotID, offerID, block.timestamp);
     }
 
-    /**
-     * @param indexes, array of NFT index.
-     * @return array of object with info about NFT
-     * @notice Get info about NFT by index.
-     */
+    function getLotsOffers(uint256[] memory indexes)
+        external
+        view
+        returns (uint256[][] memory getLot)
+    {
+        for (uint256 i = 0; i < indexes.length; i++) {
+            getLot[i] = lotOffers[indexes[i]];
+        }
+        return getLot;
+    }
+
     function getLots(uint256[] memory indexes)
         external
         view
@@ -789,7 +827,7 @@ contract NFTMarketplace is Ownable {
             lots[lotID].price = currency(tokenAddress, 0, 0);
         }
         lots[lotID].selling = lotType.Auction;
-        emit Auction(block.timestamp, lotID, msg.sender);
+        emit Auction(block.timestamp, lotID, msg.sender, lots[lotID].creationInfo.amount);
     }
 
     /**
@@ -946,7 +984,7 @@ contract NFTMarketplace is Ownable {
                 );
             }
         }
-        emit AuctionEnd(block.timestamp, lotID);
+        emit AuctionEnd(block.timestamp, lotID, lot.creationInfo.amount);
     }
 
     /**
@@ -986,7 +1024,8 @@ contract NFTMarketplace is Ownable {
                 msg.sender,
                 id,
                 lots.length - 1,
-                block.timestamp
+                block.timestamp,
+                value
             );
         }
         return
@@ -1032,7 +1071,8 @@ contract NFTMarketplace is Ownable {
                 msg.sender,
                 id,
                 lots.length - 1,
-                block.timestamp
+                block.timestamp,
+                1
             );
         }
         return
