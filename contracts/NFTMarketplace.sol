@@ -750,7 +750,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
     function getLots(uint256 indexes)
         external
         view
-        returns (lotInfo getLot)
+        returns (lotInfo memory getLot)
     {
         getLot = lots[indexes];
     }
