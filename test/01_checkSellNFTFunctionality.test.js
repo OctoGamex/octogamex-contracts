@@ -35,49 +35,49 @@ contract("sell NFT functionality", async accounts => {
         MarketPlaceAddress = MarketPlace.address;
     });
 
-    it("reset market comission", async () => {
-        let marketComission = new BN(150);
+    it("reset market commission", async () => {
+        let marketCommission = new BN(150);
 
-        await MarketPlace.setMarketComission(marketComission, {from: deployer});
+        await MarketPlace.setMarketCommission(marketCommission, {from: deployer});
 
-        let receivedMarketComission = await MarketPlace.marketComission({from: deployer});
-        assert.equal(Number(receivedMarketComission), marketComission, "market comission is wrong");
+        let receivedMarketCommission = await MarketPlace.marketCommission({from: deployer});
+        assert.equal(Number(receivedMarketCommission), marketCommission, "market comission is wrong");
     });
 
-    it("expect revert if market comission more then 100%", async () => {
-        let marketComission = new BN(1001);
+    it("expect revert if market commission more then 100%", async () => {
+        let marketCommission = new BN(1001);
 
         await expectRevert(
-            MarketPlace.setMarketComission(marketComission, {from: deployer}),
+            MarketPlace.setMarketCommission(marketCommission, {from: deployer}),
             "revert"
         );
     });
 
-    it("expect revert for NOT owner caller func 'setMarketComission'", async () => {
-        let marketComission = new BN(150);
+    it("expect revert for NOT owner caller func 'setMarketCommission'", async () => {
+        let marketCommission = new BN(150);
 
         await expectRevert(
-            MarketPlace.setMarketComission(marketComission, {from: accountOne}),
+            MarketPlace.setMarketCommission(marketCommission, {from: accountOne}),
             "Ownable: caller is not the owner"
         );
     });
 
-    it("reset offer comission", async () => {
+    it("reset offer commission", async () => {
         const tokenbits = (new BN(10)).pow(new BN(16));
-        let comissionOffer = new BN(5).mul(tokenbits);
+        let offerCommission = new BN(5).mul(tokenbits);
 
-        await MarketPlace.setOfferComission(comissionOffer, {from: deployer});
+        await MarketPlace.setOfferCommission(offerCommission, {from: deployer});
 
-        let receivedOfferComission = await MarketPlace.offerComission({from: deployer});
-        assert.equal(Number(receivedOfferComission), comissionOffer, "offer comission is wrong");
+        let receivedOfferCommission = await MarketPlace.offerCommission({from: deployer});
+        assert.equal(Number(receivedOfferCommission), offerCommission, "offer comission is wrong");
     });
 
-    it("expect revert for NOT owner caller func 'setOfferComission'", async () => {
+    it("expect revert for NOT owner caller func 'setOfferCommission'", async () => {
         const tokenbits = (new BN(10)).pow(new BN(16));
-        let comissionOffer = new BN(5).mul(tokenbits);
+        let offerCommission = new BN(5).mul(tokenbits);
 
         await expectRevert(
-            MarketPlace.setOfferComission(comissionOffer, {from: accountOne}),
+            MarketPlace.setOfferCommission(offerCommission, {from: accountOne}),
             "Ownable: caller is not the owner"
         );
     });
@@ -182,7 +182,15 @@ contract("sell NFT functionality", async accounts => {
             MarketPlace.add(ERC1155Address, NFT1155id, NFT1155value, isERC1155, NFTdata, { from: accountOne }),
             'Value is 0'
         );
-    });    
+    });  
+
+    // add tests for a function setERC20_Support
+    
+    it("set ERC-20 support", async () => {
+        let isERC20Supported = true;
+        await MarketPlace.setERC20_Support(ERC1155Address, [ERC20Address], [isERC20Supported], { from: deployer });
+        await MarketPlace.setERC20_Support(ERC721Address, [ERC20Address], [isERC20Supported], { from: deployer });
+    });
 
     it("sell NFT for cryptocurrency with zero address", async () => {
         let userLotsIds = [];
