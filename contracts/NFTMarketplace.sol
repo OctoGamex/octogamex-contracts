@@ -32,7 +32,8 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         uint256 NFT_ID,
         uint256 lotID,
         uint256 datetime,
-        uint256 amount
+        uint256 amount,
+        uint256 typeOfLot
     );
     event SellNFT(
         address indexed user,
@@ -165,6 +166,8 @@ contract NFTMarketplace is Ownable, VariablesTypes {
      * @param contractAddress, contract address with NFT.
      * @param id, NFT id.
      * @param value, NFT amount.
+     * @param isERC1155 is ERC-1155.
+     * param typeOfLot 0 - none, 1 - fixed price, 2 - auction, 3 - exchange.
      * @param data, data what can be added to transaction.
      * @notice add NFT to contract.
      * Requirements:
@@ -176,6 +179,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         uint256 id,
         uint256 value,
         bool isERC1155,
+        lotType typeOfLot,
         bytes memory data
     ) public {
         require(value > 0 && contractAddress != address(0x0), "Value is 0");
@@ -197,7 +201,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                         value,
                         block.timestamp
                     ),
-                    lotType.None,
+                    typeOfLot,
                     0,
                     currency(address(0x0), 0, 0),
                     auctionInfo(0, 0, 0, 0, address(0x0)),
@@ -211,7 +215,8 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                 id,
                 lots.length - 1,
                 block.timestamp,
-                1
+                value,
+                uint256(typeOfLot)
             );
         } else {
             ERC721 NFT_Contract = ERC721(contractAddress);
@@ -239,7 +244,8 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                 id,
                 lots.length - 1,
                 block.timestamp,
-                1
+                1,
+                uint256(typeOfLot)
             );
         }
         lotOwner[msg.sender].push(lots.length - 1); // add lot id to owner array
@@ -266,7 +272,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         uint256 price,
         bytes memory data
     ) external {
-        add(contractAddress, id, value, isERC1155, data);
+        add(contractAddress, id, value, isERC1155, lotType.FixedPrice, data);
         uint256 lotID = lots.length - 1;
         sell(lotID, tokenAddress, price, startDate);
     }
@@ -294,7 +300,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
     ) external {
         uint256[] memory lotIDs;
         for (uint256 i = 0; i < contractAddress.length; i++) {
-            add(contractAddress[i], id[i], value[i], isERC1155[i], data);
+            add(contractAddress[i], id[i], value[i], isERC1155[i], lotType.Exchange, data);
             lotIDs[i] = lots.length - 1;
         }
         makeOffer(lot, lotIDs, tokenAddress, amount);
@@ -739,27 +745,20 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         emit ChoosedOffer(lotID, offerID, block.timestamp);
     }
 
-    function getLotsOffers(uint256[] memory indexes)
+    function getLotsOffers(uint256 indexes)
         external
         view
-        returns (uint256[][] memory getLot)
+        returns (uint256[] memory getLot)
     {
-        for (uint256 i = 0; i < indexes.length; i++) {
-            getLot[i] = lotOffers[indexes[i]];
-        }
-        return getLot;
+        getLot = lotOffers[indexes];
     }
 
-    function getLots(uint256[] memory indexes)
+    function getLots(uint256 indexes)
         external
         view
-        returns (lotInfo[] memory)
+        returns (lotInfo memory getLot)
     {
-        lotInfo[] memory getLot;
-        for (uint256 i = 0; i < indexes.length; i++) {
-            getLot[i] = lots[indexes[i]];
-        }
-        return getLot;
+        getLot = lots[indexes];
     }
 
     /**
@@ -814,7 +813,8 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                 id,
                 lots.length - 1,
                 block.timestamp,
-                value
+                value,
+                uint256(lotType.None)
             );
         }
         return
@@ -861,7 +861,8 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                 id,
                 lots.length - 1,
                 block.timestamp,
-                1
+                1,
+                uint256(lotType.None)
             );
         }
         return

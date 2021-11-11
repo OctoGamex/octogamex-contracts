@@ -18,6 +18,8 @@ contract("NFT Marketplace", accounts => {
     ERC20 = await Tokens.deployed({ from: accountOne });
     ERC721 = await TestERC721.deployed({ from: accountOne });
 
+    console.log(Marketplace.address);
+
     await ERC1155.mint(accountOne, 1, 100, data, { from: accountOne });
     await ERC1155.setApprovalForAll(Marketplace.address, true, { from: accountOne });
     await ERC1155.setApprovalForAll(Marketplace.address, true, { from: accountTwo });
@@ -31,6 +33,8 @@ contract("NFT Marketplace", accounts => {
     await ERC721.mint(accountOne, 1, { from: accountOne });
     await ERC721.setApprovalForAll(Marketplace.address, true, { from: accountOne });
     await Marketplace.setNFT_Collection(ERC721.address, true, { from: accountOne });
+    await Marketplace.setERC20_Support(ERC1155.address, [ERC20.address], [true], { from: accountOne });
+    await Marketplace.setERC20_Support(ERC20.address, [ERC20.address], [true], { from: accountOne });
   });
 
   it("Add NFT", async () => {
