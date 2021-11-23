@@ -140,9 +140,10 @@ contract("sell NFT functionality", async accounts => {
         let NFT1155value = new BN(10);
         let isERC1155 = true;
         let addNFTNum = 8; // max 10
+        let lotType = 0; // lotType.None
 
         for(let i = 0; i < addNFTNum; i++) {
-            await MarketPlace.add(ERC1155Address, NFT1155id, NFT1155value, isERC1155, NFTdata, { from: accountOne });
+            await MarketPlace.add(ERC1155Address, NFT1155id, NFT1155value, isERC1155, lotType, NFTdata, { from: accountOne });
         }      
 
         let accOneBalanceAfterTransfer = await ERC1155.balanceOf.call(MarketPlaceAddress, NFT1155id, { from: accountOne });
@@ -155,8 +156,9 @@ contract("sell NFT functionality", async accounts => {
         let accOneBalanceBeforeTransfer = await ERC721.balanceOf.call(MarketPlaceAddress, { from: accountOne });
         let NFT721value = new BN(1);
         let isERC1155 = false;
+        let lotType = 0; // lotType.None
 
-        await MarketPlace.add(ERC721Address, NFT721id, NFT721value, isERC1155, NFTdata, { from: accountOne });
+        await MarketPlace.add(ERC721Address, NFT721id, NFT721value, isERC1155, lotType, NFTdata, { from: accountOne });
 
         let accOneBalanceAfterTransfer = await ERC721.balanceOf.call(MarketPlaceAddress, { from: accountOne });
 
@@ -167,9 +169,10 @@ contract("sell NFT functionality", async accounts => {
     it("'contractAddress' in func 'add' should not be able zero address", async () => {
         let NFT1155value = new BN(10);
         let isERC1155 = false;
+        let lotType = 0; // lotType.None
 
         await expectRevert(
-            MarketPlace.add(constants.ZERO_ADDRESS, NFT1155id, NFT1155value, isERC1155, NFTdata, { from: accountOne }),
+            MarketPlace.add(constants.ZERO_ADDRESS, NFT1155id, NFT1155value, isERC1155, lotType, NFTdata, { from: accountOne }),
             'Value is 0'
         );
     });
@@ -177,9 +180,10 @@ contract("sell NFT functionality", async accounts => {
     it("'value' in func 'add' should not be able zero param", async () => {
         let NFT1155value = new BN(0);
         let isERC1155 = true;
+        let lotType = 0; // lotType.None
 
         await expectRevert(
-            MarketPlace.add(ERC1155Address, NFT1155id, NFT1155value, isERC1155, NFTdata, { from: accountOne }),
+            MarketPlace.add(ERC1155Address, NFT1155id, NFT1155value, isERC1155, lotType, NFTdata, { from: accountOne }),
             'Value is 0'
         );
     });  
