@@ -158,6 +158,8 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         require(Address.isContract(NFT_Address), "It's not contract");
         for (uint256 i = 0; i < ERC20_Address.length; i++) {
             require(Address.isContract(ERC20_Address[i]), "It's not contract");
+            ERC20(ERC20_Address[i]).name();
+            ERC20(ERC20_Address[i]).symbol();
             NFT_ERC20_Supports[NFT_Address][ERC20_Address[i]] = canTransfer[i];
         }
     }
@@ -332,14 +334,10 @@ contract NFTMarketplace is Ownable, VariablesTypes {
             lots[index].creationInfo.owner == msg.sender &&
                 lots[index].offered == false &&
                 lots[index].selling == lotType.None, // user must be owner and not added to offer
-            "You are not the owner!(sell)"
+            "You are not the owner or lot is selling!"
         );
         require(
-            NFT_ERC20_Supports[lots[index].creationInfo.contractAddress][
-                contractAddress
-            ] ==
-                true ||
-                contractAddress == address(0x0),
+            NFT_ERC20_Supports[lots[index].creationInfo.contractAddress][contractAddress] == true || contractAddress == address(0x0),
             "Not supported"
         );
         if (price == 0) {
@@ -498,17 +496,14 @@ contract NFTMarketplace is Ownable, VariablesTypes {
             "You not send comission or lot not valid"
         );
         require(
-            NFT_ERC20_Supports[lots[index].creationInfo.contractAddress][
-                tokenAddress
-            ] ==
-                true ||
+            NFT_ERC20_Supports[lots[index].creationInfo.contractAddress][tokenAddress] == true ||
                 tokenAddress == address(0x0),
             "Not Supported"
         );
-        if (msg.value == offerCommission) {
+        if (msg.value <= offerCommission) {
             if (lotIndex.length == 0) {
                 // token
-                require(amount > 0, "You send 0 tokens");
+                require(amount > 0 || msg.value == 0, "You send 0 tokens or send token and crypto");
                 ERC20 tokenContract = ERC20(tokenAddress);
                 tokenContract.transferFrom(msg.sender, address(this), amount);
                 offers.push(
@@ -535,7 +530,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                 }
                 if (tokenAddress != address(0)) {
                     // nft + token
-                    require(amount > 0, "You send 0 tokens");
+                    require(amount > 0 || msg.value == offerCommission, "You send 0 tokens or don't send commission");
                     ERC20 tokenContract = ERC20(tokenAddress);
                     tokenContract.transferFrom(
                         msg.sender,
@@ -556,6 +551,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                     );
                 } else {
                     //nft
+                    require(msg.value == offerCommission, "You don't send commission");
                     offers.push(
                         offer(
                             msg.sender,
