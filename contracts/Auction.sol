@@ -11,7 +11,7 @@ import "./NFTMarketplace.sol";
 import "./VariableType.sol";
 
 contract Auction is VariablesTypes {
-    NFTMarketplace marketplace;
+    NFTMarketplace public marketplace;
 
     constructor(address market) {
         marketplace = NFTMarketplace(market);
@@ -62,18 +62,18 @@ contract Auction is VariablesTypes {
             lot.isERC1155
         ) = marketplace.lots(lotID);
         require(
-            lot.creationInfo.owner == msg.sender,
-            "You are not owner or lot in sale"
+            lot.creationInfo.owner == msg.sender && step <= 1000 && amount > 0,
+            "You are not owner or too big a step or start price 0"
         );
-        require(startDate < endDate, "Auction start ended");
+        require(startDate < endDate && startDate >= block.timestamp, "The auction starts after the end or opening of the auction occurs before its start");
         require(
             marketplace.NFT_ERC20_Supports(
                 lot.creationInfo.contractAddress,
                 tokenAddress
             ) ==
-                true ||
+                true &&
                 tokenAddress == address(0x0),
-            "Not supported"
+            "Not supported ERC20 tokens"
         );
         lot.auction = auctionInfo(
             startDate,
@@ -213,7 +213,7 @@ contract Auction is VariablesTypes {
             ERC1155 nft_contract = ERC1155(lot.creationInfo.contractAddress);
             if (lot.price.sellerPrice == 0) {
                 nft_contract.safeTransferFrom(
-                    address(this),
+                    address(marketplace),
                     lot.creationInfo.owner,
                     lot.creationInfo.id,
                     lot.creationInfo.amount,
@@ -221,7 +221,7 @@ contract Auction is VariablesTypes {
                 );
             } else {
                 nft_contract.safeTransferFrom(
-                    address(this),
+                    address(marketplace),
                     lot.auction.lastBid,
                     lot.creationInfo.id,
                     lot.creationInfo.amount,
@@ -232,14 +232,14 @@ contract Auction is VariablesTypes {
             ERC721 nft_contract = ERC721(lot.creationInfo.contractAddress);
             if (lot.price.sellerPrice == 0) {
                 nft_contract.safeTransferFrom(
-                    address(this),
+                    address(marketplace),
                     lot.creationInfo.owner,
                     lot.creationInfo.id,
                     data
                 );
             } else {
                 nft_contract.safeTransferFrom(
-                    address(this),
+                    address(marketplace),
                     lot.auction.lastBid,
                     lot.creationInfo.id,
                     data
@@ -247,10 +247,14 @@ contract Auction is VariablesTypes {
             }
         }
         if (lot.price.sellerPrice != 0) {
+            (uint256 commission, address owner) = marketplace.collections(lot.creationInfo.contractAddress);
             if (lot.price.contractAddress == address(0x0)) {
                 payable(lot.creationInfo.owner).transfer(lot.price.sellerPrice);
-                payable(marketWallet).transfer(
-                    lot.price.buyerPrice - lot.price.sellerPrice
+                payable(marketplace.marketWallet()).transfer(
+                    lot.price.buyerPrice * marketplace.marketCommission() / 1000
+                );
+                payable(owner).transfer(
+                    lot.price.buyerPrice * commission / 1000
                 );
             } else {
                 ERC20 tokenContract = ERC20(lot.price.contractAddress);
@@ -260,7 +264,11 @@ contract Auction is VariablesTypes {
                 );
                 tokenContract.transfer(
                     marketWallet,
-                    lot.price.buyerPrice - lot.price.sellerPrice
+                    lot.price.buyerPrice * marketplace.marketCommission() / 1000
+                );
+                tokenContract.transfer(
+                    owner,
+                    lot.price.buyerPrice * commission / 1000
                 );
             }
         }
