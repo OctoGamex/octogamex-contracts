@@ -240,17 +240,21 @@ contract NFTMarketplace is Ownable, VariablesTypes {
             lot.creationInfo.owner,
             lot.price.sellerPrice
         );
+        if (marketCommission != 0) {
         tokenContract.transferFrom(
             msg.sender,
             marketWallet,
             (lot.price.buyerPrice * marketCommission) / 1000
         );
+        }
+        if (collections[lot.creationInfo.contractAddress].commission != 0) {
         tokenContract.transferFrom(
             msg.sender,
             collections[lot.creationInfo.contractAddress].owner,
             (lot.price.buyerPrice *
                 collections[lot.creationInfo.contractAddress].commission) / 1000
         );
+        }
     }
 
     function sendERC20(
