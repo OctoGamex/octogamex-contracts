@@ -34,7 +34,6 @@ contract("NFT Marketplace", accounts => {
     await ERC721.setApprovalForAll(Marketplace.address, true, { from: accountOne });
     await Marketplace.setNFT_Collection(ERC721.address, true, { from: accountOne });
     await Marketplace.setERC20_Support(ERC1155.address, [ERC20.address], [true], { from: accountOne });
-    await Marketplace.setERC20_Support(ERC20.address, [ERC20.address], [true], { from: accountOne });
   });
 
   it("Add NFT", async () => {
@@ -42,25 +41,25 @@ contract("NFT Marketplace", accounts => {
     const balanceERC_Before = await ERC1155.balanceOf.call(Marketplace.address, 1, { from: accountOne });
 
     await ERC1155.safeTransferFrom(accountOne, Marketplace.address, 1, 1, data, { from: accountOne });
-    await Marketplace.add(ERC1155.address, 1, 1, true, data, { from: accountOne });
-    await Marketplace.add(ERC1155.address, 1, 1, true, data, { from: accountOne });
-    await Marketplace.add(ERC1155.address, 1, 1, true, data, { from: accountOne });
-    await Marketplace.add(ERC1155.address, 1, 1, true, data, { from: accountOne });
-    await Marketplace.add(ERC1155.address, 1, 1, true, data, { from: accountTwo });
-    await Marketplace.add(ERC1155.address, 1, 1, true, data, { from: accountOne });
-    await Marketplace.add(ERC1155.address, 1, 1, true, data, { from: accountTwo });
-    await Marketplace.add(ERC1155.address, 1, 1, true, data, { from: accountOne });
-    await Marketplace.add(ERC1155.address, 1, 1, true, data, { from: accountTwo });
-    await Marketplace.add(ERC1155.address, 1, 1, true, data, { from: accountOne });
-    await Marketplace.add(ERC1155.address, 1, 1, true, data, { from: accountTwo });
-    await Marketplace.add(ERC1155.address, 1, 1, true, data, { from: accountTwo });
-    await Marketplace.add(ERC1155.address, 1, 1, true, data, { from: accountTwo });
-    await Marketplace.add(ERC1155.address, 1, 1, true, data, { from: accountOne });
-    await Marketplace.add(ERC1155.address, 1, 1, true, data, { from: accountOne }); // 15
-    await Marketplace.add(ERC1155.address, 1, 1, true, data, { from: accountOne });
-    await Marketplace.add(ERC1155.address, 1, 1, true, data, { from: accountOne });
+    await Marketplace.add(ERC1155.address, 1, 1, true, 0, data, { from: accountOne });
+    await Marketplace.add(ERC1155.address, 1, 1, true, 0, data, { from: accountOne });
+    await Marketplace.add(ERC1155.address, 1, 1, true, 0, data, { from: accountOne });
+    await Marketplace.add(ERC1155.address, 1, 1, true, 0, data, { from: accountOne });
+    await Marketplace.add(ERC1155.address, 1, 1, true, 0, data, { from: accountTwo });
+    await Marketplace.add(ERC1155.address, 1, 1, true, 0, data, { from: accountOne });
+    await Marketplace.add(ERC1155.address, 1, 1, true, 0, data, { from: accountTwo });
+    await Marketplace.add(ERC1155.address, 1, 1, true, 0, data, { from: accountOne });
+    await Marketplace.add(ERC1155.address, 1, 1, true, 0, data, { from: accountTwo });
+    await Marketplace.add(ERC1155.address, 1, 1, true, 0, data, { from: accountOne });
+    await Marketplace.add(ERC1155.address, 1, 1, true, 0, data, { from: accountTwo });
+    await Marketplace.add(ERC1155.address, 1, 1, true, 0, data, { from: accountTwo });
+    await Marketplace.add(ERC1155.address, 1, 1, true, 0, data, { from: accountTwo });
+    await Marketplace.add(ERC1155.address, 1, 1, true, 0, data, { from: accountOne });
+    await Marketplace.add(ERC1155.address, 1, 1, true, 0, data, { from: accountOne }); // 15
+    await Marketplace.add(ERC1155.address, 1, 1, true, 0, data, { from: accountOne });
+    await Marketplace.add(ERC1155.address, 1, 1, true, 0, data, { from: accountOne });
 
-    await Marketplace.add(ERC721.address, 1, 1, false, data, { from: accountOne });
+    await Marketplace.add(ERC721.address, 1, 1, false, 0, data, { from: accountOne });
 
     const balanceERC_After = await ERC1155.balanceOf.call(Marketplace.address, 1, { from: accountOne });
     const lot1 = await Marketplace.lotOwner.call(accountOne, 0, { from: accountOne });
@@ -137,6 +136,8 @@ contract("NFT Marketplace", accounts => {
     assert.equal(lot.cryptoOffer.contractAddress, ERC20.address, "Proposal token not working");
     const balance = await ERC20.balanceOf.call(Marketplace.address, { from: accountTwo });
     assert.equal(parseInt(balance), 100, "Proposal token not working");
+
+    console.log(await Marketplace.getLotsOffers.call([3]));
 
   });
 
