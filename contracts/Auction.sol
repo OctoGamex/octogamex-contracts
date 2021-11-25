@@ -34,6 +34,10 @@ contract Auction is VariablesTypes {
         uint256 amount
     );
 
+    function time() external view returns(uint256) {
+        return block.timestamp;
+    }
+
     /**
      * @param lotID, lot index in array.
      * @param startDate, date when auction start (open).
@@ -65,13 +69,13 @@ contract Auction is VariablesTypes {
             lot.creationInfo.owner == msg.sender && step <= 1000 && amount > 0,
             "You are not owner or too big a step or start price 0"
         );
-        require(startDate < endDate && startDate >= block.timestamp, "The auction starts after the end or opening of the auction occurs before its start");
+        require(startDate < endDate && startDate >= block.timestamp, "Not correct start or end date");
         require(
             marketplace.NFT_ERC20_Supports(
                 lot.creationInfo.contractAddress,
                 tokenAddress
             ) ==
-                true &&
+                true ||
                 tokenAddress == address(0x0),
             "Not supported ERC20 tokens"
         );
