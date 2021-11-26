@@ -623,8 +623,10 @@ contract("proposal NFT functionality", async accounts => {
         let lotId = accTwoLotsIds[0];
 
         let lotOffers = await MarketPlace.getLotsOffers(lotId, { from: accountTwo });
-        console.log(lotOffers);
-        console.log(Number(lotOffers[1]));
+        // console.log(lotOffers);
+        // console.log(Number(lotOffers[1]));
+        console.log(await MarketPlace.lots(lotId));
+        console.log(await MarketPlace.offers(lotOffers[1]));
         await MarketPlace.chooseOffer(lotId, lotOffers[1], NFTdata, { from: accountTwo });
 
         let accThreeNFTBalance = await ERC721.balanceOf(accountThree, { from: accountThree });
@@ -866,28 +868,26 @@ contract("proposal NFT functionality", async accounts => {
     });
 
     it("check if owner of exposed NFT can pick it up before exchange", async () => {
-        // make offer
-        let accTwoLotsIds = [];
         let getInfoAccTwo = await MarketPlace.getInfo(accountTwo, { from: accountTwo });
+
+        let accTwoLotsIds = [];      
 
         for(let i = 0; i < getInfoAccTwo.userLots.length; i++) {
             accTwoLotsIds.push(Number(getInfoAccTwo.userLots[i]));
         }
 
         let lotId = accTwoLotsIds[8];
+        let accOneExchangeNFTindexes = [];
+        const tokenbits = (new BN(10)).pow(new BN(18));
+        let tokensAmount = new BN(10).mul(tokenbits);
 
-        // let accOneExchangeNFTindexes = [];
-        // const tokenbits = (new BN(10)).pow(new BN(18));
-        // let tokensAmount = new BN(10).mul(tokenbits);
+        await MarketPlace.makeOffer(lotId, accOneExchangeNFTindexes, ERC20Address, tokensAmount, { from: accountOne, value: commissionOffer });
 
-        // await MarketPlace.makeOffer(lotId, accOneExchangeNFTindexes, ERC20Address, tokensAmount, { from: accountOne, value: commissionOffer }); // FIX (REMOVE commissionOffer)
-
-        // getBack
         let accTwoNFTBalanceBefore = await ERC721.balanceOf(accountTwo, { from: accountTwo });
-        console.log(accTwoNFTBalanceBefore);
-        await MarketPlace.getBack((accTwoLotsIds.length - 1), NFTdata, { from: accountTwo });
+        await MarketPlace.getBack(lotId, NFTdata, { from: accountTwo });
         let accTwoNFTBalanceAfter = await ERC721.balanceOf(accountTwo, { from: accountTwo });
-        // console.log(accTwoNFTBalanceAfter);
+
+        assert.equal(String(accTwoNFTBalanceAfter), accTwoNFTBalanceBefore.add(new BN(1)), "owner didn't return NFT back");
     });
  
 })
