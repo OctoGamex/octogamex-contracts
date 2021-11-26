@@ -262,9 +262,9 @@ contract("proposal NFT functionality", async accounts => {
         const tokenbits = (new BN(10)).pow(new BN(18));
         let tokensAmount = new BN(200).mul(tokenbits);
 
-        await MarketPlace.makeOffer(lotId, accOneExchangeNFTindexes, ERC20Address, tokensAmount, { from: accountOne, value: commissionOffer }); // FIX (REMOVE commissionOffer)
+        await MarketPlace.makeOffer(lotId, accOneExchangeNFTindexes, ERC20Address, tokensAmount, { from: accountOne }); // FIX (REMOVE commissionOffer)
 
-        await MarketPlace.makeOffer(lotId, accThreeExchangeNFTindexes, ERC20Address, tokensAmount, { from: accountThree, value: commissionOffer }); // FIX (REMOVE commissionOffer)
+        await MarketPlace.makeOffer(lotId, accThreeExchangeNFTindexes, ERC20Address, tokensAmount, { from: accountThree }); // FIX (REMOVE commissionOffer)
 
         let offersAmount = new BN(2);
         let lotOffersInfo = await MarketPlace.getLotsOffers(lotId, { from: accountTwo });
@@ -623,7 +623,8 @@ contract("proposal NFT functionality", async accounts => {
         let lotId = accTwoLotsIds[0];
 
         let lotOffers = await MarketPlace.getLotsOffers(lotId, { from: accountTwo });
-
+        console.log(lotOffers);
+        console.log(Number(lotOffers[1]));
         await MarketPlace.chooseOffer(lotId, lotOffers[1], NFTdata, { from: accountTwo });
 
         let accThreeNFTBalance = await ERC721.balanceOf(accountThree, { from: accountThree });
@@ -886,7 +887,7 @@ contract("proposal NFT functionality", async accounts => {
         console.log(accTwoNFTBalanceBefore);
         await MarketPlace.getBack((accTwoLotsIds.length - 1), NFTdata, { from: accountTwo });
         let accTwoNFTBalanceAfter = await ERC721.balanceOf(accountTwo, { from: accountTwo });
-        console.log(accTwoNFTBalanceAfter);
+        // console.log(accTwoNFTBalanceAfter);
     });
  
 })

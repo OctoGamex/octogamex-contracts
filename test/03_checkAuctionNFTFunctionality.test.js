@@ -101,9 +101,9 @@ contract("auction NFT functionality", async accounts => {
 
         let canTransfer = true;
 
-        await MarketPlace.setNFT_Collection(ERC1155Address, canTransfer, { from: deployer });
-        await MarketPlace.setNFT_Collection(ERC721Address, canTransfer, { from: deployer });
         await MarketPlace.setAuctionContract(AuctionAddress, { from: deployer });
+        await MarketPlace.setNFT_Collection(ERC1155Address, canTransfer, { from: deployer });
+        await MarketPlace.setNFT_Collection(ERC721Address, canTransfer, { from: deployer });       
     });
 
     it("users should be able to add NFT ERC-721", async () => {
@@ -178,9 +178,12 @@ contract("auction NFT functionality", async accounts => {
 
         let lotId = accOneLotsIds[0];
 
-        let lotStartDate = Math.floor(Date.now() / 1000);
-        let date = new Date();
-        let lotEndDate = (date.setDate(date.getDate() + 1) / 1000).toFixed(0); // in one day after start auction
+        let contractDate = await Auction.time();
+        let oneDay = 1 * 24 * 3600;
+        let tenSecond = new BN(10);
+
+        let lotStartDate = contractDate.add(tenSecond);
+        let lotEndDate = lotStartDate.add(new BN(oneDay)); // in one day after start auction
         let step = new BN(150); // 15%
         const tokenbits = (new BN(10)).pow(new BN(18));
         let tokensAmount = new BN(100).mul(tokenbits);
@@ -206,9 +209,13 @@ contract("auction NFT functionality", async accounts => {
         }
 
         let lotId = accOneLotsIds[1];
-        let date = new Date();        
-        let lotStartDate = (date.setDate(date.getDate() + 1) / 1000).toFixed(0); // in one day     
-        let lotEndDate = (date.setDate((new Date(lotStartDate * 1000)).getDate() + 3) / 1000).toFixed(0); // in three days after auction start 
+
+        let contractDate = await Auction.time();
+        let oneDay = 1 * 24 * 3600;
+        let threeDays = 3 * 24 * 3600;
+      
+        let lotStartDate = contractDate.add(new BN(oneDay)); // in one day     
+        let lotEndDate = lotStartDate.add(new BN(threeDays)); // in three days after auction start 
         let step = new BN(200); // 20%
         const tokenbits = (new BN(10)).pow(new BN(18));
         let tokensAmount = new BN(50).mul(tokenbits);
@@ -234,9 +241,13 @@ contract("auction NFT functionality", async accounts => {
         }
         
         let lotId = accOneLotsIds[2];
-        let date = new Date();
-        let lotStartDate = Math.floor(Date.now() / 1000);
-        let lotEndDate = (date.setDate(date.getDate() + 2) / 1000).toFixed(0); // in two days after start auction
+
+        let contractDate = await Auction.time();
+        let twoDays = 2 * 24 * 3600;
+        let tenSecond = new BN(10);
+
+        let lotStartDate = contractDate.add(tenSecond);
+        let lotEndDate = lotStartDate.add(new BN(twoDays)); // in two days after start auction
         let step = new BN(50); // 5%
         const tokenbits = (new BN(10)).pow(new BN(18));
         let cryptoAmount = new BN(2).mul(tokenbits);
@@ -262,9 +273,13 @@ contract("auction NFT functionality", async accounts => {
         }
 
         let lotId = accOneLotsIds[3];
-        let date = new Date();
-        let lotStartDate = (date.setDate(date.getDate() + 5) / 1000).toFixed(0); // in five days  
-        let lotEndDate = (date.setDate((new Date(lotStartDate * 1000)).getDate() + 2) / 1000).toFixed(0); // in two days after auction start 
+        
+        let contractDate = await Auction.time();
+        let fiveDays = 5 * 24 * 3600;
+        let twoDays = 2 * 24 * 3600;
+
+        let lotStartDate = contractDate.add(new BN(fiveDays)); // in five days  
+        let lotEndDate = lotStartDate.add(new BN(twoDays)); // in two days after auction start 
         let step = new BN(35); // 3.5%
         const tokenbits = (new BN(10)).pow(new BN(18));
         let cryptoAmount = new BN(2).mul(tokenbits);
@@ -290,9 +305,13 @@ contract("auction NFT functionality", async accounts => {
         }
 
         let lotId = accOneLotsIds[4];
-        let date = new Date();
-        let lotStartDate = Math.floor(Date.now() / 1000);
-        let lotEndDate = (date.setDate(date.getDate() + 1) / 1000).toFixed(0); // in one day
+        
+        let contractDate = await Auction.time();
+        let tenSecond = new BN(10);
+        let oneDay = 1 * 24 * 3600;
+
+        let lotStartDate = contractDate.add(tenSecond);
+        let lotEndDate = lotStartDate.add(new BN(oneDay)); // in one day
         let step = new BN(1001); // 100.1%
         const tokenbits = (new BN(10)).pow(new BN(18));
         let cryptoAmount = new BN(2).mul(tokenbits);
@@ -313,23 +332,27 @@ contract("auction NFT functionality", async accounts => {
         }
 
         let lotId = accOneLotsIds[5];
-        let date = new Date();
-        let lotStartDate = Math.floor(Date.now() / 1000);
-        let lotEndDate = Math.floor(Date.now() / 1000);
+        
+        let contractDate = await Auction.time();
+        let tenSecond = new BN(10);
+        let oneDay = 1 * 24 * 3600;
+
+        let lotStartDate = contractDate.add(tenSecond);
+        let lotEndDate = contractDate.add(tenSecond);
         let step = new BN(100); // 10%
         const tokenbits = (new BN(10)).pow(new BN(18));
         let cryptoAmount = new BN(2).mul(tokenbits);
 
         await expectRevert( 
             Auction.startAuction(lotId, lotStartDate, lotEndDate, step, constants.ZERO_ADDRESS, cryptoAmount, { from: accountOne }),
-            "Auction start ended"
+            "Not correct start or end date"
         );
 
-        lotEndDate = (date.setDate(date.getDate() - 1) / 1000).toFixed(0);
+        lotEndDate = contractDate.sub(new BN(oneDay));
         
         await expectRevert( 
             Auction.startAuction(lotId, lotStartDate, lotEndDate, step, constants.ZERO_ADDRESS, cryptoAmount, { from: accountOne }),
-            "Auction start ended"
+            "Not correct start or end date"
         );
     });
 
@@ -343,9 +366,12 @@ contract("auction NFT functionality", async accounts => {
         }
 
         let lotId = accOneLotsIds[6];
-        let date = new Date();
-        let lotStartDate = (date.setDate(date.getDate() - 2) / 1000).toFixed(0); // 2 days ago
-        let lotEndDate = Math.floor(Date.now() / 1000);
+        
+        let contractDate = await Auction.time();
+        let twoDays = 2 * 24 * 3600;
+
+        let lotStartDate = contractDate.sub(new BN(twoDays)); // 2 days ago
+        let lotEndDate = contractDate;
         let step = new BN(100); // 10%
         const tokenbits = (new BN(10)).pow(new BN(18));
         let cryptoAmount = new BN(2).mul(tokenbits);
@@ -366,9 +392,13 @@ contract("auction NFT functionality", async accounts => {
         }
 
         let lotId = accOneLotsIds[7];
-        let date = new Date();
-        let lotStartDate = Math.floor(Date.now() / 1000);
-        let lotEndDate = (date.setDate(date.getDate() + 1) / 1000).toFixed(0); // in one day
+        
+        let contractDate = await Auction.time();
+        let tenSecond = new BN(10);
+        let oneDay = 1 * 24 * 3600;
+
+        let lotStartDate = contractDate.add(tenSecond);
+        let lotEndDate = lotStartDate.add(new BN(oneDay)); // in one day
         let step = new BN(100); // 10%
         const tokenbits = (new BN(10)).pow(new BN(18));
         let tokenAmount = new BN(1).mul(tokenbits);
@@ -389,9 +419,13 @@ contract("auction NFT functionality", async accounts => {
         }
 
         let lotId = accOneLotsIds[8];
-        let date = new Date();
-        let lotStartDate = Math.floor(Date.now() / 1000);
-        let lotEndDate = (date.setDate(date.getDate() + 1) / 1000).toFixed(0); // in one day
+        
+        let contractDate = await Auction.time();
+        let tenSecond = new BN(10);
+        let oneDay = 1 * 24 * 3600;
+
+        let lotStartDate = contractDate.add(tenSecond);
+        let lotEndDate = lotStartDate.add(new BN(oneDay)); // in one day
         let step = new BN(150); // 15%
         const tokenbits = (new BN(10)).pow(new BN(18));
         let tokenAmount = new BN(0);
@@ -412,9 +446,13 @@ contract("auction NFT functionality", async accounts => {
         }
 
         let lotId = accOneLotsIds[9];
-        let date = new Date();
-        let lotStartDate = Math.floor(Date.now() / 1000);
-        let lotEndDate = (date.setDate(date.getDate() + 1) / 1000).toFixed(0); // in one day
+        
+        let contractDate = await Auction.time();
+        let tenSecond = new BN(10);
+        let oneDay = 1 * 24 * 3600;
+
+        let lotStartDate = contractDate.add(tenSecond);
+        let lotEndDate = lotStartDate.add(new BN(oneDay)); // in one day
         let step = new BN(150); // 15%
         const tokenbits = (new BN(10)).pow(new BN(18));
         let cryptoAmount = new BN(0);
@@ -436,9 +474,12 @@ contract("auction NFT functionality", async accounts => {
 
         let lotId = accTwoLotsIds[0];
 
-        let lotStartDate = Math.floor(Date.now() / 1000);
-        let date = new Date();
-        let lotEndDate = (date.setDate(date.getDate() + 1) / 1000).toFixed(0); // in one day after start auction
+        let contractDate = await Auction.time();
+        let tenSecond = new BN(10);
+        let oneDay = 1 * 24 * 3600;
+
+        let lotStartDate = contractDate.add(tenSecond);
+        let lotEndDate = lotStartDate.add(new BN(oneDay)); // in one day after start auction
         let step = new BN(150); // 15%
         const tokenbits = (new BN(10)).pow(new BN(18));
         let tokensAmount = new BN(25).mul(tokenbits);
@@ -465,9 +506,12 @@ contract("auction NFT functionality", async accounts => {
 
         let lotId = accTwoLotsIds[1];
 
-        let date = new Date();
-        let lotStartDate = Math.floor(Date.now() / 1000);
-        let lotEndDate = (date.setDate(date.getDate() + 2) / 1000).toFixed(0); // in two days after start auction
+        let contractDate = await Auction.time();
+        let tenSecond = new BN(10);
+        let twoDays = 2 * 24 * 3600;
+
+        let lotStartDate = contractDate.add(tenSecond);
+        let lotEndDate = lotStartDate.add(new BN(twoDays)); // in two days after start auction
         let step = new BN(50); // 5%
         const tokenbits = (new BN(10)).pow(new BN(18));
         let cryptoAmount = new BN(2).mul(tokenbits);
@@ -530,7 +574,7 @@ contract("auction NFT functionality", async accounts => {
 
     it("make bids for tokens with NFT-721", async () => {
         const tokenbits = (new BN(10)).pow(new BN(18));
-        let getInfoAccOne = await MarketPlace.getInfo(accountOne, { from: accountTwo });
+        let getInfoAccOne = await MarketPlace.getInfo(accountOne, { from: accountOne });
 
         let accOneLotsIds = [];      
 
@@ -825,7 +869,7 @@ contract("auction NFT functionality", async accounts => {
 
         let lotId = accOneLotsIds[0];
         const tokenbits = (new BN(10)).pow(new BN(18));
-        console.log(Number(winningBetsNFT721[0]) / tokenbits);
+        // console.log(Number(winningBetsNFT721[0]) / tokenbits);
         let accTwoNFTBalanceBefore = await ERC721.balanceOf(accountTwo, { from: accountTwo });
         let accOneTokensBalanceBefore = await ERC20.balanceOf(accountOne, { from: accountOne });
 
@@ -846,7 +890,7 @@ contract("auction NFT functionality", async accounts => {
 
         let lotId = accTwoLotsIds[0];
         const tokenbits = (new BN(10)).pow(new BN(18));
-        console.log(Number(winningBetsNFT1155[0]) / tokenbits);
+        // console.log(Number(winningBetsNFT1155[0]) / tokenbits);
         let accThreeNFTBalanceBefore = await ERC1155.balanceOf(accountThree, accTwoNFT1155id, { from: accountThree });
         let accTwoTokensBalanceBefore = await ERC20.balanceOf(accountTwo, { from: accountTwo });
 
@@ -947,7 +991,7 @@ contract("auction NFT functionality", async accounts => {
             accTwoLotsIds.push(Number(getInfoAccTwo.userLots[i]));
         }
 
-        let lotId = accTwoLotsIds[0];
+        let lotId = accTwoLotsIds[1];
         const tokenbits = (new BN(10)).pow(new BN(18));
         
         let accThreeNFTBalanceBefore = await ERC1155.balanceOf(accountThree, accTwoNFT1155id, { from: accountThree });
