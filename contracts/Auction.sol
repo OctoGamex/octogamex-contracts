@@ -34,7 +34,7 @@ contract Auction is VariablesTypes {
         uint256 amount
     );
 
-    function time() external view returns(uint256) {
+    function time() external view returns (uint256) {
         return block.timestamp;
     }
 
@@ -69,7 +69,10 @@ contract Auction is VariablesTypes {
             lot.creationInfo.owner == msg.sender && step <= 1000 && amount > 0,
             "You are not owner or too big a step or start price 0"
         );
-        require(startDate < endDate && startDate >= block.timestamp, "Not correct start or end date");
+        require(
+            startDate < endDate && startDate >= block.timestamp,
+            "Not correct start or end date"
+        );
         require(
             marketplace.NFT_ERC20_Supports(
                 lot.creationInfo.contractAddress,
@@ -251,14 +254,17 @@ contract Auction is VariablesTypes {
             }
         }
         if (lot.price.sellerPrice != 0) {
-            (uint256 commission, address owner) = marketplace.collections(lot.creationInfo.contractAddress);
+            (uint256 commission, address owner) = marketplace.collections(
+                lot.creationInfo.contractAddress
+            );
             if (lot.price.contractAddress == address(0x0)) {
                 payable(lot.creationInfo.owner).transfer(lot.price.sellerPrice);
                 payable(marketplace.marketWallet()).transfer(
-                    lot.price.buyerPrice * marketplace.marketCommission() / 1000
+                    (lot.price.buyerPrice * marketplace.marketCommission()) /
+                        1000
                 );
                 payable(owner).transfer(
-                    lot.price.buyerPrice * commission / 1000
+                    (lot.price.buyerPrice * commission) / 1000
                 );
             } else {
                 ERC20 tokenContract = ERC20(lot.price.contractAddress);
@@ -268,13 +274,49 @@ contract Auction is VariablesTypes {
                 );
                 tokenContract.transfer(
                     marketWallet,
-                    lot.price.buyerPrice * marketplace.marketCommission() / 1000
+                    (lot.price.buyerPrice * marketplace.marketCommission()) /
+                        1000
                 );
                 tokenContract.transfer(
                     owner,
-                    lot.price.buyerPrice * commission / 1000
+                    (lot.price.buyerPrice * commission) / 1000
                 );
             }
+        }
+        delete lot;
+        marketplace.auctionLot(lotID, lot);
+        emit AuctionEnd(block.timestamp, lotID, lot.creationInfo.amount);
+    }
+
+    function finishAuction(uint256 lotID, bytes memory data) external {
+        lotInfo memory lot;
+        (
+            lot.creationInfo,
+            lot.selling,
+            lot.sellStart,
+            lot.price,
+            lot.auction,
+            lot.offered,
+            lot.isERC1155
+        ) = marketplace.lots(lotID);
+        require(lot.price.sellerPrice == 0, "Lot have bid");
+        if (lot.isERC1155 == true) {
+            ERC1155 nft_contract = ERC1155(lot.creationInfo.contractAddress);
+            nft_contract.safeTransferFrom(
+                address(marketplace),
+                lot.creationInfo.owner,
+                lot.creationInfo.id,
+                lot.creationInfo.amount,
+                data
+            );
+        } else {
+            ERC721 nft_contract = ERC721(lot.creationInfo.contractAddress);
+            nft_contract.safeTransferFrom(
+                address(marketplace),
+                lot.creationInfo.owner,
+                lot.creationInfo.id,
+                data
+            );
         }
         delete lot;
         marketplace.auctionLot(lotID, lot);
