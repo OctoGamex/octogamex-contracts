@@ -2,13 +2,18 @@
 
 pragma solidity >=0.8.9;
 
-contract VariablesTypes{
+interface VariablesTypes{
     enum lotType {
         None,
         FixedPrice,
         Auction,
         Exchange
     } // lot type
+
+    struct collectionInfo{
+        uint256 commission;
+        address owner;
+    }
 
     struct lotInfo {
         lotStart creationInfo;
