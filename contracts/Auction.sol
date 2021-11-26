@@ -257,30 +257,38 @@ contract Auction is VariablesTypes {
             (uint256 commission, address owner) = marketplace.collections(
                 lot.creationInfo.contractAddress
             );
+            uint256 marketCommission = marketplace.marketCommission();
             if (lot.price.contractAddress == address(0x0)) {
                 payable(lot.creationInfo.owner).transfer(lot.price.sellerPrice);
-                payable(marketplace.marketWallet()).transfer(
-                    (lot.price.buyerPrice * marketplace.marketCommission()) /
-                        1000
-                );
-                payable(owner).transfer(
-                    (lot.price.buyerPrice * commission) / 1000
-                );
+                if (marketCommission != 0) {
+                    payable(marketplace.marketWallet()).transfer(
+                        (lot.price.buyerPrice * marketCommission) / 1000
+                    );
+                }
+                if (commission >= 0) {
+                    payable(owner).transfer(
+                        (lot.price.buyerPrice * commission) / 1000
+                    );
+                }
             } else {
                 ERC20 tokenContract = ERC20(lot.price.contractAddress);
                 tokenContract.transfer(
                     lot.creationInfo.owner,
                     lot.price.sellerPrice
                 );
-                tokenContract.transfer(
-                    marketWallet,
-                    (lot.price.buyerPrice * marketplace.marketCommission()) /
-                        1000
-                );
-                tokenContract.transfer(
-                    owner,
-                    (lot.price.buyerPrice * commission) / 1000
-                );
+                if (marketCommission != 0) {
+                    tokenContract.transfer(
+                        marketWallet,
+                        (lot.price.buyerPrice *
+                            marketplace.marketCommission()) / 1000
+                    );
+                }
+                if (commission >= 0) {
+                    tokenContract.transfer(
+                        owner,
+                        (lot.price.buyerPrice * commission) / 1000
+                    );
+                }
             }
         }
         delete lot;
