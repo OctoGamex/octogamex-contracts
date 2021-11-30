@@ -33,8 +33,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         uint256 NFT_ID,
         uint256 lotID,
         uint256 datetime,
-        uint256 amount,
-        uint256 typeOfLot
+        uint256 amount
     );
     event SellNFT(
         address indexed user,
@@ -172,7 +171,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
      * @param canTransfer, if true, then we can take NFT from this contract, else revert transaction.
      * @notice setter for NFT collection support.
      */
-    function setNFT_Collection(address contractAddress, bool canTransfer, bool isERC1155)
+    function setNFT_Collection(address contractAddress, bool canTransfer)
         external
         onlyOwner
         checkContract(contractAddress)
@@ -244,14 +243,14 @@ contract NFTMarketplace is Ownable, VariablesTypes {
             lot.creationInfo.owner,
             lot.price.sellerPrice
         );
-        if (marketCommission != 0) {
+        if (marketCommission > 0) {
         tokenContract.transferFrom(
             msg.sender,
             marketWallet,
             (lot.price.buyerPrice * marketCommission) / 1000
         );
         }
-        if (collections[lot.creationInfo.contractAddress].commission != 0) {
+        if (collections[lot.creationInfo.contractAddress].commission > 0) {
         tokenContract.transferFrom(
             msg.sender,
             collections[lot.creationInfo.contractAddress].owner,
@@ -288,7 +287,6 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         uint256 id,
         uint256 value,
         bool isERC1155,
-        lotType typeOfLot,
         bytes memory data
     ) public {
         require(value > 0 && contractAddress != address(0x0), "Value is 0");
@@ -311,7 +309,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                         value,
                         block.timestamp
                     ),
-                    typeOfLot,
+                    lotType.None,
                     0,
                     currency(address(0x0), 0, 0),
                     auctionInfo(0, 0, 0, 0, address(0x0)),
@@ -325,8 +323,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                 id,
                 lots.length - 1,
                 block.timestamp,
-                value,
-                uint256(typeOfLot)
+                value
             );
         } else {
             sendNFT(
@@ -361,8 +358,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                 id,
                 lots.length - 1,
                 block.timestamp,
-                1,
-                uint256(typeOfLot)
+                1
             );
         }
         lotOwner[msg.sender].push(lots.length - 1); // add lot id to owner array
@@ -389,7 +385,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         uint256 price,
         bytes memory data
     ) external {
-        add(contractAddress, id, value, isERC1155, lotType.FixedPrice, data);
+        add(contractAddress, id, value, isERC1155, data);
         uint256 lotID = lots.length - 1;
         sell(lotID, tokenAddress, price, startDate);
     }
@@ -422,7 +418,6 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                 id[i],
                 value[i],
                 isERC1155[i],
-                lotType.Exchange,
                 data
             );
             lotIDs[i] = lots.length - 1;
@@ -882,8 +877,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                 id,
                 lots.length - 1,
                 block.timestamp,
-                value,
-                uint256(lotType.None)
+                value
             );
         }
         return
@@ -930,8 +924,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                 id,
                 lots.length - 1,
                 block.timestamp,
-                1,
-                uint256(lotType.None)
+                1
             );
         }
         return
@@ -948,18 +941,18 @@ contract NFTMarketplace is Ownable, VariablesTypes {
      * @param data, data what can be added to transaction.
      * @notice Need for receive many NFT1155 with difference id.
      */
-    function onERC1155BatchReceived(
-        address operator,
-        address from,
-        uint256[] calldata ids,
-        uint256[] calldata values,
-        bytes calldata data
-    ) external pure returns (bytes4) {
-        return
-            bytes4(
-                keccak256(
-                    "onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"
-                )
-            );
-    }
+    // function onERC1155BatchReceived(
+    //     address operator,
+    //     address from,
+    //     uint256[] calldata ids,
+    //     uint256[] calldata values,
+    //     bytes calldata data
+    // ) external pure returns (bytes4) {
+    //     return
+    //         bytes4(
+    //             keccak256(
+    //                 "onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"
+    //             )
+    //         );
+    // }
 }
