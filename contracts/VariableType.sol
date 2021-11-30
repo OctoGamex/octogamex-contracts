@@ -51,7 +51,7 @@ interface VariablesTypes{
         address owner; // created by
         uint256 lotID;
         uint256[] lotsOffer; // array of lot index
-        currency cryptoOffer;
+        currency price;
     }
 
     struct returnInfo {
