@@ -639,7 +639,7 @@ contract("auction NFT functionality", async accounts => {
 
     it("make bids for crypto with NFT-721", async () => {
         const tokenbits = (new BN(10)).pow(new BN(18));
-        let getInfoAccOne = await MarketPlace.getInfo(accountOne, { from: accountTwo });
+        let getInfoAccOne = await MarketPlace.getInfo(accountOne, { from: accountOne });
 
         let accOneLotsIds = [];      
 
@@ -681,6 +681,8 @@ contract("auction NFT functionality", async accounts => {
         let thirdBidAmount = secondBibAmount.add(bidStepAmount);
 
         await Auction.makeBid(lotId, tokensAmount, { from: accountThree, value: thirdBidAmount });
+
+        winningBetsNFT721.push(thirdBidAmount);
 
         lotInfo = await MarketPlace.getLots(lotId, { from: accountOne });
         assert.equal(lotInfo.auction.lastBid, accountThree, "address of user maked bid is wrong");
@@ -733,6 +735,8 @@ contract("auction NFT functionality", async accounts => {
         let thirdBidAmount = secondBibAmount.add(bidStepAmount);
 
         await Auction.makeBid(lotId, tokensAmount, { from: accountOne, value: thirdBidAmount });
+        console.log(Number(thirdBidAmount) / tokenbits);
+        winningBetsNFT1155.push(thirdBidAmount);
 
         lotInfo = await MarketPlace.getLots(lotId, { from: accountTwo });
         assert.equal(lotInfo.auction.lastBid, accountOne, "address of user maked bid is wrong");
@@ -972,8 +976,14 @@ contract("auction NFT functionality", async accounts => {
         let accThreeNFTBalanceAfter = await ERC721.balanceOf(accountThree, { from: accountThree });
         let accOneCryptoBalanceAfter = (await web3.eth.getBalance(accountOne));
 
+        let commission = await MarketPlace.marketCommission({ from: deployer });
+        let winningBet = winningBetsNFT721[1];
+
         let expectedNFT = accThreeNFTBalanceBefore.add(new BN(1));
+        let expectedCryptoReward = ((new BN(accOneCryptoBalanceBefore)).add(winningBet.sub((winningBet.mul(commission)).div(new BN(1000))))).sub(gasFee);
+
         assert.equal(String(accThreeNFTBalanceAfter), expectedNFT, "NFT balance of user is wrong");
+        assert.equal(String(accOneCryptoBalanceAfter), expectedCryptoReward, "reward of crypto is wrong");
     });
 
     it("end auction for crypto with NFT-1155", async () => {
@@ -988,15 +998,30 @@ contract("auction NFT functionality", async accounts => {
         let lotId = accTwoLotsIds[1];
         const tokenbits = (new BN(10)).pow(new BN(18));
         
-        let accThreeNFTBalanceBefore = await ERC1155.balanceOf(accountThree, accTwoNFT1155id, { from: accountThree });
+        let accOneNFTBalanceBefore = await ERC1155.balanceOf(accountOne, accTwoNFT1155id, { from: accountOne });
         let accTwoCryptoBalanceBefore = (await web3.eth.getBalance(accountTwo));
 
-        await Auction.endAuction(lotId, NFTdata, { from: accountThree });
+        let receipt = await Auction.endAuction(lotId, NFTdata, { from: accountOne });
 
-        let accThreeNFTBalanceAfter = await ERC1155.balanceOf(accountThree, accTwoNFT1155id, { from: accountThree });
+        const gasUsed = receipt.receipt.gasUsed;
+
+        const tx = await web3.eth.getTransaction(receipt.tx);
+        const gasPrice = tx.gasPrice;
+
+        let gasFee = (new BN(gasUsed)).mul(new BN(gasPrice));
+
+        let accOneNFTBalanceAfter = await ERC1155.balanceOf(accountOne, accTwoNFT1155id, { from: accountOne });
         let accTwoCryptoBalanceAfter = (await web3.eth.getBalance(accountTwo));
 
-        console.log(Number(accThreeNFTBalanceBefore));
-        console.log(Number(accThreeNFTBalanceAfter));
+        let commission = await MarketPlace.marketCommission({ from: deployer });
+        let winningBet = winningBetsNFT1155[1];
+
+        let expectedCryptoReward = ((new BN(accTwoCryptoBalanceBefore)).add(winningBet.sub((winningBet.mul(commission)).div(new BN(1000))))).sub(gasFee);
+        console.log(Number(accTwoCryptoBalanceBefore) / tokenbits);
+        console.log(Number(expectedCryptoReward) / tokenbits);
+        console.log(Number(accTwoCryptoBalanceAfter) / tokenbits);
+
+        console.log(Number(accOneNFTBalanceBefore));
+        console.log(Number(accOneNFTBalanceAfter));
     });
 });

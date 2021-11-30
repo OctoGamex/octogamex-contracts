@@ -276,14 +276,14 @@ contract Auction is VariablesTypes {
                     lot.creationInfo.owner,
                     lot.price.sellerPrice
                 );
-                if (marketCommission != 0) {
+                if (marketCommission > 0) {
                     tokenContract.transfer(
                         marketWallet,
                         (lot.price.buyerPrice *
                             marketplace.marketCommission()) / 1000
                     );
                 }
-                if (commission >= 0) {
+                if (commission > 0) {
                     tokenContract.transfer(
                         owner,
                         (lot.price.buyerPrice * commission) / 1000
