@@ -260,12 +260,12 @@ contract Auction is VariablesTypes {
             uint256 marketCommission = marketplace.marketCommission();
             if (lot.price.contractAddress == address(0x0)) {
                 payable(lot.creationInfo.owner).transfer(lot.price.sellerPrice);
-                if (marketCommission != 0) {
+                if (marketCommission > 0) {
                     payable(marketplace.marketWallet()).transfer(
                         (lot.price.buyerPrice * marketCommission) / 1000
                     );
                 }
-                if (commission >= 0) {
+                if (commission > 0) {
                     payable(owner).transfer(
                         (lot.price.buyerPrice * commission) / 1000
                     );
