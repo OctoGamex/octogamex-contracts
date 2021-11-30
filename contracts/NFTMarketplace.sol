@@ -285,7 +285,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                         value,
                         block.timestamp
                     ),
-                    typeOfLot,
+                    lotType.None,
                     0,
                     currency(address(0x0), 0, 0),
                     auctionInfo(0, 0, 0, 0, address(0x0)),
@@ -321,7 +321,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                         1,
                         block.timestamp
                     ),
-                    typeOfLot,
+                    lotType.None,
                     0,
                     currency(address(0x0), 0, 0),
                     auctionInfo(0, 0, 0, 0, address(0x0)),
@@ -781,7 +781,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                 lotInfo memory offerLot = lots[userOffer.lotsOffer[i]];
                 delete lots[userOffer.lotsOffer[i]];
                 sendNFT(
-                    lot.creationInfo.contractAddress,
+                    offerLot.creationInfo.contractAddress,
                     address(this),
                     lot.creationInfo.owner,
                     offerLot.creationInfo.id,

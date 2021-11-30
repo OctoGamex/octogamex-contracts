@@ -735,7 +735,7 @@ contract("auction NFT functionality", async accounts => {
         let thirdBidAmount = secondBibAmount.add(bidStepAmount);
 
         await Auction.makeBid(lotId, tokensAmount, { from: accountOne, value: thirdBidAmount });
-        console.log(Number(thirdBidAmount) / tokenbits);
+        
         winningBetsNFT1155.push(thirdBidAmount);
 
         lotInfo = await MarketPlace.getLots(lotId, { from: accountTwo });
@@ -1001,14 +1001,7 @@ contract("auction NFT functionality", async accounts => {
         let accOneNFTBalanceBefore = await ERC1155.balanceOf(accountOne, accTwoNFT1155id, { from: accountOne });
         let accTwoCryptoBalanceBefore = (await web3.eth.getBalance(accountTwo));
 
-        let receipt = await Auction.endAuction(lotId, NFTdata, { from: accountOne });
-
-        const gasUsed = receipt.receipt.gasUsed;
-
-        const tx = await web3.eth.getTransaction(receipt.tx);
-        const gasPrice = tx.gasPrice;
-
-        let gasFee = (new BN(gasUsed)).mul(new BN(gasPrice));
+        await Auction.endAuction(lotId, NFTdata, { from: accountOne });
 
         let accOneNFTBalanceAfter = await ERC1155.balanceOf(accountOne, accTwoNFT1155id, { from: accountOne });
         let accTwoCryptoBalanceAfter = (await web3.eth.getBalance(accountTwo));
@@ -1016,12 +1009,58 @@ contract("auction NFT functionality", async accounts => {
         let commission = await MarketPlace.marketCommission({ from: deployer });
         let winningBet = winningBetsNFT1155[1];
 
-        let expectedCryptoReward = ((new BN(accTwoCryptoBalanceBefore)).add(winningBet.sub((winningBet.mul(commission)).div(new BN(1000))))).sub(gasFee);
-        console.log(Number(accTwoCryptoBalanceBefore) / tokenbits);
-        console.log(Number(expectedCryptoReward) / tokenbits);
-        console.log(Number(accTwoCryptoBalanceAfter) / tokenbits);
+        let expectedNFT = accOneNFTBalanceBefore.add(new BN(10));
+        let expectedCryptoReward = (new BN(accTwoCryptoBalanceBefore)).add(winningBet.sub((winningBet.mul(commission)).div(new BN(1000))));
 
-        console.log(Number(accOneNFTBalanceBefore));
-        console.log(Number(accOneNFTBalanceAfter));
+        assert.equal(String(accOneNFTBalanceAfter), expectedNFT, "NFT balance of user is wrong");
+        assert.equal(String(accTwoCryptoBalanceAfter), expectedCryptoReward, "reward of crypto is wrong");
+    });
+
+    it("check for the possibility to pick up lot before start bids", async () => {
+        let getInfoAccThree = await MarketPlace.getInfo(accountThree, { from: accountThree });
+
+        let accThreeLotsIds = [];      
+
+        for(let i = 0; i < getInfoAccThree.userLots.length; i++) {
+            accThreeLotsIds.push(Number(getInfoAccThree.userLots[i]));
+        }
+
+        let lotId = accThreeLotsIds[0];
+
+        let contractDate = await Auction.time();
+        let tenSecond = new BN(10);
+        let oneDay = 1 * 24 * 3600;
+
+        let lotStartDate = contractDate.add(tenSecond);
+        let lotEndDate = lotStartDate.add(new BN(oneDay)); // in one day after start auction
+        let step = new BN(50); // 5%
+        const tokenbits = (new BN(10)).pow(new BN(18));
+        let tokensAmount = new BN(25).mul(tokenbits);
+
+        let balanceBefore = await ERC1155.balanceOf(accountThree, accThreeNFT1155id, { from: accountThree });
+
+        await Auction.startAuction(lotId, lotStartDate, lotEndDate, step, ERC20Address, tokensAmount, { from: accountThree });
+
+        let lotInfo = await MarketPlace.getLots(lotId, { from: accountThree });
+
+        assert.equal(lotInfo.auction.startAuction, lotStartDate, "NFT-1155 lot start date is wrong");
+        assert.equal(lotInfo.auction.endAuction, lotEndDate, "NFT-1155 lot end date is wrong");
+        assert.equal(lotInfo.auction.step, step, "step of auction bids is wrong");
+        assert.equal(lotInfo.auction.nextStep, tokensAmount, "amount of tokens is wrong");
+        assert.equal(lotInfo.price.contractAddress, ERC20Address, "token address is wrong");
+
+        await Auction.finishAuction(lotId, NFTdata, { from: accountThree });
+
+        let expectedNFTreturn = new BN(15);
+        let balanceAfter = await ERC1155.balanceOf(accountThree, accThreeNFT1155id, { from: accountThree });       
+        lotInfo = await MarketPlace.getLots(lotId, { from: accountThree });
+
+        assert.equal(lotInfo.auction.startAuction, 0, "NFT-1155 lot start date is wrong");
+        assert.equal(lotInfo.auction.endAuction, 0, "NFT-1155 lot end date is wrong");
+        assert.equal(lotInfo.auction.step, 0, "step of auction bids is wrong");
+        assert.equal(lotInfo.auction.nextStep, 0, "amount of tokens is wrong");
+        assert.equal(lotInfo.price.contractAddress, constants.ZERO_ADDRESS, "token address is wrong");
+
+        assert.equal(String(balanceAfter), balanceBefore.add(expectedNFTreturn), "NFT is not returned to balance");
     });
 });

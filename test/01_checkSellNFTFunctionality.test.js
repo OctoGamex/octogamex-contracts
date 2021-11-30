@@ -187,8 +187,6 @@ contract("sell NFT functionality", async accounts => {
             'Value is 0'
         );
     });  
-
-    // add tests for a function setERC20_Support
     
     it("set ERC-20 support", async () => {
         let isERC20Supported = true;
@@ -213,8 +211,6 @@ contract("sell NFT functionality", async accounts => {
         let lotInfo = await MarketPlace.lots(userLotsIds[0], { from: accountOne });
         assert.equal(lotStartDate, Number(lotInfo.sellStart), "start date of lot is wrong");
         assert.equal(lotPrice, Number(lotInfo.price.buyerPrice), "lot price is wrong");
-
-        // console.log(await MarketPlace.lots(userLotsIds[0], { from: accountOne }));
     });
 
     it("sell NFT for tokens (ERC-20)", async () => {
@@ -234,8 +230,6 @@ contract("sell NFT functionality", async accounts => {
         let lotInfo = await MarketPlace.lots(userLotsIds[1], { from: accountOne });
         assert.equal(lotStartDate, Number(lotInfo.sellStart), "start date of lot is wrong");
         assert.equal(lotPrice, Number(lotInfo.price.buyerPrice), "lot price is wrong");
-
-        // console.log(await MarketPlace.lots(userLotsIds[0], { from: accountOne }));
     });
 
     it("should not sell NFT with param 'contractAddress' equal ERC-1155", async () => {
@@ -272,7 +266,7 @@ contract("sell NFT functionality", async accounts => {
 
         await expectRevert(
             MarketPlace.sell(userLotsIds[3], constants.ZERO_ADDRESS, lotPrice, lotStartDate, { from: accountOne }),
-            "revert" // fix revert message
+            "revert"
         ); 
     });
 
