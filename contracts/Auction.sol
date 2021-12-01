@@ -38,6 +38,29 @@ contract Auction is VariablesTypes {
         return block.timestamp;
     }
 
+    function createAuction(
+        address contractAddress,
+        uint256 id,
+        uint256 value,
+        bool isERC1155,
+        uint256 startDate,
+        uint256 endDate,
+        uint256 step,
+        address tokenAddress,
+        uint256 amount,
+        bytes memory data
+    ) external {
+        if (isERC1155 == true) {
+            ERC1155 NFT_Contract = ERC1155(contractAddress);
+            NFT_Contract.safeTransferFrom(msg.sender, address(marketplace), id, value, data);
+        } else {
+            ERC721 NFT_Contract = ERC721(contractAddress);
+            NFT_Contract.safeTransferFrom(msg.sender, address(marketplace), id, data);
+        }
+        uint256 lotID = marketplace.getLotsLength() - 1;
+        startAuction(lotID, startDate, endDate, step, tokenAddress, amount);
+    }
+
     /**
      * @param lotID, lot index in array.
      * @param startDate, date when auction start (open).
