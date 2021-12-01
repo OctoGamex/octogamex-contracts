@@ -178,7 +178,10 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         checkContract(contractAddress)
     {
         NFT_Collections[contractAddress] = canTransfer;
-        ERC1155(contractAddress).setApprovalForAll(address(auctionContract), true);
+        ERC1155(contractAddress).setApprovalForAll(
+            address(auctionContract),
+            true
+        );
     }
 
     /**
@@ -225,13 +228,17 @@ contract NFTMarketplace is Ownable, VariablesTypes {
     ) internal {
         payable(lot.creationInfo.owner).transfer(sellerPrice);
         if (marketCommission > 0) {
-        payable(marketWallet).transfer((buyerPrice * marketCommission) / 1000);
+            payable(marketWallet).transfer(
+                (buyerPrice * marketCommission) / 1000
+            );
         }
         if (collections[lot.creationInfo.contractAddress].commission > 0) {
-        payable(collections[lot.creationInfo.contractAddress].owner).transfer(
-            (buyerPrice *
-                collections[lot.creationInfo.contractAddress].commission) / 1000
-        );
+            payable(collections[lot.creationInfo.contractAddress].owner)
+                .transfer(
+                    (buyerPrice *
+                        collections[lot.creationInfo.contractAddress]
+                            .commission) / 1000
+                );
         }
     }
 
@@ -665,7 +672,10 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                 }
             }
         } else {
-            require(tokenAddress == address(0x0), "You try send crypto and tokens");
+            require(
+                tokenAddress == address(0x0),
+                "You try send crypto and tokens"
+            );
             if (lotIndex.length != 0) {
                 // crypto with nft
                 offers.push(
@@ -725,14 +735,15 @@ contract NFTMarketplace is Ownable, VariablesTypes {
             if (localOffer.price.buyerPrice == 0) {
                 payable(localOffer.owner).transfer(offerCommission);
             } else {
-                payable(localOffer.owner).transfer(
-                    localOffer.price.buyerPrice
-                );
+                payable(localOffer.owner).transfer(localOffer.price.buyerPrice);
             }
         } else {
             payable(localOffer.owner).transfer(offerCommission);
             ERC20 tokenContract = ERC20(localOffer.price.contractAddress);
-            tokenContract.transfer(localOffer.owner, localOffer.price.buyerPrice);
+            tokenContract.transfer(
+                localOffer.owner,
+                localOffer.price.buyerPrice
+            );
         }
         if (localOffer.lotsOffer.length != 0) {
             for (uint256 i = 0; i < localOffer.lotsOffer.length; i++) {
@@ -843,11 +854,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         getLot = lots[indexes];
     }
 
-    function getLotsLength()
-        external
-        view
-        returns (uint256 length)
-    {
+    function getLotsLength() external view returns (uint256 length) {
         length = lots.length;
     }
 
@@ -885,27 +892,31 @@ contract NFTMarketplace is Ownable, VariablesTypes {
             "This collection not supported"
         );
         if (operator != address(this)) {
-            lots.push(
-                lotInfo(
-                    lotStart(operator, msg.sender, id, value, block.timestamp),
-                    lotType.None,
-                    0,
-                    currency(address(0), 0, 0),
-                    auctionInfo(0, 0, 0, 0, address(0)),
-                    false,
-                    true
-                )
-            );
-            lotOwner[operator].push(lots.length - 1);
-            emit AddNFT(
-                operator,
-                msg.sender,
-                id,
-                lots.length - 1,
-                block.timestamp,
-                value,
-                uint256(lotType.None)
-            );
+            if (operator == address(auctionContract)) {
+                lots.push(
+                    lotInfo(
+                        lotStart(msg.sender, from, id, value, block.timestamp),
+                        lotType.None,
+                        0,
+                        currency(address(0), 0, 0),
+                        auctionInfo(0, 0, 0, 0, address(0)),
+                        false,
+                        true
+                    )
+                );
+                lotOwner[operator].push(lots.length - 1);
+                emit AddNFT(
+                    operator,
+                    msg.sender,
+                    id,
+                    lots.length - 1,
+                    block.timestamp,
+                    value,
+                    uint256(lotType.None)
+                );
+            } else {
+                revert("Use our site");
+            }
         }
         return
             bytes4(
@@ -933,27 +944,31 @@ contract NFTMarketplace is Ownable, VariablesTypes {
             "This collection not supported"
         );
         if (operator != address(this)) {
-            lots.push(
-                lotInfo(
-                    lotStart(operator, msg.sender, id, 1, block.timestamp),
-                    lotType.None,
-                    0,
-                    currency(address(0), 0, 0),
-                    auctionInfo(0, 0, 0, 0, address(0)),
-                    false,
-                    false
-                )
-            );
-            lotOwner[operator].push(lots.length - 1);
-            emit AddNFT(
-                operator,
-                msg.sender,
-                id,
-                lots.length - 1,
-                block.timestamp,
-                1,
-                uint256(lotType.None)
-            );
+            if (operator == address(auctionContract)) {
+                lots.push(
+                    lotInfo(
+                        lotStart(msg.sender, from, id, 1, block.timestamp),
+                        lotType.None,
+                        0,
+                        currency(address(0), 0, 0),
+                        auctionInfo(0, 0, 0, 0, address(0)),
+                        false,
+                        false
+                    )
+                );
+                lotOwner[operator].push(lots.length - 1);
+                emit AddNFT(
+                    operator,
+                    msg.sender,
+                    id,
+                    lots.length - 1,
+                    block.timestamp,
+                    1,
+                    uint256(lotType.None)
+                );
+            } else {
+                revert("Use our site!");
+            }
         }
         return
             bytes4(
