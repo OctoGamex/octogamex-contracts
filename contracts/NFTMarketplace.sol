@@ -843,6 +843,14 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         getLot = lots[indexes];
     }
 
+    function getLotsLength()
+        external
+        view
+        returns (uint256 length)
+    {
+        length = lots.length;
+    }
+
     /**
      *  indexes, array of NFT index.
      *  array of object with info about NFT
