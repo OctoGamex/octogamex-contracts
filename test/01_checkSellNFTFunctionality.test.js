@@ -12,13 +12,19 @@ const {
 } = require('@openzeppelin/test-helpers');
 
 contract("sell NFT functionality", async accounts => {
-    const [deployer, accountOne, accountTwo] = accounts;
+    const [deployer, accountOne, accountTwo, accountThree] = accounts;
 
     let ERC1155, ERC721, ERC20, MarketPlace;
     let ERC1155Address, ERC721Address, ERC20Address, MarketPlaceAddress;
     
     const NFT1155id = new BN(1);
-    const NFT721id = new BN(1);   
+    const accThreeNFT1155id = new BN(2);
+
+    const NFT721id = new BN(1); 
+    
+    let addNFT721Num = 13;
+    let accThreeNFT721ids = [];
+
     const NFTdata = 0; 
 
     before(async () => {
@@ -122,8 +128,19 @@ contract("sell NFT functionality", async accounts => {
         await ERC1155.mint(accountOne, NFT1155id, NFT1155amount, NFTdata, { from: accountOne });
         await ERC1155.setApprovalForAll(MarketPlaceAddress, NFTapproved, { from: accountOne });
 
+        await ERC1155.mint(accountThree, accThreeNFT1155id, NFT1155amount, NFTdata, { from: accountThree });
+        await ERC1155.setApprovalForAll(MarketPlaceAddress, NFTapproved, { from: accountThree });
+
         await ERC721.mint(accountOne, NFT721id, { from: accountOne });
         await ERC721.setApprovalForAll(MarketPlaceAddress, NFTapproved, { from: accountOne });
+
+        let j = 0;
+        for(let i = 10; i < addNFT721Num; i++) {
+            accThreeNFT721ids.push(new BN(i));
+            await ERC721.mint(accountThree, accThreeNFT721ids[j], { from: accountThree });
+            await ERC721.setApprovalForAll(MarketPlaceAddress, NFTapproved, { from: accountThree });
+            j++;
+        }
 
         await ERC20.mint(accountTwo, accOneTokensAmount, { from: accountTwo });
         await ERC20.approve(MarketPlaceAddress, accOneTokensAmount, { from: accountTwo });
@@ -479,6 +496,148 @@ contract("sell NFT functionality", async accounts => {
         await expectRevert(
             MarketPlace.buy(userLotsIds[8], NFTdata, { from: accountTwo }),
             "Not selling or selling not started"
+        );
+    });
+
+    it("check 'NFT_Sale' functionality with NFT-1155 for tokens", async () => {       
+        let value = new BN(25);
+        let isERC1155 = true;
+        let startDate = Math.floor(Date.now() / 1000);
+
+        const tokenbits = (new BN(10)).pow(new BN(18));
+        let tokensAmount = new BN(200).mul(tokenbits);
+
+        await MarketPlace.NFT_Sale(ERC1155Address, accThreeNFT1155id, value, 
+            isERC1155, startDate, ERC20Address, tokensAmount, NFTdata, { from: accountThree });
+
+        let lotLength = await MarketPlace.getLotsLength();
+        let lotInfo = await MarketPlace.getLots(lotLength - 1, { from: accountThree });
+        
+        assert.equal(lotInfo.creationInfo.owner, accountThree, "lot owner is wrong");
+        assert.equal(lotInfo.creationInfo.contractAddress, ERC1155Address, "lot NFT contract address is wrong");
+        assert.equal(lotInfo.creationInfo.amount, value, "NFT amount is wrong");
+
+        let commission = await MarketPlace.marketCommission({ from: deployer });
+        let expectedReward = tokensAmount.sub((tokensAmount.mul(commission)).div(new BN(1000)));
+        
+        assert.equal(lotInfo.price.contractAddress, ERC20Address, "tokens address is wrong");
+        assert.equal(lotInfo.price.sellerPrice, expectedReward, "seller price is wrong");
+        assert.equal(lotInfo.price.buyerPrice, tokensAmount, "tokens amount is wrong");
+    });
+
+    it("check 'NFT_Sale' functionality with NFT-1155 for crypto", async () => {
+        let value = new BN(25);
+        let isERC1155 = true;
+        let startDate = Math.floor(Date.now() / 1000);
+
+        const tokenbits = (new BN(10)).pow(new BN(18));
+        let cryptoAmount = new BN(2).mul(tokenbits);
+
+        await MarketPlace.NFT_Sale(ERC1155Address, accThreeNFT1155id, value, 
+            isERC1155, startDate, constants.ZERO_ADDRESS, cryptoAmount, NFTdata, { from: accountThree });
+
+        let lotLength = await MarketPlace.getLotsLength();
+        let lotInfo = await MarketPlace.getLots(lotLength - 1, { from: accountThree });
+        
+        assert.equal(lotInfo.creationInfo.owner, accountThree, "lot owner is wrong");
+        assert.equal(lotInfo.creationInfo.contractAddress, ERC1155Address, "lot NFT contract address is wrong");
+        assert.equal(lotInfo.creationInfo.amount, value, "NFT amount is wrong");
+
+        let commission = await MarketPlace.marketCommission({ from: deployer });
+        let expectedReward = cryptoAmount.sub((cryptoAmount.mul(commission)).div(new BN(1000)));
+        
+        assert.equal(lotInfo.price.contractAddress, constants.ZERO_ADDRESS, "tokens address is wrong");
+        assert.equal(lotInfo.price.sellerPrice, expectedReward, "seller price is wrong");
+        assert.equal(lotInfo.price.buyerPrice, cryptoAmount, "crypto amount is wrong");
+    });
+
+    it("check 'NFT_Sale' functionality with NFT-1155 for tokens exchange", async () => {       
+        let value = new BN(25);
+        let isERC1155 = true;
+        let startDate = Math.floor(Date.now() / 1000);
+
+        let tokensAmount = new BN(0);
+
+        await MarketPlace.NFT_Sale(ERC1155Address, accThreeNFT1155id, value, 
+            isERC1155, startDate, ERC20Address, tokensAmount, NFTdata, { from: accountThree });
+
+        let lotLength = await MarketPlace.getLotsLength();
+        let lotInfo = await MarketPlace.getLots(lotLength - 1, { from: accountThree });
+        
+        assert.equal(lotInfo.creationInfo.owner, accountThree, "lot owner is wrong");
+        assert.equal(lotInfo.creationInfo.contractAddress, ERC1155Address, "lot NFT contract address is wrong");
+        assert.equal(lotInfo.creationInfo.amount, value, "NFT amount is wrong");
+        
+        assert.equal(lotInfo.price.contractAddress, constants.ZERO_ADDRESS, "tokens address is wrong");
+        assert.equal(lotInfo.price.sellerPrice, tokensAmount, "seller price is wrong");
+        assert.equal(lotInfo.price.buyerPrice, tokensAmount, "tokens amount is wrong");
+    });
+
+    it("check 'NFT_Sale' functionality with NFT-721 for tokens", async () => {
+        let value = new BN(1);
+        let isERC1155 = false;
+        let startDate = Math.floor(Date.now() / 1000);
+
+        const tokenbits = (new BN(10)).pow(new BN(18));
+        let tokensAmount = new BN(200).mul(tokenbits);
+
+        await MarketPlace.NFT_Sale(ERC721Address, accThreeNFT721ids[0], value, 
+            isERC1155, startDate, ERC20Address, tokensAmount, NFTdata, { from: accountThree });
+
+        let lotLength = await MarketPlace.getLotsLength();
+        let lotInfo = await MarketPlace.getLots(lotLength - 1, { from: accountThree });
+        
+        assert.equal(lotInfo.creationInfo.owner, accountThree, "lot owner is wrong");
+        assert.equal(lotInfo.creationInfo.contractAddress, ERC721Address, "lot NFT contract address is wrong");
+        assert.equal(lotInfo.creationInfo.amount, value, "NFT amount is wrong");
+
+        let commission = await MarketPlace.marketCommission({ from: deployer });
+        let expectedReward = tokensAmount.sub((tokensAmount.mul(commission)).div(new BN(1000)));
+        
+        assert.equal(lotInfo.price.contractAddress, ERC20Address, "tokens address is wrong");
+        assert.equal(lotInfo.price.sellerPrice, expectedReward, "seller price is wrong");
+        assert.equal(lotInfo.price.buyerPrice, tokensAmount, "tokens amount is wrong");
+    });
+
+    it("check 'NFT_Sale' functionality with NFT-721 for tokens", async () => {
+        let value = new BN(1);
+        let isERC1155 = false;
+        let startDate = Math.floor(Date.now() / 1000);
+
+        const tokenbits = (new BN(10)).pow(new BN(18));
+        let cryptoAmount = new BN(2).mul(tokenbits);
+
+        await MarketPlace.NFT_Sale(ERC721Address, accThreeNFT721ids[1], value, 
+            isERC1155, startDate, constants.ZERO_ADDRESS, cryptoAmount, NFTdata, { from: accountThree });
+
+        let lotLength = await MarketPlace.getLotsLength();
+        let lotInfo = await MarketPlace.getLots(lotLength - 1, { from: accountThree });
+        
+        assert.equal(lotInfo.creationInfo.owner, accountThree, "lot owner is wrong");
+        assert.equal(lotInfo.creationInfo.contractAddress, ERC721Address, "lot NFT contract address is wrong");
+        assert.equal(lotInfo.creationInfo.amount, value, "NFT amount is wrong");
+
+        let commission = await MarketPlace.marketCommission({ from: deployer });
+        let expectedReward = cryptoAmount.sub((cryptoAmount.mul(commission)).div(new BN(1000)));
+        
+        assert.equal(lotInfo.price.contractAddress, constants.ZERO_ADDRESS, "tokens address is wrong");
+        assert.equal(lotInfo.price.sellerPrice, expectedReward, "seller price is wrong");
+        assert.equal(lotInfo.price.buyerPrice, cryptoAmount, "crypto amount is wrong");
+    });
+
+    it("check add NFT-1155 without smart-contract", async () => {
+        let value = new BN(25);
+
+        await expectRevert( 
+            ERC1155.safeTransferFrom(accountThree, MarketPlaceAddress, accThreeNFT1155id, value, NFTdata, { from: accountThree }),
+            "revert"
+        );
+    });
+
+    it("check add NFT-721 without smart-contract", async () => {
+        await expectRevert( 
+            ERC721.safeTransferFrom(accountThree, MarketPlaceAddress, accThreeNFT721ids[2], { from: accountThree }),
+            "revert"
         );
     });
 })

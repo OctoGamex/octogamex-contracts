@@ -395,8 +395,8 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         address tokenAddress,
         uint256 amount,
         bytes memory data
-    ) external {
-        uint256[] memory lotIDs;
+    ) external payable {
+        uint256[] memory lotIDs = new uint256[](contractAddress.length);
         for (uint256 i = 0; i < contractAddress.length; i++) {
             add(
                 contractAddress[i],
@@ -895,7 +895,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
             if (operator == address(auctionContract)) {
                 lots.push(
                     lotInfo(
-                        lotStart(msg.sender, from, id, value, block.timestamp),
+                        lotStart(from, msg.sender, id, value, block.timestamp),
                         lotType.None,
                         0,
                         currency(address(0), 0, 0),
@@ -947,7 +947,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
             if (operator == address(auctionContract)) {
                 lots.push(
                     lotInfo(
-                        lotStart(msg.sender, from, id, 1, block.timestamp),
+                        lotStart(from, msg.sender, id, 1, block.timestamp),
                         lotType.None,
                         0,
                         currency(address(0), 0, 0),

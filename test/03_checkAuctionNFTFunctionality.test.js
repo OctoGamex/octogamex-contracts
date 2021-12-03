@@ -21,7 +21,7 @@ contract("auction NFT functionality", async accounts => {
     let commissionOffer;
 
     let addNFT721Num = 10;
-    let accFourNFT721Num = 2;
+    let accFourNFT721Num = 52;
 
     const accTwoNFT1155id = new BN(1);
     const accThreeNFT1155id = new BN(2);
@@ -99,11 +99,13 @@ contract("auction NFT functionality", async accounts => {
             await ERC721.setApprovalForAll(MarketPlaceAddress, NFTapproved, { from: accountOne });
             await ERC721.setApprovalForAll(AuctionAddress, NFTapproved, { from: accountOne });
         }
-
+        
+        let j = 0;
         for(let i = 50; i < accFourNFT721Num; i++) {
             accFourNFT721ids.push(new BN(i));
-            await ERC721.mint(accountFour, accFourNFT721ids[i], { from: accountFour });
+            await ERC721.mint(accountFour, accFourNFT721ids[j], { from: accountFour });
             await ERC721.setApprovalForAll(AuctionAddress, NFTapproved, { from: accountFour });
+            j++;
         }
 
         await ERC20.mint(accountTwo, tokensAmount, { from: accountTwo });
@@ -1078,7 +1080,7 @@ contract("auction NFT functionality", async accounts => {
     });
 
     it("check 'createAuction' functionality with NFT-1155 for tokens", async () => {
-        let accFourNFT1155value = new BN(200);
+        let accFourNFT1155value = new BN(100);
         let isERC1155 = true;
 
         let contractDate = await Auction.time();
@@ -1094,19 +1096,22 @@ contract("auction NFT functionality", async accounts => {
         await Auction.createAuction(ERC1155Address, accFourNFT1155id, accFourNFT1155value, isERC1155, 
             lotStartDate, lotEndDate, step, ERC20Address, tokensAmount, NFTdata, { from: accountFour });
 
-        // let userLotsIds = [];
-        // let getInfo = await MarketPlace.getInfo(accountOne, { from: accountOne });
-        // for(let i = 0; i < getInfo.userLots.length; i++) {
-        //     userLotsIds.push(Number(getInfo.userLots[i]));
-        // }
+        let lotLength = await MarketPlace.getLotsLength();
+        let lotInfo = await MarketPlace.getLots(lotLength - 1, { from: accountFour });  
+        
+        assert.equal(lotInfo.creationInfo.owner, accountFour, "lot owner is wrong");
+        assert.equal(lotInfo.creationInfo.contractAddress, ERC1155Address, "lot NFT contract address is wrong");
+        assert.equal(lotInfo.creationInfo.amount, accFourNFT1155value, "NFT amount is wrong");
 
-        // let lotInfo = await MarketPlace.getLots([userLotsIds[0]], { from: accountOne });  
-        // console.log(lotInfo);
-        // assert.equal(accountOne, lotInfo.creationInfo.owner, "lot information is wrong");
+        assert.equal(lotInfo.auction.startAuction, lotStartDate, "NFT-1155 lot start date is wrong");
+        assert.equal(lotInfo.auction.endAuction, lotEndDate, "NFT-1155 lot end date is wrong");
+        assert.equal(lotInfo.auction.step, step, "step of auction bids is wrong");
+        assert.equal(lotInfo.auction.nextStep, tokensAmount, "amount of tokens is wrong");
+        assert.equal(lotInfo.price.contractAddress, ERC20Address, "token address is wrong");
     });
 
     it("check 'createAuction' functionality with NFT-1155 for crypto", async () => {
-        let accFourNFT1155value = new BN(15);
+        let accFourNFT1155value = new BN(100);
         let isERC1155 = true;
 
         let contractDate = await Auction.time();
@@ -1122,15 +1127,19 @@ contract("auction NFT functionality", async accounts => {
         await Auction.createAuction(ERC1155Address, accFourNFT1155id, accFourNFT1155value, isERC1155, 
             lotStartDate, lotEndDate, step, constants.ZERO_ADDRESS, cryptoAmount, NFTdata, { from: accountFour });
 
-        // let userLotsIds = [];
-        // let getInfo = await MarketPlace.getInfo(accountOne, { from: accountOne });
-        // for(let i = 0; i < getInfo.userLots.length; i++) {
-        //     userLotsIds.push(Number(getInfo.userLots[i]));
-        // }
 
-        // let lotInfo = await MarketPlace.getLots([userLotsIds[0]], { from: accountOne });  
-        // console.log(lotInfo);
-        // assert.equal(accountOne, lotInfo.creationInfo.owner, "lot information is wrong");
+        let lotLength = await MarketPlace.getLotsLength();
+        let lotInfo = await MarketPlace.getLots(lotLength - 1, { from: accountFour }); 
+        
+        assert.equal(lotInfo.creationInfo.owner, accountFour, "lot owner is wrong");
+        assert.equal(lotInfo.creationInfo.contractAddress, ERC1155Address, "lot NFT contract address is wrong");
+        assert.equal(lotInfo.creationInfo.amount, accFourNFT1155value, "NFT amount is wrong");
+
+        assert.equal(lotInfo.auction.startAuction, lotStartDate, "NFT-1155 lot start date is wrong");
+        assert.equal(lotInfo.auction.endAuction, lotEndDate, "NFT-1155 lot end date is wrong");
+        assert.equal(lotInfo.auction.step, step, "step of auction bids is wrong");
+        assert.equal(lotInfo.auction.nextStep, cryptoAmount, "amount of tokens is wrong");
+        assert.equal(lotInfo.price.contractAddress, constants.ZERO_ADDRESS, "token address is wrong");
     });
 
     it("check 'createAuction' functionality with NFT-721 for tokens", async () => {
@@ -1147,18 +1156,21 @@ contract("auction NFT functionality", async accounts => {
         const tokenbits = (new BN(10)).pow(new BN(18));
         let tokensAmount = new BN(20).mul(tokenbits);
         
-        await Auction.createAuction(ERC721Address, NFT721ids[0], NFT721value, isERC1155, 
+        await Auction.createAuction(ERC721Address, accFourNFT721ids[0], NFT721value, isERC1155, 
             lotStartDate, lotEndDate, step, ERC20Address, tokensAmount, NFTdata, { from: accountFour });
 
-        // let userLotsIds = [];
-        // let getInfo = await MarketPlace.getInfo(accountOne, { from: accountOne });
-        // for(let i = 0; i < getInfo.userLots.length; i++) {
-        //     userLotsIds.push(Number(getInfo.userLots[i]));
-        // }
+        let lotLength = await MarketPlace.getLotsLength();
+        let lotInfo = await MarketPlace.getLots(lotLength - 1, { from: accountFour }); 
+        
+        assert.equal(lotInfo.creationInfo.owner, accountFour, "lot owner is wrong");
+        assert.equal(lotInfo.creationInfo.contractAddress, ERC721Address, "lot NFT contract address is wrong");
+        assert.equal(lotInfo.creationInfo.amount, NFT721value, "NFT amount is wrong");
 
-        // let lotInfo = await MarketPlace.getLots([userLotsIds[0]], { from: accountOne });  
-        // console.log(lotInfo);
-        // assert.equal(accountOne, lotInfo.creationInfo.owner, "lot information is wrong");
+        assert.equal(lotInfo.auction.startAuction, lotStartDate, "NFT-1155 lot start date is wrong");
+        assert.equal(lotInfo.auction.endAuction, lotEndDate, "NFT-1155 lot end date is wrong");
+        assert.equal(lotInfo.auction.step, step, "step of auction bids is wrong");
+        assert.equal(lotInfo.auction.nextStep, tokensAmount, "amount of tokens is wrong");
+        assert.equal(lotInfo.price.contractAddress, ERC20Address, "token address is wrong");
     });
 
     it("check 'createAuction' functionality with NFT-721 for crypto", async () => {
@@ -1175,17 +1187,20 @@ contract("auction NFT functionality", async accounts => {
         const tokenbits = (new BN(10)).pow(new BN(18));
         let cryptoAmount = new BN(3).mul(tokenbits);
         
-        await Auction.createAuction(ERC721Address, NFT721ids[1], NFT721value, isERC1155, 
+        await Auction.createAuction(ERC721Address, accFourNFT721ids[1], NFT721value, isERC1155, 
             lotStartDate, lotEndDate, step, constants.ZERO_ADDRESS, cryptoAmount, NFTdata, { from: accountFour });
 
-        // let userLotsIds = [];
-        // let getInfo = await MarketPlace.getInfo(accountOne, { from: accountOne });
-        // for(let i = 0; i < getInfo.userLots.length; i++) {
-        //     userLotsIds.push(Number(getInfo.userLots[i]));
-        // }
+        let lotLength = await MarketPlace.getLotsLength();
+        let lotInfo = await MarketPlace.getLots(lotLength - 1, { from: accountFour }); 
+        
+        assert.equal(lotInfo.creationInfo.owner, accountFour, "lot owner is wrong");
+        assert.equal(lotInfo.creationInfo.contractAddress, ERC721Address, "lot NFT contract address is wrong");
+        assert.equal(lotInfo.creationInfo.amount, NFT721value, "NFT amount is wrong");
 
-        // let lotInfo = await MarketPlace.getLots([userLotsIds[0]], { from: accountOne });  
-        // console.log(lotInfo);
-        // assert.equal(accountOne, lotInfo.creationInfo.owner, "lot information is wrong");
+        assert.equal(lotInfo.auction.startAuction, lotStartDate, "NFT-1155 lot start date is wrong");
+        assert.equal(lotInfo.auction.endAuction, lotEndDate, "NFT-1155 lot end date is wrong");
+        assert.equal(lotInfo.auction.step, step, "step of auction bids is wrong");
+        assert.equal(lotInfo.auction.nextStep, cryptoAmount, "amount of tokens is wrong");
+        assert.equal(lotInfo.price.contractAddress, constants.ZERO_ADDRESS, "token address is wrong");
     });
 });
