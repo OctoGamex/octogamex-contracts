@@ -252,6 +252,10 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         tokenContract.transferFrom(from, to, amount);
     }
 
+    function getNextStep(uint256 lotID) external view returns (uint256) {
+        return lots[lotID].auction.nextStep;
+    }
+
     /**
      * @param contractAddress, contract address with NFT.
      * @param id, NFT id.
@@ -467,7 +471,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
             lots[index].selling = lotType.FixedPrice;
             emit SellNFT(
                 msg.sender,
-                lots[index].creationInfo.id,
+                index,
                 block.timestamp,
                 lots[index].creationInfo.amount
             );
