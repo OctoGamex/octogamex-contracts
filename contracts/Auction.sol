@@ -86,7 +86,8 @@ contract Auction is VariablesTypes {
             lot.price,
             lot.auction,
             lot.offered,
-            lot.isERC1155
+            lot.isERC1155,
+            lot.openForOffers
         ) = marketplace.lots(lotID);
         require(
             lot.creationInfo.owner == msg.sender && step <= 1000 && amount > 0,
@@ -140,7 +141,8 @@ contract Auction is VariablesTypes {
             lot.price,
             lot.auction,
             lot.offered,
-            lot.isERC1155
+            lot.isERC1155,
+            lot.openForOffers
         ) = marketplace.lots(lotID);
         require(
             lot.auction.endAuction > block.timestamp &&
@@ -235,7 +237,8 @@ contract Auction is VariablesTypes {
             lot.price,
             lot.auction,
             lot.offered,
-            lot.isERC1155
+            lot.isERC1155,
+            lot.openForOffers
         ) = marketplace.lots(lotID);
         require(lot.auction.endAuction <= block.timestamp, "Auction not ended");
         address marketWallet = marketplace.marketWallet();
@@ -328,7 +331,8 @@ contract Auction is VariablesTypes {
             lot.price,
             lot.auction,
             lot.offered,
-            lot.isERC1155
+            lot.isERC1155,
+            lot.openForOffers
         ) = marketplace.lots(lotID);
         require(lot.price.sellerPrice == 0, "Lot have bid");
         if (lot.isERC1155 == true) {

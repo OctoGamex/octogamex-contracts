@@ -40,7 +40,9 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         address indexed user,
         uint256 indexed lotID,
         uint256 indexed datetime,
-        uint256 amount
+        uint256 amount,
+        uint256 price,
+        bool openForOffer
     );
     event BuyNFT(
         address indexed user,
@@ -140,14 +142,16 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         offerCommission = comission;
     }
 
-    function calculateCommission(uint256 price, address commission)
+    function calculateCommission(uint256 price, address collectionCommission)
         internal
         view
         returns (uint256)
     {
         return
             price -
-            (price * (collections[commission].commission + marketCommission)) /
+            (price *
+                (collections[collectionCommission].commission +
+                    marketCommission)) /
             1000;
     }
 
@@ -221,6 +225,14 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         }
     }
 
+    function calculateMarket(uint256 price, uint256 commission)
+        internal
+        view
+        returns (uint256)
+    {
+        return (price * commission) / 1000;
+    }
+
     function sendCrypto(
         lotInfo memory lot,
         uint256 sellerPrice,
@@ -229,15 +241,16 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         payable(lot.creationInfo.owner).transfer(sellerPrice);
         if (marketCommission > 0) {
             payable(marketWallet).transfer(
-                (buyerPrice * marketCommission) / 1000
+                calculateMarket(buyerPrice, marketCommission)
             );
         }
         if (collections[lot.creationInfo.contractAddress].commission > 0) {
             payable(collections[lot.creationInfo.contractAddress].owner)
                 .transfer(
-                    (buyerPrice *
-                        collections[lot.creationInfo.contractAddress]
-                            .commission) / 1000
+                    calculateMarket(
+                        buyerPrice,
+                        collections[lot.creationInfo.contractAddress].commission
+                    )
                 );
         }
     }
@@ -250,6 +263,10 @@ contract NFTMarketplace is Ownable, VariablesTypes {
     ) internal {
         ERC20 tokenContract = ERC20(contractAddress);
         tokenContract.transferFrom(from, to, amount);
+    }
+
+    function getNextStep(uint256 lotID) external view returns (uint256) {
+        return lots[lotID].auction.nextStep;
     }
 
     /**
@@ -297,7 +314,8 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                     currency(address(0x0), 0, 0),
                     auctionInfo(0, 0, 0, 0, address(0x0)),
                     false,
-                    isERC1155
+                    isERC1155,
+                    false
                 )
             ); // add lot to array
             emit AddNFT(
@@ -333,7 +351,8 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                     currency(address(0x0), 0, 0),
                     auctionInfo(0, 0, 0, 0, address(0x0)),
                     false,
-                    isERC1155
+                    isERC1155,
+                    false
                 )
             ); // add lot to array
             emit AddNFT(
@@ -368,11 +387,12 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         uint256 startDate,
         address tokenAddress,
         uint256 price,
+        bool openForOffers,
         bytes memory data
     ) external {
         add(contractAddress, id, value, isERC1155, lotType.FixedPrice, data);
         uint256 lotID = lots.length - 1;
-        sell(lotID, tokenAddress, price, startDate);
+        sell(lotID, tokenAddress, price, openForOffers, startDate);
     }
 
     /**
@@ -426,6 +446,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         uint256 index,
         address contractAddress,
         uint256 price,
+        bool openForOffers,
         uint256 date
     ) public {
         require(
@@ -465,11 +486,14 @@ contract NFTMarketplace is Ownable, VariablesTypes {
             lots[index].price.buyerPrice = price; // set value what send buyer
             lots[index].price.contractAddress = contractAddress;
             lots[index].selling = lotType.FixedPrice;
+            lots[index].openForOffers = openForOffers;
             emit SellNFT(
                 msg.sender,
-                lots[index].creationInfo.id,
+                index,
                 block.timestamp,
-                lots[index].creationInfo.amount
+                lots[index].creationInfo.amount,
+                price,
+                openForOffers
             );
         }
     }
@@ -536,16 +560,17 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                 tokenContract.transferFrom(
                     msg.sender,
                     marketWallet,
-                    (lot.price.buyerPrice * marketCommission) / 1000
+                    calculateMarket(lot.price.buyerPrice, marketCommission)
                 );
             }
             if (collections[lot.creationInfo.contractAddress].commission > 0) {
                 tokenContract.transferFrom(
                     msg.sender,
                     collections[lot.creationInfo.contractAddress].owner,
-                    (lot.price.buyerPrice *
-                        collections[lot.creationInfo.contractAddress]
-                            .commission) / 1000
+                    calculateMarket(
+                        lot.price.buyerPrice,
+                        collections[lot.creationInfo.contractAddress].commission
+                    )
                 );
             }
         }
@@ -589,7 +614,8 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         require(
             lots[index].creationInfo.contractAddress != address(0x0) &&
                 lots[index].selling != lotType.None &&
-                lots[index].selling != lotType.Auction,
+                lots[index].selling != lotType.Auction &&
+                lots[index].openForOffers == true,
             "You not send comission or lot not valid"
         );
         require(
@@ -823,15 +849,19 @@ contract NFTMarketplace is Ownable, VariablesTypes {
             if (marketCommission > 0) {
                 tokenContract.transfer(
                     marketWallet,
-                    (userOffer.price.buyerPrice * marketCommission) / 1000
+                    calculateMarket(
+                        userOffer.price.buyerPrice,
+                        marketCommission
+                    )
                 );
             }
             if (collections[lot.creationInfo.contractAddress].commission > 0) {
                 tokenContract.transfer(
                     collections[lot.creationInfo.contractAddress].owner,
-                    (userOffer.price.buyerPrice *
-                        collections[lot.creationInfo.contractAddress]
-                            .commission) / 1000
+                    calculateMarket(
+                        userOffer.price.buyerPrice,
+                        collections[lot.creationInfo.contractAddress].commission
+                    )
                 );
             }
         }
@@ -901,7 +931,8 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                         currency(address(0), 0, 0),
                         auctionInfo(0, 0, 0, 0, address(0)),
                         false,
-                        true
+                        true,
+                        false
                     )
                 );
                 lotOwner[operator].push(lots.length - 1);
@@ -918,12 +949,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                 revert("Use our site");
             }
         }
-        return
-            bytes4(
-                keccak256(
-                    "onERC1155Received(address,address,uint256,uint256,bytes)"
-                )
-            );
+        return 0xf23a6e61; // bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes")))
     }
 
     /**
@@ -953,6 +979,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                         currency(address(0), 0, 0),
                         auctionInfo(0, 0, 0, 0, address(0)),
                         false,
+                        false,
                         false
                     )
                 );
@@ -970,10 +997,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                 revert("Use our site!");
             }
         }
-        return
-            bytes4(
-                keccak256("onERC721Received(address,address,uint256,bytes)")
-            );
+        return 0x150b7a02; // bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"))
     }
 
     /**
