@@ -193,7 +193,7 @@ contract("proposal NFT functionality", async accounts => {
             await MarketPlace.sell(userLotsIds[i], constants.ZERO_ADDRESS, lotPrice, openForOffers, lotStartDate, { from: accountTwo });
 
             lotInfo = await MarketPlace.lots(userLotsIds[i], { from: accountTwo });
-        
+     
             assert.equal(lotStartDate, Number(lotInfo.sellStart), "start date of lot is wrong");
             assert.equal(lotPrice, Number(lotInfo.price.buyerPrice), "lot price is wrong");
         }     

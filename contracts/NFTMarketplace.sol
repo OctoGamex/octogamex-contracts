@@ -471,6 +471,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         if (price == 0) {
             lots[index].sellStart = date;
             lots[index].selling = lotType.Exchange;
+            lots[index].openForOffers = true;
             emit ExchangeNFT(
                 block.timestamp,
                 index,
