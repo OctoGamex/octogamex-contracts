@@ -23,6 +23,7 @@ interface VariablesTypes{
         auctionInfo auction;
         bool offered; // added to offer
         bool isERC1155;
+        bool openForOffers;
     } // information about lot
 
     struct lotStart {
