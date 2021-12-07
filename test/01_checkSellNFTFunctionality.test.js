@@ -223,7 +223,9 @@ contract("sell NFT functionality", async accounts => {
         let lotPrice = (new BN(1)).mul(tokenbits);
         let lotStartDate = Math.floor(Date.now() / 1000);
 
-        await MarketPlace.sell(userLotsIds[0], constants.ZERO_ADDRESS, lotPrice, lotStartDate, { from: accountOne });
+        let openForOffers = false;
+
+        await MarketPlace.sell(userLotsIds[0], constants.ZERO_ADDRESS, lotPrice, openForOffers, lotStartDate, { from: accountOne });
 
         let lotInfo = await MarketPlace.lots(userLotsIds[0], { from: accountOne });
         assert.equal(lotStartDate, Number(lotInfo.sellStart), "start date of lot is wrong");
@@ -242,7 +244,9 @@ contract("sell NFT functionality", async accounts => {
         let lotPrice = (new BN(200)).mul(tokenbits);
         let lotStartDate = Math.floor(Date.now() / 1000);
 
-        await MarketPlace.sell(userLotsIds[1], ERC20Address, lotPrice, lotStartDate, { from: accountOne });
+        let openForOffers = false;
+
+        await MarketPlace.sell(userLotsIds[1], ERC20Address, lotPrice, openForOffers, lotStartDate, { from: accountOne });
 
         let lotInfo = await MarketPlace.lots(userLotsIds[1], { from: accountOne });
         assert.equal(lotStartDate, Number(lotInfo.sellStart), "start date of lot is wrong");
@@ -261,8 +265,10 @@ contract("sell NFT functionality", async accounts => {
         let lotPrice = (new BN(1)).mul(tokenbits);
         let lotStartDate = Math.floor(Date.now() / 1000);
 
+        let openForOffers = false;
+
         await expectRevert(
-            MarketPlace.sell(userLotsIds[2], ERC1155Address, lotPrice, lotStartDate, { from: accountOne }),
+            MarketPlace.sell(userLotsIds[2], ERC1155Address, lotPrice, openForOffers, lotStartDate, { from: accountOne }),
             "revert"
         );
     });
@@ -279,10 +285,12 @@ contract("sell NFT functionality", async accounts => {
         let lotPrice = (new BN(1)).mul(tokenbits);
         let lotStartDate = Math.floor(Date.now() / 1000);
 
-        await MarketPlace.sell(userLotsIds[3], constants.ZERO_ADDRESS, lotPrice, lotStartDate, { from: accountOne });
+        let openForOffers = false;
+
+        await MarketPlace.sell(userLotsIds[3], constants.ZERO_ADDRESS, lotPrice, openForOffers, lotStartDate, { from: accountOne });
 
         await expectRevert(
-            MarketPlace.sell(userLotsIds[3], constants.ZERO_ADDRESS, lotPrice, lotStartDate, { from: accountOne }),
+            MarketPlace.sell(userLotsIds[3], constants.ZERO_ADDRESS, lotPrice, openForOffers, lotStartDate, { from: accountOne }),
             "revert"
         ); 
     });
@@ -298,7 +306,9 @@ contract("sell NFT functionality", async accounts => {
         let lotPrice = (new BN(0));
         let lotStartDate = Math.floor(Date.now() / 1000);
 
-        await MarketPlace.sell(userLotsIds[4], constants.ZERO_ADDRESS, lotPrice, lotStartDate, { from: accountOne });
+        let openForOffers = false;
+
+        await MarketPlace.sell(userLotsIds[4], constants.ZERO_ADDRESS, lotPrice, openForOffers, lotStartDate, { from: accountOne });
 
         let lotInfo = await MarketPlace.lots(userLotsIds[4], { from: accountOne });
         assert.equal(lotStartDate, Number(lotInfo.sellStart), "start date of lot is wrong");
@@ -316,7 +326,9 @@ contract("sell NFT functionality", async accounts => {
         let lotPrice = (new BN(0));
         let lotStartDate = Math.floor(Date.now() / 1000);
 
-        await MarketPlace.sell(userLotsIds[5], ERC20Address, lotPrice, lotStartDate, { from: accountOne });
+        let openForOffers = false;
+
+        await MarketPlace.sell(userLotsIds[5], ERC20Address, lotPrice, openForOffers, lotStartDate, { from: accountOne });
 
         let lotInfo = await MarketPlace.lots(userLotsIds[5], { from: accountOne });
         assert.equal(lotStartDate, Number(lotInfo.sellStart), "start date of lot is wrong");
@@ -336,7 +348,9 @@ contract("sell NFT functionality", async accounts => {
         const date = new Date();
         let lotStartDate = date.setDate(date.getDate() + 1); // Date.now + 1 day
 
-        await MarketPlace.sell(userLotsIds[6], ERC20Address, lotPrice, lotStartDate, { from: accountOne });
+        let openForOffers = false;
+
+        await MarketPlace.sell(userLotsIds[6], ERC20Address, lotPrice, openForOffers, lotStartDate, { from: accountOne });
 
         let lotInfo = await MarketPlace.lots(userLotsIds[6], { from: accountOne });
         assert.equal(lotStartDate, Number(lotInfo.sellStart), "start date of lot is wrong");
@@ -507,8 +521,10 @@ contract("sell NFT functionality", async accounts => {
         const tokenbits = (new BN(10)).pow(new BN(18));
         let tokensAmount = new BN(200).mul(tokenbits);
 
+        let openForOffers = false;
+
         await MarketPlace.NFT_Sale(ERC1155Address, accThreeNFT1155id, value, 
-            isERC1155, startDate, ERC20Address, tokensAmount, NFTdata, { from: accountThree });
+            isERC1155, startDate, ERC20Address, tokensAmount, openForOffers, NFTdata, { from: accountThree });
 
         let lotLength = await MarketPlace.getLotsLength();
         let lotInfo = await MarketPlace.getLots(lotLength - 1, { from: accountThree });
@@ -533,8 +549,10 @@ contract("sell NFT functionality", async accounts => {
         const tokenbits = (new BN(10)).pow(new BN(18));
         let cryptoAmount = new BN(2).mul(tokenbits);
 
+        let openForOffers = false;
+
         await MarketPlace.NFT_Sale(ERC1155Address, accThreeNFT1155id, value, 
-            isERC1155, startDate, constants.ZERO_ADDRESS, cryptoAmount, NFTdata, { from: accountThree });
+            isERC1155, startDate, constants.ZERO_ADDRESS, cryptoAmount, openForOffers, NFTdata, { from: accountThree });
 
         let lotLength = await MarketPlace.getLotsLength();
         let lotInfo = await MarketPlace.getLots(lotLength - 1, { from: accountThree });
@@ -558,8 +576,10 @@ contract("sell NFT functionality", async accounts => {
 
         let tokensAmount = new BN(0);
 
+        let openForOffers = false;
+
         await MarketPlace.NFT_Sale(ERC1155Address, accThreeNFT1155id, value, 
-            isERC1155, startDate, ERC20Address, tokensAmount, NFTdata, { from: accountThree });
+            isERC1155, startDate, ERC20Address, tokensAmount, openForOffers, NFTdata, { from: accountThree });
 
         let lotLength = await MarketPlace.getLotsLength();
         let lotInfo = await MarketPlace.getLots(lotLength - 1, { from: accountThree });
@@ -581,8 +601,10 @@ contract("sell NFT functionality", async accounts => {
         const tokenbits = (new BN(10)).pow(new BN(18));
         let tokensAmount = new BN(200).mul(tokenbits);
 
+        let openForOffers = false;
+
         await MarketPlace.NFT_Sale(ERC721Address, accThreeNFT721ids[0], value, 
-            isERC1155, startDate, ERC20Address, tokensAmount, NFTdata, { from: accountThree });
+            isERC1155, startDate, ERC20Address, tokensAmount, openForOffers, NFTdata, { from: accountThree });
 
         let lotLength = await MarketPlace.getLotsLength();
         let lotInfo = await MarketPlace.getLots(lotLength - 1, { from: accountThree });
@@ -607,8 +629,10 @@ contract("sell NFT functionality", async accounts => {
         const tokenbits = (new BN(10)).pow(new BN(18));
         let cryptoAmount = new BN(2).mul(tokenbits);
 
+        let openForOffers = false;
+
         await MarketPlace.NFT_Sale(ERC721Address, accThreeNFT721ids[1], value, 
-            isERC1155, startDate, constants.ZERO_ADDRESS, cryptoAmount, NFTdata, { from: accountThree });
+            isERC1155, startDate, constants.ZERO_ADDRESS, cryptoAmount, openForOffers, NFTdata, { from: accountThree });
 
         let lotLength = await MarketPlace.getLotsLength();
         let lotInfo = await MarketPlace.getLots(lotLength - 1, { from: accountThree });

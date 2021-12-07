@@ -187,9 +187,10 @@ contract("proposal NFT functionality", async accounts => {
         let lotStartDate = Math.floor(Date.now() / 1000);
 
         let lotInfo;
+        let openForOffers = true;
 
         for(let i = 0; i < addNFT721Num; i++) {
-            await MarketPlace.sell(userLotsIds[i], constants.ZERO_ADDRESS, lotPrice, lotStartDate, { from: accountTwo });
+            await MarketPlace.sell(userLotsIds[i], constants.ZERO_ADDRESS, lotPrice, openForOffers, lotStartDate, { from: accountTwo });
 
             lotInfo = await MarketPlace.lots(userLotsIds[i], { from: accountTwo });
         
@@ -952,8 +953,10 @@ contract("proposal NFT functionality", async accounts => {
         let lotPrice = (new BN(1)).mul(tokenbits);
         let lotStartDate = Math.floor(Date.now() / 1000);
 
+        let openForOffers = false;
+
         await expectRevert(
-            MarketPlace.sell(accThreeLotsIds[7], constants.ZERO_ADDRESS, lotPrice, lotStartDate, { from: accountThree }),
+            MarketPlace.sell(accThreeLotsIds[7], constants.ZERO_ADDRESS, lotPrice, openForOffers, lotStartDate, { from: accountThree }),
             "revert"
         );
 
