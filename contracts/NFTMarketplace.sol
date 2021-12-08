@@ -431,6 +431,12 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         makeOffer(lot, lotIDs, tokenAddress, amount);
     }
 
+    function exchangeSell(uint256 index, uint256 date, lotType lot, bool openToOffer) internal {
+            lots[index].sellStart = date;
+            lots[index].selling = lot;
+            lots[index].openForOffers = openToOffer;
+    }
+
     /**
      * @param index, lot index what user want sell.
      * @param contractAddress, ERC20 token contract address, zero address, if user want get cryptocurrency for NFT.
@@ -469,9 +475,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
             "Not supported"
         );
         if (price == 0) {
-            lots[index].sellStart = date;
-            lots[index].selling = lotType.Exchange;
-            lots[index].openForOffers = true;
+            exchangeSell(index, date, lotType.Exchange, true);
             emit ExchangeNFT(
                 block.timestamp,
                 index,
@@ -483,11 +487,9 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                 price,
                 lots[index].creationInfo.contractAddress
             ); // set value what send to seller
-            lots[index].sellStart = date;
+            exchangeSell(index, date, lotType.FixedPrice, openForOffers);
             lots[index].price.buyerPrice = price; // set value what send buyer
             lots[index].price.contractAddress = contractAddress;
-            lots[index].selling = lotType.FixedPrice;
-            lots[index].openForOffers = openForOffers;
             emit SellNFT(
                 msg.sender,
                 index,
