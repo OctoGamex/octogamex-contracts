@@ -588,7 +588,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         );
         emit BuyNFT(
             msg.sender,
-            lot.creationInfo.id,
+            index,
             block.timestamp,
             lots[index].creationInfo.amount
         );
