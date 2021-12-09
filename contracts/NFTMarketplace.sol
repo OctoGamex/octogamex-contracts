@@ -524,7 +524,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
             lot.isERC1155
         );
         emit GetBack(
-            lot.creationInfo.id,
+            index,
             block.timestamp,
             lots[index].creationInfo.amount
         );
