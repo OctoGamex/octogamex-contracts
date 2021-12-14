@@ -33,7 +33,8 @@ contract Auction is VariablesTypes {
     event AuctionEnd(
         uint256 indexed dateTime,
         uint256 indexed lotID,
-        uint256 amount
+        uint256 amount,
+        bool isCanceled
     );
 
     function time() external view returns (uint256) {
@@ -322,7 +323,7 @@ contract Auction is VariablesTypes {
         }
         delete lot;
         marketplace.auctionLot(lotID, lot);
-        emit AuctionEnd(block.timestamp, lotID, lot.creationInfo.amount);
+        emit AuctionEnd(block.timestamp, lotID, lot.creationInfo.amount, false);
     }
 
     function finishAuction(uint256 lotID, bytes memory data) external {
@@ -358,6 +359,6 @@ contract Auction is VariablesTypes {
         }
         delete lot;
         marketplace.auctionLot(lotID, lot);
-        emit AuctionEnd(block.timestamp, lotID, lot.creationInfo.amount);
+        emit AuctionEnd(block.timestamp, lotID, lot.creationInfo.amount, true);
     }
 }
