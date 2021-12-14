@@ -18,15 +18,17 @@ contract Auction is VariablesTypes {
     }
 
     event AuctionStart(
-        uint256 indexed dateTime,
         uint256 indexed id,
         address indexed owner,
-        uint256 amount
+        uint256 priceInitial,
+        uint256 priceStepPercent,
+        uint256 deadline
     );
     event BidMaked(
         uint256 indexed dateTime,
         uint256 indexed lotID,
-        address indexed user
+        address indexed user,
+        uint256 amount
     );
     event AuctionEnd(
         uint256 indexed dateTime,
@@ -120,10 +122,11 @@ contract Auction is VariablesTypes {
         }
         marketplace.auctionLot(lotID, lot);
         emit AuctionStart(
-            block.timestamp,
             lotID,
             msg.sender,
-            lot.creationInfo.amount
+            amount,
+            step,
+            endDate
         );
     }
 
@@ -220,7 +223,7 @@ contract Auction is VariablesTypes {
             }
         }
         marketplace.auctionLot(lotID, lot);
-        emit BidMaked(block.timestamp, lotID, msg.sender);
+        emit BidMaked(block.timestamp, lotID, msg.sender, amount);
     }
 
     /**
