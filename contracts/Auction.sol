@@ -223,7 +223,7 @@ contract Auction is VariablesTypes {
             }
         }
         marketplace.auctionLot(lotID, lot);
-        emit BidMaked(block.timestamp, lotID, msg.sender, amount);
+        emit BidMaked(block.timestamp, lotID, msg.sender, msg.value != 0 ? msg.value : amount);
     }
 
     /**
