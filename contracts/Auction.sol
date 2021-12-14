@@ -18,20 +18,23 @@ contract Auction is VariablesTypes {
     }
 
     event AuctionStart(
-        uint256 indexed dateTime,
         uint256 indexed id,
         address indexed owner,
-        uint256 amount
+        uint256 priceInitial,
+        uint256 priceStepPercent,
+        uint256 deadline
     );
     event BidMaked(
         uint256 indexed dateTime,
         uint256 indexed lotID,
-        address indexed user
+        address indexed user,
+        uint256 amount
     );
     event AuctionEnd(
         uint256 indexed dateTime,
         uint256 indexed lotID,
-        uint256 amount
+        uint256 amount,
+        bool isCanceled
     );
 
     function time() external view returns (uint256) {
@@ -120,10 +123,11 @@ contract Auction is VariablesTypes {
         }
         marketplace.auctionLot(lotID, lot);
         emit AuctionStart(
-            block.timestamp,
             lotID,
             msg.sender,
-            lot.creationInfo.amount
+            amount,
+            step,
+            endDate
         );
     }
 
@@ -220,7 +224,7 @@ contract Auction is VariablesTypes {
             }
         }
         marketplace.auctionLot(lotID, lot);
-        emit BidMaked(block.timestamp, lotID, msg.sender);
+        emit BidMaked(block.timestamp, lotID, msg.sender, msg.value != 0 ? msg.value : amount);
     }
 
     /**
@@ -319,7 +323,7 @@ contract Auction is VariablesTypes {
         }
         delete lot;
         marketplace.auctionLot(lotID, lot);
-        emit AuctionEnd(block.timestamp, lotID, lot.creationInfo.amount);
+        emit AuctionEnd(block.timestamp, lotID, lot.creationInfo.amount, false);
     }
 
     function finishAuction(uint256 lotID, bytes memory data) external {
@@ -355,6 +359,6 @@ contract Auction is VariablesTypes {
         }
         delete lot;
         marketplace.auctionLot(lotID, lot);
-        emit AuctionEnd(block.timestamp, lotID, lot.creationInfo.amount);
+        emit AuctionEnd(block.timestamp, lotID, lot.creationInfo.amount, true);
     }
 }
