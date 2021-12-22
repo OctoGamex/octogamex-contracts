@@ -18,7 +18,7 @@ contract Auction is VariablesTypes {
     }
 
     event AuctionStart(
-        uint256 indexed dateTime,
+        uint256 indexed startDate,
         uint256 indexed id,
         address indexed owner,
         uint256 amount
@@ -120,7 +120,7 @@ contract Auction is VariablesTypes {
         }
         marketplace.auctionLot(lotID, lot);
         emit AuctionStart(
-            block.timestamp,
+            startDate,
             lotID,
             msg.sender,
             lot.creationInfo.amount
