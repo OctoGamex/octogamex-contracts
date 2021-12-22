@@ -944,9 +944,9 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                         false
                     )
                 );
-                lotOwner[operator].push(lots.length - 1);
+                lotOwner[from].push(lots.length - 1);
                 emit AddNFT(
-                    operator,
+                    from,
                     msg.sender,
                     id,
                     lots.length - 1,
@@ -992,9 +992,9 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                         false
                     )
                 );
-                lotOwner[operator].push(lots.length - 1);
+                lotOwner[from].push(lots.length - 1);
                 emit AddNFT(
-                    operator,
+                    from,
                     msg.sender,
                     id,
                     lots.length - 1,
