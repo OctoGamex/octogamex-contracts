@@ -39,7 +39,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
     event SellNFT(
         address indexed user,
         uint256 indexed lotID,
-        uint256 indexed datetime,
+        uint256 indexed startDate,
         uint256 amount,
         uint256 price,
         address tokenAddress,
@@ -75,14 +75,14 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         uint256 indexed datetime
     );
     event ExchangeNFT(
-        uint256 indexed dateTime,
+        uint256 indexed startDate,
         uint256 indexed lotID,
         address indexed owner,
         uint256 amount
     );
 
     modifier checkContract(address contractAddress) {
-        require(Address.isContract(contractAddress), "It's not contract");
+        require(Address.isContract(contractAddress), "1");
         _;
     }
 
@@ -104,7 +104,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         external
         onlyOwner
     {
-        require(NFT_Collections[contractNFT] == true, "NFT not supported");
+        require(NFT_Collections[contractNFT] == true, "2");
         collections[contractNFT].commission = commission;
     }
 
@@ -114,7 +114,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
     {
         require(
             NFT_Collections[contractAddress] == true && owner != address(0x0),
-            "NFT not supported"
+            "2"
         );
         collections[contractAddress].owner = owner;
     }
@@ -124,7 +124,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
     {
         require(
             msg.sender == address(auctionContract),
-            "You do not have enough rights"
+            "3"
         );
         lots[lotID] = lot;
     }
@@ -135,7 +135,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
      * 1000 = 100 %.
      */
     function setMarketCommission(uint256 commission) public onlyOwner {
-        require(commission <= 1000, "The commission is too big");
+        require(commission <= 1000, "4");
         marketCommission = commission;
     }
 
@@ -170,7 +170,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
     function setWallet(address newWallet) public onlyOwner {
         require(
             newWallet != address(0x0) && newWallet != marketWallet,
-            "Invalid market address"
+            "5"
         );
         marketWallet = newWallet;
     }
@@ -204,7 +204,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         bool[] memory canTransfer
     ) external onlyOwner checkContract(NFT_Address) {
         for (uint256 i = 0; i < ERC20_Address.length; i++) {
-            require(Address.isContract(ERC20_Address[i]), "It's not contract");
+            require(Address.isContract(ERC20_Address[i]), "1");
             ERC20(ERC20_Address[i]).name();
             ERC20(ERC20_Address[i]).symbol();
             NFT_ERC20_Supports[NFT_Address][ERC20_Address[i]] = canTransfer[i];
@@ -231,7 +231,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
 
     function calculateMarket(uint256 price, uint256 commission)
         internal
-        view
+        pure
         returns (uint256)
     {
         return (price * commission) / 1000;
@@ -293,7 +293,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         lotType typeOfLot,
         bytes memory data
     ) public {
-        require(value > 0 && contractAddress != address(0x0), "Value is 0");
+        require(value > 0 && contractAddress != address(0x0), "6");
         if (isERC1155 == true) {
             sendNFT(
                 contractAddress,
@@ -460,15 +460,10 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         uint256 date
     ) public {
         require(
-            lots[index].selling != lotType.FixedPrice &&
-                lots[index].selling != lotType.Exchange,
-            "Lot is already exhibited"
-        );
-        require(
             lots[index].creationInfo.owner == msg.sender &&
                 lots[index].offered == false &&
                 lots[index].selling == lotType.None, // user must be owner and not added to offer
-            "You are not the owner or lot is selling!"
+            "7"
         );
         require(
             NFT_ERC20_Supports[lots[index].creationInfo.contractAddress][
@@ -476,12 +471,12 @@ contract NFTMarketplace is Ownable, VariablesTypes {
             ] ==
                 true ||
                 contractAddress == address(0x0),
-            "Not supported"
+            "8"
         );
         if (price == 0) {
             exchangeSell(index, date, lotType.Exchange, true);
             emit ExchangeNFT(
-                block.timestamp,
+                date,
                 index,
                 msg.sender,
                 lots[index].creationInfo.amount
@@ -497,7 +492,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
             emit SellNFT(
                 msg.sender,
                 index,
-                block.timestamp,
+                date,
                 lots[index].creationInfo.amount,
                 price,
                 contractAddress,
@@ -517,7 +512,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
      */
     function returnNFT(uint256 index, bytes memory data) internal {
         lotInfo memory lot = lots[index];
-        require(lot.creationInfo.owner == msg.sender, "You are not owner");
+        require(lot.creationInfo.owner == msg.sender, "9");
         delete lots[index];
         sendNFT(
             lot.creationInfo.contractAddress,
@@ -549,12 +544,12 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         require(
             lot.selling == lotType.FixedPrice &&
                 lot.sellStart <= block.timestamp,
-            "Not selling or selling not started"
+            "10"
         );
         delete lots[index];
         if (lot.price.contractAddress == address(0)) {
             // buy by crypto
-            require(msg.value == lot.price.buyerPrice, "Not enought payment");
+            require(msg.value == lot.price.buyerPrice, "11");
             sendCrypto(lot, lot.price.sellerPrice, lot.price.buyerPrice);
         } else {
             // buy by tokens
@@ -624,7 +619,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                 lots[index].selling != lotType.None &&
                 lots[index].selling != lotType.Auction &&
                 lots[index].openForOffers == true,
-            "You not send comission or lot not valid"
+            "12"
         );
         require(
             NFT_ERC20_Supports[lots[index].creationInfo.contractAddress][
@@ -632,14 +627,14 @@ contract NFTMarketplace is Ownable, VariablesTypes {
             ] ==
                 true ||
                 tokenAddress == address(0x0),
-            "Not Supported"
+            "8"
         );
         if (msg.value <= offerCommission) {
             if (lotIndex.length == 0) {
                 // token
                 require(
                     amount > 0 && msg.value == 0,
-                    "You send 0 tokens or send token and crypto"
+                    "13"
                 );
                 sendERC20(tokenAddress, msg.sender, address(this), amount);
                 offers.push(
@@ -663,15 +658,15 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                         lots[lotIndex[i]].creationInfo.owner == msg.sender &&
                             lotIndex[i] != index &&
                             lots[lotIndex[i]].offered == false,
-                        "You are not the owner or wrong lot"
+                        "14"
                     );
                     lots[lotIndex[i]].offered = true;
                 }
                 if (tokenAddress != address(0)) {
                     // nft + token
                     require(
-                        amount > 0 || msg.value == offerCommission,
-                        "You send 0 tokens or don't send commission"
+                        amount > 0 && msg.value == offerCommission,
+                        "15"
                     );
                     sendERC20(tokenAddress, msg.sender, address(this), amount);
                     offers.push(
@@ -693,7 +688,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                     //nft
                     require(
                         msg.value == offerCommission,
-                        "You don't send commission"
+                        "16"
                     );
                     offers.push(
                         offer(
@@ -708,7 +703,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         } else {
             require(
                 tokenAddress == address(0x0),
-                "You try send crypto and tokens"
+                "17"
             );
             if (lotIndex.length != 0) {
                 // crypto with nft
@@ -767,7 +762,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
     function cancelOffer(uint256 index) external {
         require(
             offers[index].owner == msg.sender,
-            "You are not the owner!(cancel offer)"
+            "9"
         );
         offer memory localOffer = offers[index];
         delete offers[index];
@@ -811,7 +806,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         require(
             lots[lotID].creationInfo.owner == msg.sender &&
                 offers[offerID].lotID == lotID,
-            "You are not owner"
+            "9"
         );
         lotInfo memory lot = lots[lotID];
         delete lots[lotID];
@@ -933,7 +928,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
     ) external returns (bytes4) {
         require(
             NFT_Collections[msg.sender] == true,
-            "This collection not supported"
+            "2"
         );
         if (operator != address(this)) {
             if (operator == address(auctionContract)) {
@@ -981,7 +976,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
     ) public virtual returns (bytes4) {
         require(
             NFT_Collections[msg.sender] == true,
-            "This collection not supported"
+            "2"
         );
         if (operator != address(this)) {
             if (operator == address(auctionContract)) {
