@@ -512,7 +512,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
      */
     function returnNFT(uint256 index, bytes memory data) internal {
         lotInfo memory lot = lots[index];
-        require(lot.creationInfo.owner == msg.sender, "9");
+        require(lot.creationInfo.owner == msg.sender && lot.selling != lotType.Auction, "9");
         delete lots[index];
         sendNFT(
             lot.creationInfo.contractAddress,
