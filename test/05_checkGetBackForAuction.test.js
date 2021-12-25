@@ -319,7 +319,11 @@ contract("check that getBack func does not provide an opportunity to pick up lot
 
         let lotId = accOneLotsIds[0];
 
+        console.log(Number(await ERC721.balanceOf(accountOne, { from: accountOne })));
+
         await MarketPlace.getBack(lotId, NFTdata, { from: accountOne });
+
+        console.log(Number(await ERC721.balanceOf(accountOne, { from: accountOne })));
     });
 
     it("make bids for crypto with NFT-721", async () => {
@@ -386,7 +390,11 @@ contract("check that getBack func does not provide an opportunity to pick up lot
 
         let lotId = accOneLotsIds[1];
 
+        console.log(Number(await ERC721.balanceOf(accountOne, { from: accountOne })));
+
         await MarketPlace.getBack(lotId, NFTdata, { from: accountOne });
+
+        console.log(Number(await ERC721.balanceOf(accountOne, { from: accountOne })));
     });
 
     it("getBack NFT 1155 before bids", async () => {
@@ -399,7 +407,11 @@ contract("check that getBack func does not provide an opportunity to pick up lot
 
         let lotId = accTwoLotsIds[1];
 
+        console.log(Number(await ERC1155.balanceOf(accountTwo, accTwoNFT1155id, { from: accountTwo })));
+
         await MarketPlace.getBack(lotId, NFTdata, { from: accountTwo });
+
+        console.log(Number(await ERC1155.balanceOf(accountTwo, accTwoNFT1155id, { from: accountTwo })));
     });
 
     it("make bids for tokens with NFT-1155", async () => {
@@ -457,6 +469,10 @@ contract("check that getBack func does not provide an opportunity to pick up lot
 
         let lotId = accTwoLotsIds[0];
 
+        console.log(Number(await ERC1155.balanceOf(accountTwo, accTwoNFT1155id, { from: accountTwo })));
+
         await MarketPlace.getBack(lotId, NFTdata, { from: accountTwo });
+
+        console.log(Number(await ERC1155.balanceOf(accountTwo, accTwoNFT1155id, { from: accountTwo })));
     });
 })
