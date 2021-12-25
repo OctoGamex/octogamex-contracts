@@ -1,0 +1,17 @@
+1 - It's not contract (on set NFTCollection or ERC20Support)
+2 - NFT not supported (not supported NFT collection on set collection commission or set collection owner)
+3 - You do not have enough rights (on try change lot info if caller not auction contract)
+4 - The commission is too big (when set commission more then 100%, setMarketCommission)
+5 - Invalid market address (on set market wallet which receive commission)
+6 - Wrong add (try send 0 NFT or NFT contract address 0)
+7 - You are not the owner or lot is selling! (try sell or exhange item if you are not owner, nft in offer or sale)
+8 - Not supported (not supported ERC20 tokens for this collection)
+9 - You are not owner (when user try return nft)
+10 - Not selling or selling not started
+11 - Not enought payment (sended not enought cryptocurrency)
+12 - Lot not valid or lot can't take offer
+13 - You send 0 tokens or send token and crypto
+14 - You are not the owner or wrong lot (when try NFT to offer)
+15 - You send 0 tokens or don't send commission
+16 - You don't send commission (when offer have only NFT)
+17 - You try send crypto and tokens (in offer)
