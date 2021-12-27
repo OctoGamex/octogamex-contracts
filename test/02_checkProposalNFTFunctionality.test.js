@@ -742,7 +742,7 @@ contract("proposal NFT functionality", async accounts => {
 
         await expectRevert(
             MarketPlace.cancelOffer(lotOffers[0], { from: accountTwo }),
-            "You are not the owner!(cancel offer)"
+            "revert"
         );
     });
 
@@ -937,7 +937,7 @@ contract("proposal NFT functionality", async accounts => {
 
         await expectRevert(
             MarketPlace.chooseOffer(lotId, lotOffers[0], NFTdata, { from: accountOne }),
-            "You are not owner"
+            "revert"
         );
     });
 

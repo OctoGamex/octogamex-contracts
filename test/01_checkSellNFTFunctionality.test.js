@@ -105,7 +105,7 @@ contract("sell NFT functionality", async accounts => {
     it("expect revert if market wallet equal zero adress", async () => {
         await expectRevert(
             MarketPlace.setWallet(constants.ZERO_ADDRESS, {from: deployer}),
-            "Invalid market address"
+            "revert"
         );
     });
 
@@ -114,7 +114,7 @@ contract("sell NFT functionality", async accounts => {
 
         await expectRevert(
             MarketPlace.setWallet(oldMarketWallet, {from: deployer}),
-            "Invalid market address"
+            "revert"
         );
     });
 
@@ -190,7 +190,7 @@ contract("sell NFT functionality", async accounts => {
 
         await expectRevert(
             MarketPlace.add(constants.ZERO_ADDRESS, NFT1155id, NFT1155value, isERC1155, lotType, NFTdata, { from: accountOne }),
-            'Value is 0'
+            'revert'
         );
     });
 
@@ -201,7 +201,7 @@ contract("sell NFT functionality", async accounts => {
 
         await expectRevert(
             MarketPlace.add(ERC1155Address, NFT1155id, NFT1155value, isERC1155, lotType, NFTdata, { from: accountOne }),
-            'Value is 0'
+            'revert'
         );
     });  
     
@@ -495,7 +495,7 @@ contract("sell NFT functionality", async accounts => {
 
         await expectRevert(
             MarketPlace.buy(userLotsIds[6], NFTdata, { from: accountTwo }),
-            "Not selling or selling not started"
+            "revert"
         );
     });
 
@@ -509,7 +509,7 @@ contract("sell NFT functionality", async accounts => {
 
         await expectRevert(
             MarketPlace.buy(userLotsIds[8], NFTdata, { from: accountTwo }),
-            "Not selling or selling not started"
+            "revert"
         );
     });
 

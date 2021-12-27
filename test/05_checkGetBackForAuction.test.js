@@ -329,7 +329,7 @@ contract("check that getBack func does not provide an opportunity to pick up lot
 
         let balanceAfter = await ERC721.balanceOf(accountOne, { from: accountOne });
         console.log(Number(balanceAfter));
-        assert.equal(balanceBefore, balanceAfter, "balance of NFT is wrong");       
+        assert.equal(balanceBefore, String(balanceAfter), "balance of NFT is wrong");       
     });
 
     it("make bids for crypto with NFT-721", async () => {
@@ -406,7 +406,7 @@ contract("check that getBack func does not provide an opportunity to pick up lot
 
         let balanceAfter = await ERC721.balanceOf(accountOne, { from: accountOne });
         console.log(Number(balanceAfter));
-        assert.equal(balanceBefore, balanceAfter, "balance of NFT is wrong");
+        assert.equal(balanceBefore, String(balanceAfter), "balance of NFT is wrong");
     });
 
     it("getBack NFT 1155 before bids", async () => {
@@ -429,7 +429,7 @@ contract("check that getBack func does not provide an opportunity to pick up lot
 
         let balanceAfter = await ERC1155.balanceOf(accountTwo, accTwoNFT1155id, { from: accountTwo });
         console.log(Number(balanceAfter));
-        assert.equal(balanceBefore, balanceAfter, "balance of NFT is wrong");
+        assert.equal(balanceBefore, String(balanceAfter), "balance of NFT is wrong");
     });
 
     it("make bids for tokens with NFT-1155", async () => {
@@ -497,6 +497,6 @@ contract("check that getBack func does not provide an opportunity to pick up lot
 
         let balanceAfter = await ERC1155.balanceOf(accountTwo, accTwoNFT1155id, { from: accountTwo });
         console.log(Number(balanceAfter));
-        assert.equal(balanceBefore, balanceAfter, "balance of NFT is wrong");
+        assert.equal(balanceBefore, String(balanceAfter), "balance of NFT is wrong");
     });
 })
