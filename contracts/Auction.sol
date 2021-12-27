@@ -94,7 +94,7 @@ contract Auction is VariablesTypes {
             lot.openForOffers
         ) = marketplace.lots(lotID);
         require(
-            lot.creationInfo.owner == msg.sender && step <= 1000 && amount > 0,
+            lot.creationInfo.owner == msg.sender && lot.selling == lotType.None && step <= 1000 && amount > 0,
             "You are not owner or too big a step or start price 0"
         );
         require(
@@ -110,6 +110,7 @@ contract Auction is VariablesTypes {
                 tokenAddress == address(0x0),
             "Not supported ERC20 tokens"
         );
+        lot.selling = lotType.Auction;
         lot.auction = auctionInfo(
             startDate,
             endDate,
