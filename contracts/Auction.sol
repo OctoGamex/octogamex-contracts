@@ -153,7 +153,7 @@ contract Auction is VariablesTypes {
         ) = marketplace.lots(lotID);
         require(
             lot.auction.endAuction > block.timestamp &&
-                lot.auction.startAuction <= block.timestamp,
+                lot.auction.startAuction <= block.timestamp && lot.selling == lotType.Auction,
             "Lot not on auction"
         );
         if (lot.price.contractAddress == address(0x0)) {
@@ -247,7 +247,7 @@ contract Auction is VariablesTypes {
             lot.isERC1155,
             lot.openForOffers
         ) = marketplace.lots(lotID);
-        require(lot.auction.endAuction <= block.timestamp, "Auction not ended");
+        require(lot.auction.endAuction <= block.timestamp && lot.selling == lotType.Auction, "Auction not ended");
         address marketWallet = marketplace.marketWallet();
         if (lot.isERC1155 == true) {
             ERC1155 nft_contract = ERC1155(lot.creationInfo.contractAddress);
@@ -341,7 +341,7 @@ contract Auction is VariablesTypes {
             lot.isERC1155,
             lot.openForOffers
         ) = marketplace.lots(lotID);
-        require(lot.price.sellerPrice == 0, "Lot have bid");
+        require(lot.price.sellerPrice == 0 && lot.selling == lotType.Auction, "Lot have bid");
         if (lot.isERC1155 == true) {
             ERC1155 nft_contract = ERC1155(lot.creationInfo.contractAddress);
             nft_contract.safeTransferFrom(
