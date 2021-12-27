@@ -271,9 +271,9 @@ contract("proposal NFT functionality", async accounts => {
         const tokenbits = (new BN(10)).pow(new BN(18));
         let tokensAmount = new BN(200).mul(tokenbits);
 
-        await MarketPlace.makeOffer(lotId, accOneExchangeNFTindexes, ERC20Address, tokensAmount, { from: accountOne }); // FIX (REMOVE commissionOffer)
+        await MarketPlace.makeOffer(lotId, accOneExchangeNFTindexes, ERC20Address, tokensAmount, { from: accountOne }); 
 
-        await MarketPlace.makeOffer(lotId, accThreeExchangeNFTindexes, ERC20Address, tokensAmount, { from: accountThree }); // FIX (REMOVE commissionOffer)
+        await MarketPlace.makeOffer(lotId, accThreeExchangeNFTindexes, ERC20Address, tokensAmount, { from: accountThree });
 
         let offersAmount = new BN(2);
         let lotOffersInfo = await MarketPlace.getLotsOffers(lotId, { from: accountTwo });
@@ -504,7 +504,7 @@ contract("proposal NFT functionality", async accounts => {
         let tokensAmount = new BN(150).mul(tokenbits);
 
         await MarketPlace.NFT_Offer([ERC1155Address], [accFourNFT1155id], [accFourNFT1155value], 
-            [isERC1155], lotId, ERC20Address, tokensAmount, NFTdata, { from: accountFour });
+            [isERC1155], lotId, ERC20Address, tokensAmount, NFTdata, { from: accountFour, value: commissionOffer });
 
         let lotLength = await MarketPlace.getLotsLength();
         let lotInfo = await MarketPlace.getLots(lotLength - 1, { from: accountFour });  
@@ -572,7 +572,7 @@ contract("proposal NFT functionality", async accounts => {
         let tokensAmount = new BN(150).mul(tokenbits);
 
         await MarketPlace.NFT_Offer([ERC721Address], [accFourNFT721ids[0]], [value], 
-            [isERC1155], lotId, ERC20Address, tokensAmount, NFTdata, { from: accountFour });
+            [isERC1155], lotId, ERC20Address, tokensAmount, NFTdata, { from: accountFour, value: commissionOffer });
 
         let lotLength = await MarketPlace.getLotsLength();
         let lotInfo = await MarketPlace.getLots(lotLength - 1, { from: accountFour });  
