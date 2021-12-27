@@ -94,7 +94,7 @@ contract Auction is VariablesTypes {
             lot.openForOffers
         ) = marketplace.lots(lotID);
         require(
-            lot.creationInfo.owner == msg.sender && step <= 1000 && amount > 0,
+            lot.creationInfo.owner == msg.sender && lot.selling == lotType.None && step <= 1000 && amount > 0,
             "You are not owner or too big a step or start price 0"
         );
         require(
@@ -110,6 +110,7 @@ contract Auction is VariablesTypes {
                 tokenAddress == address(0x0),
             "Not supported ERC20 tokens"
         );
+        lot.selling = lotType.Auction;
         lot.auction = auctionInfo(
             startDate,
             endDate,
@@ -152,7 +153,7 @@ contract Auction is VariablesTypes {
         ) = marketplace.lots(lotID);
         require(
             lot.auction.endAuction > block.timestamp &&
-                lot.auction.startAuction <= block.timestamp,
+                lot.auction.startAuction <= block.timestamp && lot.selling == lotType.Auction,
             "Lot not on auction"
         );
         if (lot.price.contractAddress == address(0x0)) {
@@ -246,7 +247,7 @@ contract Auction is VariablesTypes {
             lot.isERC1155,
             lot.openForOffers
         ) = marketplace.lots(lotID);
-        require(lot.auction.endAuction <= block.timestamp, "Auction not ended");
+        require(lot.auction.endAuction <= block.timestamp && lot.selling == lotType.Auction, "Auction not ended");
         address marketWallet = marketplace.marketWallet();
         if (lot.isERC1155 == true) {
             ERC1155 nft_contract = ERC1155(lot.creationInfo.contractAddress);
@@ -340,7 +341,7 @@ contract Auction is VariablesTypes {
             lot.isERC1155,
             lot.openForOffers
         ) = marketplace.lots(lotID);
-        require(lot.price.sellerPrice == 0, "Lot have bid");
+        require(lot.price.sellerPrice == 0 && lot.selling == lotType.Auction, "Lot have bid");
         if (lot.isERC1155 == true) {
             ERC1155 nft_contract = ERC1155(lot.creationInfo.contractAddress);
             nft_contract.safeTransferFrom(
