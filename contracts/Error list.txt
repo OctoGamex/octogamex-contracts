@@ -15,3 +15,4 @@
 15 - You send 0 tokens or don't send commission
 16 - You don't send commission (when offer have only NFT)
 17 - You try send crypto and tokens (in offer)
+18 - Wrong date
