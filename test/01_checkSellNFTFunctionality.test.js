@@ -621,7 +621,7 @@ contract("sell NFT functionality", async accounts => {
         assert.equal(lotInfo.price.buyerPrice, tokensAmount, "tokens amount is wrong");
     });
 
-    it("check 'NFT_Sale' functionality with NFT-721 for tokens", async () => {
+    it("check 'NFT_Sale' functionality with NFT-721 for crypto", async () => {
         let value = new BN(1);
         let isERC1155 = false;
         let startDate = Math.floor(Date.now() / 1000);

@@ -12,7 +12,7 @@ const {
 } = require('@openzeppelin/test-helpers');
 
 contract("sell NFT with offers functionality", async accounts => {
-    const [deployer, accountOne, accountTwo, accountThree] = accounts;
+    const [deployer, accountOne, accountTwo, accountThree, accountFour] = accounts;
 
     let ERC1155, ERC721, ERC20, MarketPlace;
     let ERC1155Address, ERC721Address, ERC20Address, MarketPlaceAddress;
@@ -91,6 +91,9 @@ contract("sell NFT with offers functionality", async accounts => {
 
         await ERC20.mint(accountThree, tokensAmount, { from: accountThree });
         await ERC20.approve(MarketPlaceAddress, tokensAmount, { from: accountThree });
+
+        await ERC20.mint(accountFour, tokensAmount, { from: accountFour });
+        await ERC20.approve(MarketPlaceAddress, tokensAmount, { from: accountFour });
 
         let canTransfer = true;
 
@@ -197,6 +200,29 @@ contract("sell NFT with offers functionality", async accounts => {
         await MarketPlace.sell(userLotsIds[1], ERC20Address, lotPrice, openForOffers, lotStartDate, { from: accountTwo });
 
         let lotInfo = await MarketPlace.lots(userLotsIds[1], { from: accountTwo });
+        
+        assert.equal(lotInfo.sellStart, lotStartDate, "start date of lot is wrong");
+        assert.equal(lotInfo.price.buyerPrice, lotPrice, "lot price is wrong");
+        assert.equal(lotInfo.price.contractAddress, ERC20Address, "address of price contract is wrong");
+        assert.equal(lotInfo.openForOffers, openForOffers, "open for offers is wrong");       
+    });
+
+    it("sell NFT-721 with proposal for tokens (for calcel)", async () => {
+        const tokenbits = (new BN(10)).pow(new BN(18));
+        let userLotsIds = [];
+        let getInfo = await MarketPlace.getInfo(accountTwo, { from: accountTwo });
+        for(let i = 0; i < getInfo.userLots.length; i++) {
+            userLotsIds.push(Number(getInfo.userLots[i]));
+        }
+
+        let lotPrice = (new BN(10)).mul(tokenbits);
+        let lotStartDate = Math.floor(Date.now() / 1000);
+        
+        let openForOffers = true;
+
+        await MarketPlace.sell(userLotsIds[2], ERC20Address, lotPrice, openForOffers, lotStartDate, { from: accountTwo });
+
+        let lotInfo = await MarketPlace.lots(userLotsIds[2], { from: accountTwo });
         
         assert.equal(lotInfo.sellStart, lotStartDate, "start date of lot is wrong");
         assert.equal(lotInfo.price.buyerPrice, lotPrice, "lot price is wrong");
@@ -359,6 +385,143 @@ contract("sell NFT with offers functionality", async accounts => {
         let lotOffersInfo = await MarketPlace.getLotsOffers(lotId, { from: accountOne });
 
         assert.equal(String(lotOffersInfo.length), offersAmount, "amount of offers is wrong");
+    });
+
+    it("make offer with tokens (for cancel)", async () => {
+        let accTwoLotsIds = [];
+
+        let getInfoAccTwo = await MarketPlace.getInfo(accountTwo, { from: accountTwo });
+
+        for(let i = 0; i < getInfoAccTwo.userLots.length; i++) {
+            accTwoLotsIds.push(Number(getInfoAccTwo.userLots[i]));
+        }
+
+        let lotId = accTwoLotsIds[2];
+
+        let accFourExchangeNFTindexes = [];
+        const tokenbits = (new BN(10)).pow(new BN(18));
+        let tokensAmount = new BN(2).mul(tokenbits);
+
+        await MarketPlace.makeOffer(lotId, accFourExchangeNFTindexes, ERC20Address, 
+                tokensAmount, { from: accountFour });
+
+        let offersAmount = new BN(1);
+        let lotOffersInfo = await MarketPlace.getLotsOffers(lotId, { from: accountFour });
+
+        assert.equal(String(lotOffersInfo.length), offersAmount, "amount of offers is wrong");
+    });
+
+    it("make offer with crypto (for cancel)", async () => {
+        let accTwoLotsIds = [];
+
+        let getInfoAccTwo = await MarketPlace.getInfo(accountTwo, { from: accountTwo });
+
+        for(let i = 0; i < getInfoAccTwo.userLots.length; i++) {
+            accTwoLotsIds.push(Number(getInfoAccTwo.userLots[i]));
+        }
+
+        let lotId = accTwoLotsIds[2];
+
+        let accFourExchangeNFTindexes = [];
+        const tokenbits = (new BN(10)).pow(new BN(18));
+        let tokensAmount = new BN(0);
+        let cryptoProposalAmount = new BN(3).mul(tokenbits);
+
+        await MarketPlace.makeOffer(lotId, accFourExchangeNFTindexes, constants.ZERO_ADDRESS, 
+            tokensAmount, { from: accountFour, value: (Number(commissionOffer) + Number(cryptoProposalAmount)) });
+
+        let offersAmount = new BN(2);
+        let lotOffersInfo = await MarketPlace.getLotsOffers(lotId, { from: accountTwo });
+
+        assert.equal(String(lotOffersInfo.length), offersAmount, "amount of offers is wrong");
+    });
+
+    it("make offer with NFT (for cancel)", async () => {
+        let accTwoLotsIds = [], accThreeLotsIds = [];
+
+        let getInfoAccTwo = await MarketPlace.getInfo(accountTwo, { from: accountTwo });
+        let getInfoAccThree = await MarketPlace.getInfo(accountThree, { from: accountThree });
+
+        for(let i = 0; i < getInfoAccTwo.userLots.length; i++) {
+            accTwoLotsIds.push(Number(getInfoAccTwo.userLots[i]));
+        }
+
+        for(let i = 0; i < getInfoAccThree.userLots.length; i++) {
+            accThreeLotsIds.push(Number(getInfoAccThree.userLots[i]));
+        }
+
+        let accThreeExchangeNFTindexes = accThreeLotsIds.slice(6, 8); // [6, 7]
+        let tokensAmount = new BN(0);
+
+        let lotId = accTwoLotsIds[2];
+
+        await MarketPlace.makeOffer(lotId, accThreeExchangeNFTindexes, constants.ZERO_ADDRESS, 
+            tokensAmount, { from: accountThree, value: commissionOffer });
+
+        let offersAmount = new BN(3);
+        let lotOffersInfo = await MarketPlace.getLotsOffers(lotId, { from: accountTwo });
+
+        assert.equal(String(lotOffersInfo.length), offersAmount, "amount of offers is wrong");
+    });
+
+    it("cancel offer with tokens", async () => {
+        let getInfoAccFour = await MarketPlace.getInfo(accountFour, { from: accountFour });
+        let lotOffers = [];
+        
+        for(let i = 0; i < getInfoAccFour.userOffers.length; i++) {
+            lotOffers.push(Number(getInfoAccFour.userOffers[i]));
+        }
+
+        const tokenbits = (new BN(10)).pow(new BN(18));
+        let tokensAmount = new BN(2).mul(tokenbits);
+
+        let accFourTokensBalanceBefore = await ERC20.balanceOf(accountFour, { from: accountFour });  
+
+        await MarketPlace.cancelOffer(lotOffers[0], { from: accountFour });
+        let accFourTokensBalanceAfter = await ERC20.balanceOf(accountFour, { from: accountFour });
+ 
+        assert.equal((Number(accFourTokensBalanceBefore) + Number(tokensAmount)), accFourTokensBalanceAfter, "balance of tokens after canceled is wrong");
+    });
+
+    it("cancel offer with NFT", async () => {
+        let getInfoAccThree = await MarketPlace.getInfo(accountThree, { from: accountThree });
+        let lotOffers = [];
+        
+        for(let i = 0; i < getInfoAccThree.userOffers.length; i++) {
+            lotOffers.push(Number(getInfoAccThree.userOffers[i]));
+        }
+
+        let offeredNFTAmount = new BN(30); // from "make offer with NFT (for cancel)" [6, 7]
+
+        let accThreeNFTBalanceBefore = await ERC1155.balanceOf(accountThree, accThreeNFT1155id, { from: accountThree });
+
+        await MarketPlace.cancelOffer(lotOffers[lotOffers.length - 1], { from: accountThree });
+        let accThreeNFTBalanceAfter = await ERC1155.balanceOf(accountThree, accThreeNFT1155id, { from: accountThree });
+
+        assert.equal(String(accThreeNFTBalanceBefore.add(offeredNFTAmount)), accThreeNFTBalanceAfter, "offer with NFT is not canceled");
+    });
+
+    it("cancel offer with cryptocurrancy", async () => {
+        let getInfoAccFour = await MarketPlace.getInfo(accountFour, { from: accountFour });
+        let lotOffers = [];
+
+        for(let i = 0; i < getInfoAccFour.userOffers.length; i++) {
+            lotOffers.push(Number(getInfoAccFour.userOffers[i]));
+        }
+
+        const tokenbits = (new BN(10)).pow(new BN(18));
+
+        let cryptoProposalAmount = new BN(3); // from "make offer with crypto (for cancel)"
+        let commision = commissionOffer / tokenbits;
+        
+        let accFourCryptoBalanceBefore = (await web3.eth.getBalance(accountFour) / tokenbits).toFixed(0);
+
+        await MarketPlace.cancelOffer(lotOffers[lotOffers.length - 1], { from: accountFour });
+
+        let accFourCryptoBalanceAfter = (await web3.eth.getBalance(accountFour) / tokenbits).toFixed(0);
+
+        assert.equal((Number(accFourCryptoBalanceBefore) + Number(cryptoProposalAmount) + Number(commision)), accFourCryptoBalanceAfter, 
+            "balance of crypto after canceled is wrong");
     });
 
     it("choose offer with NFT", async () => {
