@@ -101,6 +101,7 @@ contract Auction is VariablesTypes {
             startDate < endDate && startDate >= block.timestamp,
             "Not correct start or end date"
         );
+        require(startDate - block.timestamp <= 2692000 && endDate - startDate <= 7998000, "18");
         require(
             marketplace.NFT_ERC20_Supports(
                 lot.creationInfo.contractAddress,
