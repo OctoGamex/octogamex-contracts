@@ -389,7 +389,8 @@ contract("sell NFT functionality", async accounts => {
         let lotInfo = await MarketPlace.lots(userLotsIds[0], { from: accountTwo });
         let accTwoNFTBalanceBefore = Number(await ERC1155.balanceOf.call(accountTwo, NFT1155id, { from: accountTwo }));
 
-        await MarketPlace.buy(userLotsIds[0], NFTdata, { from: accountTwo, value: lotPrice });
+        let receipt = await MarketPlace.buy(userLotsIds[0], NFTdata, { from: accountTwo, value: lotPrice });
+        console.log("gas used for 1st lot: ", receipt.receipt.gasUsed);
 
         let accTwoNFTBalanceAfter = Number(await ERC1155.balanceOf.call(accountTwo, NFT1155id, { from: accountTwo }));
 
@@ -440,7 +441,8 @@ contract("sell NFT functionality", async accounts => {
 
         let accTwoNFTBalanceBefore = Number(await ERC1155.balanceOf.call(accountTwo, NFT1155id, { from: accountTwo }));
 
-        await MarketPlace.buy(userLotsIds[3], NFTdata, { from: accountTwo, value: lotPrice });
+        let receipt = await MarketPlace.buy(userLotsIds[3], NFTdata, { from: accountTwo, value: lotPrice });
+        console.log("gas used for last lot: ", receipt.receipt.gasUsed);
 
         let accTwoNFTBalanceAfter = Number(await ERC1155.balanceOf.call(accountTwo, NFT1155id, { from: accountTwo }));
 
