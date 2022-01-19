@@ -184,7 +184,8 @@ contract("proposal NFT functionality", async accounts => {
         }
 
         let lotPrice = (new BN(0));
-        let lotStartDate = Math.floor(Date.now() / 1000);
+        let date = await web3.eth.getBlock("latest");
+        let lotStartDate = (new BN(date.timestamp)).add(new BN(5));
 
         let lotInfo;
         let openForOffers = true;

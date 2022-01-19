@@ -170,7 +170,8 @@ contract("sell NFT with offers functionality", async accounts => {
         }
 
         let lotPrice = (new BN(1)).mul(tokenbits);
-        let lotStartDate = Math.floor(Date.now() / 1000);
+        let date = await web3.eth.getBlock("latest");
+        let lotStartDate = (new BN(date.timestamp)).add(new BN(5));
         
         let openForOffers = true;
 
@@ -178,7 +179,7 @@ contract("sell NFT with offers functionality", async accounts => {
 
         let lotInfo = await MarketPlace.lots(userLotsIds[0], { from: accountTwo });
         
-        assert.equal(lotInfo.sellStart, lotStartDate, "start date of lot is wrong");
+        assert.equal(lotInfo.sellStart, String(lotStartDate), "start date of lot is wrong");
         assert.equal(lotInfo.price.buyerPrice, lotPrice, "lot price is wrong");
         assert.equal(lotInfo.price.contractAddress, constants.ZERO_ADDRESS, "address of price contract is wrong");
         assert.equal(lotInfo.openForOffers, openForOffers, "open for offers is wrong");    
@@ -193,7 +194,8 @@ contract("sell NFT with offers functionality", async accounts => {
         }
 
         let lotPrice = (new BN(50)).mul(tokenbits);
-        let lotStartDate = Math.floor(Date.now() / 1000);
+        let date = await web3.eth.getBlock("latest");
+        let lotStartDate = (new BN(date.timestamp)).add(new BN(5));
         
         let openForOffers = true;
 
@@ -201,7 +203,7 @@ contract("sell NFT with offers functionality", async accounts => {
 
         let lotInfo = await MarketPlace.lots(userLotsIds[1], { from: accountTwo });
         
-        assert.equal(lotInfo.sellStart, lotStartDate, "start date of lot is wrong");
+        assert.equal(lotInfo.sellStart, String(lotStartDate), "start date of lot is wrong");
         assert.equal(lotInfo.price.buyerPrice, lotPrice, "lot price is wrong");
         assert.equal(lotInfo.price.contractAddress, ERC20Address, "address of price contract is wrong");
         assert.equal(lotInfo.openForOffers, openForOffers, "open for offers is wrong");       
@@ -216,7 +218,8 @@ contract("sell NFT with offers functionality", async accounts => {
         }
 
         let lotPrice = (new BN(10)).mul(tokenbits);
-        let lotStartDate = Math.floor(Date.now() / 1000);
+        let date = await web3.eth.getBlock("latest");
+        let lotStartDate = (new BN(date.timestamp)).add(new BN(5));
         
         let openForOffers = true;
 
@@ -224,7 +227,7 @@ contract("sell NFT with offers functionality", async accounts => {
 
         let lotInfo = await MarketPlace.lots(userLotsIds[2], { from: accountTwo });
         
-        assert.equal(lotInfo.sellStart, lotStartDate, "start date of lot is wrong");
+        assert.equal(lotInfo.sellStart, String(lotStartDate), "start date of lot is wrong");
         assert.equal(lotInfo.price.buyerPrice, lotPrice, "lot price is wrong");
         assert.equal(lotInfo.price.contractAddress, ERC20Address, "address of price contract is wrong");
         assert.equal(lotInfo.openForOffers, openForOffers, "open for offers is wrong");       
@@ -239,7 +242,8 @@ contract("sell NFT with offers functionality", async accounts => {
         }
 
         let lotPrice = (new BN(2)).mul(tokenbits);
-        let lotStartDate = Math.floor(Date.now() / 1000);
+        let date = await web3.eth.getBlock("latest");
+        let lotStartDate = (new BN(date.timestamp)).add(new BN(5));
         
         let openForOffers = true;
 
@@ -247,7 +251,7 @@ contract("sell NFT with offers functionality", async accounts => {
 
         let lotInfo = await MarketPlace.lots(userLotsIds[0], { from: accountOne });
         
-        assert.equal(lotInfo.sellStart, lotStartDate, "start date of lot is wrong");
+        assert.equal(lotInfo.sellStart, String(lotStartDate), "start date of lot is wrong");
         assert.equal(lotInfo.price.buyerPrice, lotPrice, "lot price is wrong");
         assert.equal(lotInfo.price.contractAddress, constants.ZERO_ADDRESS, "address of price contract is wrong");
         assert.equal(lotInfo.openForOffers, openForOffers, "open for offers is wrong");    
@@ -262,7 +266,8 @@ contract("sell NFT with offers functionality", async accounts => {
         }
 
         let lotPrice = (new BN(150)).mul(tokenbits);
-        let lotStartDate = Math.floor(Date.now() / 1000);
+        let date = await web3.eth.getBlock("latest");
+        let lotStartDate = (new BN(date.timestamp)).add(new BN(5));
         
         let openForOffers = true;
 
@@ -270,7 +275,7 @@ contract("sell NFT with offers functionality", async accounts => {
 
         let lotInfo = await MarketPlace.lots(userLotsIds[1], { from: accountOne });
         
-        assert.equal(lotInfo.sellStart, lotStartDate, "start date of lot is wrong");
+        assert.equal(lotInfo.sellStart, String(lotStartDate), "start date of lot is wrong");
         assert.equal(lotInfo.price.buyerPrice, lotPrice, "lot price is wrong");
         assert.equal(lotInfo.price.contractAddress, ERC20Address, "address of price contract is wrong");
         assert.equal(lotInfo.openForOffers, openForOffers, "open for offers is wrong");       

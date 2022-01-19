@@ -221,7 +221,9 @@ contract("sell NFT functionality", async accounts => {
 
         const tokenbits = (new BN(10)).pow(new BN(18));
         let lotPrice = (new BN(1)).mul(tokenbits);
-        let lotStartDate = Math.floor(Date.now() / 1000);
+        let date = await web3.eth.getBlock("latest");
+        // console.log(date.timestamp);
+        let lotStartDate = (new BN(date.timestamp)).add(new BN(5));
 
         let openForOffers = false;
 
@@ -242,7 +244,8 @@ contract("sell NFT functionality", async accounts => {
 
         const tokenbits = (new BN(10)).pow(new BN(18));
         let lotPrice = (new BN(200)).mul(tokenbits);
-        let lotStartDate = Math.floor(Date.now() / 1000);
+        let date = await web3.eth.getBlock("latest");
+        let lotStartDate = (new BN(date.timestamp)).add(new BN(5));
 
         let openForOffers = false;
 
@@ -283,7 +286,8 @@ contract("sell NFT functionality", async accounts => {
 
         const tokenbits = (new BN(10)).pow(new BN(18));
         let lotPrice = (new BN(1)).mul(tokenbits);
-        let lotStartDate = Math.floor(Date.now() / 1000);
+        let date = await web3.eth.getBlock("latest");
+        let lotStartDate = (new BN(date.timestamp)).add(new BN(5));
 
         let openForOffers = false;
 
@@ -304,7 +308,8 @@ contract("sell NFT functionality", async accounts => {
         }
 
         let lotPrice = (new BN(0));
-        let lotStartDate = Math.floor(Date.now() / 1000);
+        let date = await web3.eth.getBlock("latest");
+        let lotStartDate = (new BN(date.timestamp)).add(new BN(5));
 
         let openForOffers = false;
 
@@ -324,7 +329,8 @@ contract("sell NFT functionality", async accounts => {
         }
 
         let lotPrice = (new BN(0));
-        let lotStartDate = Math.floor(Date.now() / 1000);
+        let date = await web3.eth.getBlock("latest");
+        let lotStartDate = (new BN(date.timestamp)).add(new BN(5));
 
         let openForOffers = false;
 
@@ -345,8 +351,9 @@ contract("sell NFT functionality", async accounts => {
 
         const tokenbits = (new BN(10)).pow(new BN(18));
         let lotPrice = (new BN(1)).mul(tokenbits);
-        const date = new Date();
-        let lotStartDate = date.setDate(date.getDate() + 1); // Date.now + 1 day
+        let date = await web3.eth.getBlock("latest");
+        let oneDay = 1 * 24 * 3600;
+        let lotStartDate = (new BN(date.timestamp)).add(new BN(oneDay));
 
         let openForOffers = false;
 
@@ -518,7 +525,8 @@ contract("sell NFT functionality", async accounts => {
     it("check 'NFT_Sale' functionality with NFT-1155 for tokens", async () => {       
         let value = new BN(25);
         let isERC1155 = true;
-        let startDate = Math.floor(Date.now() / 1000);
+        let date = await web3.eth.getBlock("latest");
+        let startDate = (new BN(date.timestamp)).add(new BN(5));
 
         const tokenbits = (new BN(10)).pow(new BN(18));
         let tokensAmount = new BN(200).mul(tokenbits);
@@ -546,7 +554,8 @@ contract("sell NFT functionality", async accounts => {
     it("check 'NFT_Sale' functionality with NFT-1155 for crypto", async () => {
         let value = new BN(25);
         let isERC1155 = true;
-        let startDate = Math.floor(Date.now() / 1000);
+        let date = await web3.eth.getBlock("latest");
+        let startDate = (new BN(date.timestamp)).add(new BN(5));
 
         const tokenbits = (new BN(10)).pow(new BN(18));
         let cryptoAmount = new BN(2).mul(tokenbits);
@@ -574,7 +583,8 @@ contract("sell NFT functionality", async accounts => {
     it("check 'NFT_Sale' functionality with NFT-1155 for tokens exchange", async () => {       
         let value = new BN(25);
         let isERC1155 = true;
-        let startDate = Math.floor(Date.now() / 1000);
+        let date = await web3.eth.getBlock("latest");
+        let startDate = (new BN(date.timestamp)).add(new BN(5));
 
         let tokensAmount = new BN(0);
 
@@ -598,7 +608,8 @@ contract("sell NFT functionality", async accounts => {
     it("check 'NFT_Sale' functionality with NFT-721 for tokens", async () => {
         let value = new BN(1);
         let isERC1155 = false;
-        let startDate = Math.floor(Date.now() / 1000);
+        let date = await web3.eth.getBlock("latest");
+        let startDate = (new BN(date.timestamp)).add(new BN(5));
 
         const tokenbits = (new BN(10)).pow(new BN(18));
         let tokensAmount = new BN(200).mul(tokenbits);
@@ -626,7 +637,8 @@ contract("sell NFT functionality", async accounts => {
     it("check 'NFT_Sale' functionality with NFT-721 for crypto", async () => {
         let value = new BN(1);
         let isERC1155 = false;
-        let startDate = Math.floor(Date.now() / 1000);
+        let date = await web3.eth.getBlock("latest");
+        let startDate = (new BN(date.timestamp)).add(new BN(5));
 
         const tokenbits = (new BN(10)).pow(new BN(18));
         let cryptoAmount = new BN(2).mul(tokenbits);
