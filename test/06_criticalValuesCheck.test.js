@@ -127,7 +127,7 @@ contract("sell NFT functionality", async accounts => {
         const tokenbits = (new BN(10)).pow(new BN(18));
         let lotPrice = (new BN(1)).mul(tokenbits);
         let date = await web3.eth.getBlock("latest");
-        let lotStartDate = (new BN(date.timestamp)).add(new BN(5));
+        let lotStartDate = (new BN(date.timestamp)).add(new BN(60));
 
         let openForOffers = true;
 
