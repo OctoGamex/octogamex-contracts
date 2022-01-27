@@ -220,7 +220,7 @@ contract("sell NFT functionality", async accounts => {
         }
 
         const tokenbits = (new BN(10)).pow(new BN(18));
-        let lotPrice = (new BN(1)).mul(tokenbits);
+        let lotPrice = (new BN(100)).mul(tokenbits);
         let date = await web3.eth.getBlock("latest");
         // console.log(date.timestamp);
         let lotStartDate = (new BN(date.timestamp)).add(new BN(5));
@@ -391,15 +391,29 @@ contract("sell NFT functionality", async accounts => {
         }
 
         const tokenbits = (new BN(10)).pow(new BN(18));
-        let lotPrice = (new BN(1)).mul(tokenbits);
+        let lotPrice = (new BN(100)).mul(tokenbits);
 
         let lotInfo = await MarketPlace.lots(userLotsIds[0], { from: accountTwo });
         let accTwoNFTBalanceBefore = Number(await ERC1155.balanceOf.call(accountTwo, NFT1155id, { from: accountTwo }));
 
+        let commission = await MarketPlace.marketCommission({ from: deployer });
+
+        let commisionWalletBalanceBefore = await web3.eth.getBalance(deployer);
+        console.log("commission wallet crypto balance before", commisionWalletBalanceBefore / tokenbits);
+
         let receipt = await MarketPlace.buy(userLotsIds[0], NFTdata, { from: accountTwo, value: lotPrice });
+
+        let commisionWalletBalanceAfter = await web3.eth.getBalance(deployer);
+        console.log("commission wallet crypto balance after", commisionWalletBalanceAfter / tokenbits);
+        
         console.log("gas used for 1st lot: ", receipt.receipt.gasUsed);
 
         let accTwoNFTBalanceAfter = Number(await ERC1155.balanceOf.call(accountTwo, NFT1155id, { from: accountTwo }));
+
+        let expectedCommision = (lotPrice.mul(commission)).div(new BN(1000));
+
+        assert.equal((new BN(commisionWalletBalanceBefore)).add(expectedCommision), commisionWalletBalanceAfter, 
+            "crypto commission amount on commission wallet is wrong");
 
         assert.equal((accTwoNFTBalanceBefore + Number(lotInfo.creationInfo.amount)), accTwoNFTBalanceAfter, 
             "NFT was not bought");
@@ -407,6 +421,7 @@ contract("sell NFT functionality", async accounts => {
 
     it("buy NFT for tokens (ERC-20)", async () => {
         await time.increase(time.duration.minutes(5));
+        const tokenbits = (new BN(10)).pow(new BN(18));
 
         let userLotsIds = [];
         let getInfo = await MarketPlace.getInfo(accountOne, { from: accountTwo });
@@ -415,14 +430,28 @@ contract("sell NFT functionality", async accounts => {
             userLotsIds.push(Number(getInfo.userLots[i]));
         }
 
+        let lotPrice = (new BN(200)).mul(tokenbits);
+
         let lotInfo = await MarketPlace.lots(userLotsIds[1], { from: accountTwo });
         let accTwoNFTBalanceBefore = Number(await ERC1155.balanceOf.call(accountTwo, NFT1155id, { from: accountTwo }));
         let accTwoTokensBalBefore = Number(await ERC20.balanceOf.call(accountTwo, { from: accountTwo }));
+
+        let commisionWalletBalanceBefore = await ERC20.balanceOf.call(deployer, { from: deployer });
+        console.log("commission wallet token balance before", Number(commisionWalletBalanceBefore));
 
         await MarketPlace.buy(userLotsIds[1], NFTdata, { from: accountTwo });
 
         let accTwoNFTBalanceAfter = Number(await ERC1155.balanceOf.call(accountTwo, NFT1155id, { from: accountTwo }));
         let accTwoTokensBalAfter = Number(await ERC20.balanceOf.call(accountTwo, { from: accountTwo }));
+
+        let commisionWalletBalanceAfter = await ERC20.balanceOf.call(deployer, { from: deployer });       
+        console.log("commission wallet token balance before", Number(commisionWalletBalanceAfter) / tokenbits);
+
+        let commission = await MarketPlace.marketCommission({ from: deployer });
+        let expectedCommision = (lotPrice.mul(commission)).div(new BN(1000));
+
+        assert.equal((new BN(commisionWalletBalanceBefore)).add(expectedCommision), String(commisionWalletBalanceAfter), 
+            "token commission amount on commission wallet is wrong");
 
         assert.equal((accTwoNFTBalanceBefore + Number(lotInfo.creationInfo.amount)), accTwoNFTBalanceAfter, 
             "NFT was not bought");
