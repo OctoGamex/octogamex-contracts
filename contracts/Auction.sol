@@ -23,7 +23,8 @@ contract Auction is VariablesTypes {
         address indexed owner,
         uint256 priceInitial,
         uint256 priceStepPercent,
-        uint256 deadline
+        uint256 deadline,
+        address tokenAddress
     );
     event BidMaked(
         uint256 indexed dateTime,
