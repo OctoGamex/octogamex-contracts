@@ -132,7 +132,8 @@ contract Auction is VariablesTypes {
             msg.sender,
             amount,
             step,
-            endDate
+            endDate,
+            tokenAddress
         );
     }
 
