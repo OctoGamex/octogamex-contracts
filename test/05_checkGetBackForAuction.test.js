@@ -47,6 +47,15 @@ contract("check that getBack func does not provide an opportunity to pick up lot
 
         Auction = await AuctionContract.new(MarketPlaceAddress, {from: deployer});
         AuctionAddress = Auction.address;
+
+        let canTransfer = true;
+        await MarketPlace.setAuctionContract(AuctionAddress, { from: deployer });
+        await MarketPlace.setNFT_Collection(ERC1155Address, canTransfer, { from: deployer });
+        await MarketPlace.setNFT_Collection(ERC721Address, canTransfer, { from: deployer }); 
+
+        let isERC20Supported = true;
+        await MarketPlace.setERC20_Support(ERC1155Address, [ERC20Address], [isERC20Supported], { from: deployer });
+        await MarketPlace.setERC20_Support(ERC721Address, [ERC20Address], [isERC20Supported], { from: deployer });
     });
 
     it("reset market commission", async () => {
@@ -75,7 +84,7 @@ contract("check that getBack func does not provide an opportunity to pick up lot
         assert.equal(String(receivedMarketWallet), deployer, "market wallet is wrong");
     });
 
-    it("mint, approve & set NFT collection & set auction contract", async () => {
+    it("mint & approve NFT and tokens for users", async () => {
         const tokenbits = (new BN(10)).pow(new BN(18));
         let tokensAmount = new BN(1000).mul(tokenbits);
 
@@ -112,13 +121,7 @@ contract("check that getBack func does not provide an opportunity to pick up lot
         await ERC20.approve(AuctionAddress, tokensAmount, { from: accountTwo });
 
         await ERC20.mint(accountThree, tokensAmount, { from: accountThree });
-        await ERC20.approve(AuctionAddress, tokensAmount, { from: accountThree });
-
-        let canTransfer = true;
-
-        await MarketPlace.setAuctionContract(AuctionAddress, { from: deployer });
-        await MarketPlace.setNFT_Collection(ERC1155Address, canTransfer, { from: deployer });
-        await MarketPlace.setNFT_Collection(ERC721Address, canTransfer, { from: deployer });       
+        await ERC20.approve(AuctionAddress, tokensAmount, { from: accountThree });      
     });
 
     it("users should be able to add NFT ERC-721", async () => {
@@ -173,12 +176,6 @@ contract("check that getBack func does not provide an opportunity to pick up lot
             "before add NFT-1155 to Market Place and after should not be equal (accThree)");
         assert.equal(Number(accThreeBalanceAfterTransfer), (Number(accThreeNFT1155value) * addNFTNum),
         "after add NFT-1155 to Market Place amount is wrong (accThree)");
-    });
-
-    it("set ERC-20 support", async () => {
-        let isERC20Supported = true;
-        await MarketPlace.setERC20_Support(ERC1155Address, [ERC20Address], [isERC20Supported], { from: deployer });
-        await MarketPlace.setERC20_Support(ERC721Address, [ERC20Address], [isERC20Supported], { from: deployer });
     });
 
     it("start auction with start day now for tokens", async () => {

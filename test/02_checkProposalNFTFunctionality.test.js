@@ -39,8 +39,15 @@ contract("proposal NFT functionality", async accounts => {
         ERC20Address = ERC20.address;
 
         MarketPlace = await Marketplace.deployed({from: deployer});
-
         MarketPlaceAddress = MarketPlace.address;
+
+        let canTransfer = true;
+        await MarketPlace.setNFT_Collection(ERC1155Address, canTransfer, { from: deployer });
+        await MarketPlace.setNFT_Collection(ERC721Address, canTransfer, { from: deployer });
+
+        let isERC20Supported = true;
+        await MarketPlace.setERC20_Support(ERC1155Address, [ERC20Address], [isERC20Supported], { from: deployer });
+        await MarketPlace.setERC20_Support(ERC721Address, [ERC20Address], [isERC20Supported], { from: deployer });
     });
 
     it("reset market commission", async () => {
@@ -69,7 +76,7 @@ contract("proposal NFT functionality", async accounts => {
         assert.equal(String(receivedMarketWallet), deployer, "market wallet is wrong");
     });
 
-    it("mint, approve & set NFT collection", async () => {
+    it("mint & approve NFT and tokens for users", async () => {
         const tokenbits = (new BN(10)).pow(new BN(18));
         let tokensAmount = new BN(1000).mul(tokenbits);
 
@@ -109,11 +116,6 @@ contract("proposal NFT functionality", async accounts => {
 
         await ERC20.mint(accountFour, tokensAmount, { from: accountFour });
         await ERC20.approve(MarketPlaceAddress, tokensAmount, { from: accountFour });
-
-        let canTransfer = true;
-
-        await MarketPlace.setNFT_Collection(ERC1155Address, canTransfer, { from: deployer });
-        await MarketPlace.setNFT_Collection(ERC721Address, canTransfer, { from: deployer });
     });
 
     it("users should be able to add NFT ERC-1155", async () => {
@@ -168,12 +170,6 @@ contract("proposal NFT functionality", async accounts => {
 
         assert.notEqual(accTwoBalanceBeforeTransfer, accTwoBalanceAfterTransfer, "before add NFT-721 to Market Place and after should not be equal");
         assert.equal(Number(accTwoBalanceAfterTransfer), (Number(NFT721value) * addNFT721Num), "after add NFT-721 to Market Place amount is wrong");
-    });
-
-    it("set ERC-20 support", async () => {
-        let isERC20Supported = true;
-        await MarketPlace.setERC20_Support(ERC1155Address, [ERC20Address], [isERC20Supported], { from: deployer });
-        await MarketPlace.setERC20_Support(ERC721Address, [ERC20Address], [isERC20Supported], { from: deployer });
     });
 
     it("sell NFT with zero price for proposal", async () => {

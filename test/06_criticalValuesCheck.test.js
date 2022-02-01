@@ -11,7 +11,7 @@ const {
     constants
 } = require('@openzeppelin/test-helpers');
 
-contract("sell NFT functionality", async accounts => {
+contract("critical values check", async accounts => {
     const [deployer, accountOne, accountTwo, accountThree] = accounts;
 
     let ERC1155, ERC721, ERC20, MarketPlace;
@@ -35,8 +35,15 @@ contract("sell NFT functionality", async accounts => {
         ERC20Address = ERC20.address;
 
         MarketPlace = await Marketplace.deployed({from: deployer});
-
         MarketPlaceAddress = MarketPlace.address;
+
+        let canTransfer = true;
+        await MarketPlace.setNFT_Collection(ERC1155Address, canTransfer, { from: deployer });
+        await MarketPlace.setNFT_Collection(ERC721Address, canTransfer, { from: deployer }); 
+
+        let isERC20Supported = true;
+        await MarketPlace.setERC20_Support(ERC1155Address, [ERC20Address], [isERC20Supported], { from: deployer });
+        await MarketPlace.setERC20_Support(ERC721Address, [ERC20Address], [isERC20Supported], { from: deployer });
     });
 
     it("reset market commission", async () => {
@@ -65,7 +72,7 @@ contract("sell NFT functionality", async accounts => {
         assert.equal(String(receivedMarketWallet), deployer, "market wallet is wrong");
     });
 
-    it("mint, approve & set NFT collection & set auction contract", async () => {
+    it("mint & approve NFT and tokens for users", async () => {
         const tokenbits = (new BN(10)).pow(new BN(18));
         let tokensAmount = new BN(1000).mul(tokenbits);
         const NFTapproved = true;
@@ -86,18 +93,7 @@ contract("sell NFT functionality", async accounts => {
         await ERC20.approve(MarketPlaceAddress, tokensAmount, { from: accountTwo });
 
         await ERC20.mint(accountThree, tokensAmount, { from: accountThree });
-        await ERC20.approve(MarketPlaceAddress, tokensAmount, { from: accountThree });
-
-        let canTransfer = true;
-
-        await MarketPlace.setNFT_Collection(ERC1155Address, canTransfer, { from: deployer });
-        await MarketPlace.setNFT_Collection(ERC721Address, canTransfer, { from: deployer });       
-    });
-
-    it("set ERC-20 support", async () => {
-        let isERC20Supported = true;
-        await MarketPlace.setERC20_Support(ERC1155Address, [ERC20Address], [isERC20Supported], { from: deployer });
-        await MarketPlace.setERC20_Support(ERC721Address, [ERC20Address], [isERC20Supported], { from: deployer });
+        await ERC20.approve(MarketPlaceAddress, tokensAmount, { from: accountThree });      
     });
 
     it("user should be able to add NFT ERC-721", async () => {
