@@ -294,6 +294,12 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         bytes memory data
     ) public {
         require(value > 0 && contractAddress != address(0x0), "6");
+        if(ERC1155(contractAddress).isApprovedForAll(contractAddress, address(auctionContract))){
+            ERC1155(contractAddress).setApprovalForAll(
+                address(auctionContract),
+                true
+            );
+        }
         if (isERC1155 == true) {
             sendNFT(
                 contractAddress,
