@@ -27,7 +27,7 @@ contract ERC1155_prod is ERC1155, Ownable {
         require(totalSupply < 1500, "more than 1500");
 
         for (uint i; i < _address.length; i++){
-            _mint(_address[i], _id[i], _amount[i], "");
+            _mint(_address[i], _id[i], _amount[i], data);
             totalSupply = totalSupply + _amount[i];
             tokenIdList[_id[i]] = true;
         }
