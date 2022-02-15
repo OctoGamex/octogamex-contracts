@@ -19,7 +19,7 @@ contract ERC721_prod is ERC721, Ownable {
     }
 
 
-    function mintBatch(address[] calldata _address) external onlyOwner {
+    function batchMint(address[] calldata _address) external onlyOwner {
         require(totalSupply < 1000, "more than 1000");
 
         for (uint i; i < _address.length; i++) {

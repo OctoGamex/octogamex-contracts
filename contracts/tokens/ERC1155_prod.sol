@@ -22,7 +22,7 @@ contract ERC1155_prod is ERC1155, Ownable {
         tokenIdList[_id] = true;
     }
 
-    function mintBatch(address[] calldata _address, uint256[] calldata _id, uint256[] calldata _amount, bytes memory data) external onlyOwner {
+    function batchMint(address[] calldata _address, uint256[] calldata _id, uint256[] calldata _amount, bytes memory data) external onlyOwner {
         require(_address.length == _id.length && _id.length == _amount.length, "arrays must be the same length");
         require(totalSupply < 1500, "more than 1500");
 
