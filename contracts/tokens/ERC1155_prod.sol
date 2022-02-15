@@ -5,31 +5,36 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract ERC1155_prod is ERC1155, Ownable {
+    uint256 public constant TOTAL_SUPPLY_LIMIT = 1500;
+
     uint256 public totalSupply;
-    string  public baseURI;
+    string public baseURI;
 
     mapping(uint256 => bool) private tokenIdList;
 
-    constructor () ERC1155('asd') {
+    constructor (string memory uri_) ERC1155(uri_) {
 
     }
 
     function mint(address _account, uint256 _id, uint256 _amount, bytes memory data) external onlyOwner{
-        require(totalSupply < 1500, "more than 1500");
+        require((totalSupply + _amount) <= TOTAL_SUPPLY_LIMIT, "Maximum total supply is 1500");
 
         _mint(_account, _id, _amount, data);
         totalSupply = totalSupply + _amount;
         tokenIdList[_id] = true;
     }
 
-    function batchMint(address[] calldata _address, uint256[] calldata _id, uint256[] calldata _amount, bytes memory data) external onlyOwner {
-        require(_address.length == _id.length && _id.length == _amount.length, "arrays must be the same length");
-        require(totalSupply < 1500, "more than 1500");
+    function batchMint(address[] calldata _addresses, uint256[] calldata _ids, uint256[] calldata _amounts, bytes memory data) external onlyOwner {
+        require(_addresses.length == _ids.length && _ids.length == _amounts.length, "Arrays must be the same length");
 
-        for (uint i; i < _address.length; i++){
-            _mint(_address[i], _id[i], _amount[i], data);
-            totalSupply = totalSupply + _amount[i];
-            tokenIdList[_id[i]] = true;
+        for (uint8 i = 0; i < _addresses.length; i++) {
+            if (totalSupply + _amounts[i] > TOTAL_SUPPLY_LIMIT) {
+                break;
+            }
+
+            _mint(_addresses[i], _ids[i], _amounts[i], data);
+            totalSupply+= _amounts[i];
+            tokenIdList[_ids[i]] = true;
         }
     }
 
