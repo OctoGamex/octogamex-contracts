@@ -62,7 +62,8 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         uint256 indexed offerID,
         address tokenAddress,
         uint256 tokenAmount,
-        uint256[] itemLotIds
+        uint256[] itemLotIds,
+        uint256 tokenValue
     );
     event ChoosedOffer(
         uint256 indexed lotID,
@@ -438,7 +439,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
             );
             lotIDs[i] = lots.length - 1;
         }
-        makeOffer(lot, lotIDs, tokenAddress, amount);
+        makeOffer(lot, lotIDs, tokenAddress, amount, msg.value);
     }
 
     function exchangeSell(uint256 index, uint256 date, lotType lot, bool openToOffer) internal {
@@ -618,7 +619,8 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         uint256 index,
         uint256[] memory lotIndex,
         address tokenAddress,
-        uint256 amount
+        uint256 amount,
+        uint256 tokenValue
     ) public payable {
         // create offer
         require(
@@ -756,7 +758,8 @@ contract NFTMarketplace is Ownable, VariablesTypes {
             offers.length - 1,
             tokenAddress,
             amount,
-            lotIndex);
+            lotIndex,
+            tokenValue);
     }
 
     /**
