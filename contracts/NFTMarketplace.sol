@@ -626,6 +626,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         address tokenAddress,
         uint256 amount
     ) public payable {
+        uint256 memory value = msg.value;
         // create offer
         require(
             lots[index].creationInfo.contractAddress != address(0x0) &&
@@ -720,6 +721,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
             );
             if (lotIndex.length != 0) {
                 // crypto with nft
+                value = msg.value - offerCommission;
                 offers.push(
                     offer(
                         msg.sender,
@@ -763,7 +765,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
             tokenAddress,
             amount,
             lotIndex,
-            msg.value - offerCommission);
+            value);
     }
 
     /**
