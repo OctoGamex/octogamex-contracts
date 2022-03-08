@@ -62,7 +62,8 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         uint256 indexed offerID,
         address tokenAddress,
         uint256 tokenAmount,
-        uint256[] itemLotIds
+        uint256[] itemLotIds,
+        uint256 tokenValue
     );
     event ChoosedOffer(
         uint256 indexed lotID,
@@ -479,7 +480,12 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                 contractAddress == address(0x0),
             "8"
         );
-        require(date - block.timestamp <= 2692000 && date > block.timestamp, "18");
+        require(date - block.timestamp <= 2692000, "18");
+
+        if(date < block.timestamp){
+            date = block.timestamp;
+        }
+
         if (price == 0) {
             exchangeSell(index, date, lotType.Exchange, true);
             emit ExchangeNFT(
@@ -620,20 +626,21 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         address tokenAddress,
         uint256 amount
     ) public payable {
+        uint256 memory value = msg.value;
         // create offer
         require(
             lots[index].creationInfo.contractAddress != address(0x0) &&
-                lots[index].selling != lotType.None &&
-                lots[index].selling != lotType.Auction &&
-                lots[index].openForOffers == true,
+            lots[index].selling != lotType.None &&
+            lots[index].selling != lotType.Auction &&
+            lots[index].openForOffers == true,
             "12"
         );
         require(
             NFT_ERC20_Supports[lots[index].creationInfo.contractAddress][
-                tokenAddress
+            tokenAddress
             ] ==
-                true ||
-                tokenAddress == address(0x0),
+            true ||
+            tokenAddress == address(0x0),
             "8"
         );
         if (msg.value <= offerCommission) {
@@ -663,8 +670,8 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                 for (uint256 i = 0; i < lotIndex.length; i++) {
                     require(
                         lots[lotIndex[i]].creationInfo.owner == msg.sender &&
-                            lotIndex[i] != index &&
-                            lots[lotIndex[i]].offered == false,
+                        lotIndex[i] != index &&
+                        lots[lotIndex[i]].offered == false,
                         "14"
                     );
                     lots[lotIndex[i]].offered = true;
@@ -714,6 +721,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
             );
             if (lotIndex.length != 0) {
                 // crypto with nft
+                value = msg.value - offerCommission;
                 offers.push(
                     offer(
                         msg.sender,
@@ -756,7 +764,8 @@ contract NFTMarketplace is Ownable, VariablesTypes {
             offers.length - 1,
             tokenAddress,
             amount,
-            lotIndex);
+            lotIndex,
+            value);
     }
 
     /**

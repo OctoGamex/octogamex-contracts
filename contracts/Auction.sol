@@ -99,9 +99,14 @@ contract Auction is VariablesTypes {
             "You are not owner or too big a step or start price 0"
         );
         require(
-            startDate < endDate && startDate >= block.timestamp,
+            startDate < endDate,
             "Not correct start or end date"
         );
+
+        if(startDate < block.timestamp){
+            startDate = block.timestamp;
+        }
+
         require(startDate - block.timestamp <= 2692000 && endDate - startDate <= 7998000, "18");
         require(
             marketplace.NFT_ERC20_Supports(
