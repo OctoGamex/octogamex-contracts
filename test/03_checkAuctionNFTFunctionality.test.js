@@ -631,6 +631,43 @@ contract("auction NFT functionality", async accounts => {
         assert.equal(String(accThreeBalanceBefore), String(accThreeBalanceAfter), "accountThree address tokens didn't return");
     });
 
+    it("expect revert with func finishAuction if lot has bid", async () => {
+        let getInfoAccOne = await MarketPlace.getInfo(accountOne, { from: accountOne });
+
+        let accOneLotsIds = [];      
+
+        for(let i = 0; i < getInfoAccOne.userLots.length; i++) {
+            accOneLotsIds.push(Number(getInfoAccOne.userLots[i]));
+        }
+
+        let lotId = accOneLotsIds[0];
+
+        await expectRevert(
+            Auction.finishAuction(lotId, NFTdata, { from: accountOne }),
+            "Lot have bid"
+        );
+    });
+
+    it("expect revert if tokens amount is zero in func makeBid for tokens", async () => {
+        const tokenbits = (new BN(10)).pow(new BN(18));
+        let getInfoAccTwo = await MarketPlace.getInfo(accountTwo, { from: accountTwo });
+
+        let accTwoLotsIds = [];      
+
+        for(let i = 0; i < getInfoAccTwo.userLots.length; i++) {
+            accTwoLotsIds.push(Number(getInfoAccTwo.userLots[i]));
+        }
+
+        let lotId = accTwoLotsIds[0];
+
+        let firstBidAmount = new BN(0);
+
+        await expectRevert(
+            Auction.makeBid(lotId, firstBidAmount, { from: accountThree }),
+            "revert"
+        );
+    });
+
     it("make bids for tokens with NFT-1155", async () => {
         const tokenbits = (new BN(10)).pow(new BN(18));
         let getInfoAccTwo = await MarketPlace.getInfo(accountTwo, { from: accountTwo });
@@ -667,13 +704,17 @@ contract("auction NFT functionality", async accounts => {
 
         await Auction.makeBid(lotId, thirdBidAmount, { from: accountThree });
 
-        winningBetsNFT1155.push(thirdBidAmount);
-
         lotInfo = await MarketPlace.getLots(lotId, { from: accountTwo });
         assert.equal(lotInfo.auction.lastBid, accountThree, "address of user maked bid is wrong");
 
         let accTwoBalanceAfter = await ERC20.balanceOf(accountTwo, { from: accountTwo });
         assert.equal(String(accTwoBalanceBefore), String(accTwoBalanceAfter), "two address tokens didn't return");
+
+        let fourthBidAmount = (new BN(1)).mul(tokenbits);
+
+        await Auction.makeBid(lotId, fourthBidAmount, { from: accountThree });
+
+        winningBetsNFT1155.push(fourthBidAmount.add(thirdBidAmount));
     });
 
     it("make bids for crypto with NFT-721", async () => {
@@ -721,13 +762,18 @@ contract("auction NFT functionality", async accounts => {
 
         await Auction.makeBid(lotId, tokensAmount, { from: accountThree, value: thirdBidAmount });
 
-        winningBetsNFT721.push(thirdBidAmount);
-
         lotInfo = await MarketPlace.getLots(lotId, { from: accountOne });
         assert.equal(lotInfo.auction.lastBid, accountThree, "address of user maked bid is wrong");
 
         let accFourCryptoBalAfter = (await web3.eth.getBalance(accountFour));
         assert.equal((new BN(accFourCryptoBalAfter)).add(gasFee), accFourCryptoBalBefore, "four address crypto didn't return");
+
+        let fourthBidAmount = new BN(10000);    
+
+        await Auction.makeBid(lotId, tokensAmount, { from: accountThree, value: fourthBidAmount });
+
+        // if the same user makes a bet, the previous bet is not returned to this user, the bets are added
+        winningBetsNFT721.push(fourthBidAmount.add(thirdBidAmount));
     });
 
     it("make bids for crypto with NFT-1155", async () => {
@@ -957,6 +1003,9 @@ contract("auction NFT functionality", async accounts => {
         let bidStepAmount = (firstBidAmount.mul(new BN(lotInfo.auction.step))).div(new BN(1000));
         let secondBibAmount = firstBidAmount.add(bidStepAmount);
 
+        let nextStep = await MarketPlace.getNextStep(lotId, { from: accountThree });
+        assert.equal(String(nextStep), secondBibAmount, "next step is wrong");
+
         await expectRevert( 
             Auction.makeBid(lotId, tokensAmount, { from: accountFour, value: firstBidAmount }),
             "Not enought payment"
@@ -1103,6 +1152,27 @@ contract("auction NFT functionality", async accounts => {
         assert.equal(String(balanceAfter), balanceBefore.add(expectedNFTreturn), "NFT is not returned to balance");
     });
 
+    // commission
+
+    it("reset market commission", async () => {
+        let marketCommission = new BN(0);
+
+        await MarketPlace.setMarketCommission(marketCommission, {from: deployer});
+
+        let receivedMarketCommission = await MarketPlace.marketCommission({from: deployer});
+        assert.equal(Number(receivedMarketCommission), marketCommission, "market comission is wrong");
+    });
+
+    it("reset offer commission", async () => {
+        const tokenbits = (new BN(10)).pow(new BN(18));
+        commissionOffer = new BN(0);
+
+        await MarketPlace.setOfferCommission(commissionOffer, {from: deployer});
+
+        let receivedOfferCommission = await MarketPlace.offerCommission({from: deployer});
+        assert.equal(Number(receivedOfferCommission), commissionOffer, "offer comission is wrong");
+    });
+
     it("check 'createAuction' functionality with NFT-1155 for tokens", async () => {
         let accFourNFT1155value = new BN(100);
         let isERC1155 = true;
@@ -1195,6 +1265,20 @@ contract("auction NFT functionality", async accounts => {
         assert.equal(lotInfo.auction.step, step, "step of auction bids is wrong");
         assert.equal(lotInfo.auction.nextStep, tokensAmount, "amount of tokens is wrong");
         assert.equal(lotInfo.price.contractAddress, ERC20Address, "token address is wrong");
+
+        let getInfoAccFour = await MarketPlace.getInfo(accountFour, { from: accountFour });
+
+        let accFourLotsIds = [];      
+
+        for(let i = 0; i < getInfoAccFour.userLots.length; i++) {
+            accFourLotsIds.push(Number(getInfoAccFour.userLots[i]));
+        }
+
+        let lotId = accFourLotsIds[accFourLotsIds.length - 1];
+
+        await time.increase(time.duration.hours(25));
+
+        await Auction.endAuction(lotId, NFTdata, { from: accountFour });
     });
 
     it("check 'createAuction' functionality with NFT-721 for crypto", async () => {
@@ -1226,6 +1310,18 @@ contract("auction NFT functionality", async accounts => {
         assert.equal(lotInfo.auction.step, step, "step of auction bids is wrong");
         assert.equal(lotInfo.auction.nextStep, cryptoAmount, "amount of tokens is wrong");
         assert.equal(lotInfo.price.contractAddress, constants.ZERO_ADDRESS, "token address is wrong");
+
+        let getInfoAccFour = await MarketPlace.getInfo(accountFour, { from: accountFour });
+
+        let accFourLotsIds = [];      
+
+        for(let i = 0; i < getInfoAccFour.userLots.length; i++) {
+            accFourLotsIds.push(Number(getInfoAccFour.userLots[i]));
+        }
+
+        let lotId = accFourLotsIds[accFourLotsIds.length - 1];
+
+        await Auction.finishAuction(lotId, NFTdata, { from: accountFour });
     });
 
 });

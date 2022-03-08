@@ -330,6 +330,7 @@ contract("check that getBack func does not provide an opportunity to pick up lot
     });
 
     it("make bids for crypto with NFT-721", async () => {
+        await time.increase(time.duration.minutes(1));
         const tokenbits = (new BN(10)).pow(new BN(18));
         let getInfoAccOne = await MarketPlace.getInfo(accountOne, { from: accountOne });
 

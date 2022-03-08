@@ -11,7 +11,8 @@
   },
   "devDependencies": {
     "@openzeppelin/test-helpers": "^0.5.15",
-    "sol-merger": "^3.1.0"
+    "sol-merger": "^3.1.0",
+    "solidity-coverage": "^0.7.18"
   },
   "scripts": {
     "compile": "truffle compile --all",

@@ -245,7 +245,7 @@ contract("sell NFT functionality", async accounts => {
         }
 
         const tokenbits = (new BN(10)).pow(new BN(18));
-        let lotPrice = (new BN(100)).mul(tokenbits);
+        let lotPrice = (new BN(10)).mul(tokenbits);
         let date = await web3.eth.getBlock("latest");
         // console.log(date.timestamp);
         let lotStartDate = (new BN(date.timestamp)).add(new BN(5));
@@ -423,7 +423,7 @@ contract("sell NFT functionality", async accounts => {
         await expectRevert(
             MarketPlace.makeOffer(userLotsIds[0], exchangeNFTindexes, constants.ZERO_ADDRESS, 
                 tokensAmount, { from: accountThree, value: (Number(commissionOffer) + Number(cryptoProposalAmount)) }),
-                "revert"
+                "12" //
         );
     });
     
@@ -438,7 +438,7 @@ contract("sell NFT functionality", async accounts => {
         }
 
         const tokenbits = (new BN(10)).pow(new BN(18));
-        let lotPrice = (new BN(100)).mul(tokenbits);
+        let lotPrice = (new BN(10)).mul(tokenbits);
 
         let lotInfo = await MarketPlace.lots(userLotsIds[0], { from: accountTwo });
         let accTwoNFTBalanceBefore = Number(await ERC1155.balanceOf.call(accountTwo, NFT1155id, { from: accountTwo }));

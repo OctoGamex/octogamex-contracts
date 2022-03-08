@@ -20,7 +20,7 @@ contract("critical values check", async accounts => {
     
     const NFT1155id = new BN(1);
     
-    let addNFT721Num = 101;
+    let addNFT721Num = 11;
     let NFT721ids = []; 
 
     const NFTdata = 0; 
@@ -151,11 +151,13 @@ contract("critical values check", async accounts => {
         let tokensAmount = new BN(0);
         let cryptoProposalAmount = new BN(1).mul(tokenbits);
 
-        let proposalsAmount = 100;
+        let proposalsAmount = 10;
+
+        let priceWithCommission = cryptoProposalAmount.add(commissionOffer);
 
         for(let i = 0; i < proposalsAmount; i++){
             await MarketPlace.makeOffer(lotId, exchangeNFTindexes, constants.ZERO_ADDRESS, 
-                tokensAmount, { from: accountTwo, value: (Number(commissionOffer) + Number(cryptoProposalAmount)) });
+                tokensAmount, { from: accountTwo, value: priceWithCommission });
         }
 
         let offersAmount = new BN(proposalsAmount);
