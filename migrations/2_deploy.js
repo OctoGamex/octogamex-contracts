@@ -13,6 +13,6 @@ module.exports = async function (deployer) {
   await deployer.deploy(ERC1155);
   await deployer.deploy(ERC20);
   await deployer.deploy(ERC721);
-  await deployer.deploy(ERC721_prod);
-  await deployer.deploy(ERC1155_prod);
+  await deployer.deploy(ERC721_prod, "");
+  await deployer.deploy(ERC1155_prod, "");
 };

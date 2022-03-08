@@ -330,13 +330,13 @@ contract("proposal NFT functionality", async accounts => {
         let accThreeExchangeNFTindexes = [];
         const tokenbits = (new BN(10)).pow(new BN(18));
         let tokensAmount = new BN(0);
-        let cryptoProposalAmount = new BN(10).mul(tokenbits);
+        let cryptoProposalAmount = new BN(1).mul(tokenbits);
 
         await MarketPlace.makeOffer(lotId, accOneExchangeNFTindexes, constants.ZERO_ADDRESS, 
-            tokensAmount, { from: accountOne, value: (Number(commissionOffer) + Number(cryptoProposalAmount)) });
+            tokensAmount, { from: accountOne, value: cryptoProposalAmount });
 
         await MarketPlace.makeOffer(lotId, accThreeExchangeNFTindexes, constants.ZERO_ADDRESS, 
-            tokensAmount, { from: accountThree, value: (Number(commissionOffer) + Number(cryptoProposalAmount)) });
+            tokensAmount, { from: accountThree, value: cryptoProposalAmount });
 
         let offersAmount = new BN(2);
         let lotOffersInfo = await MarketPlace.getLotsOffers(lotId, { from: accountTwo });
@@ -475,7 +475,7 @@ contract("proposal NFT functionality", async accounts => {
 
         // accountFour make offer crypto
         await MarketPlace.makeOffer(lotId, accFourExchangeNFTindexes, constants.ZERO_ADDRESS, 
-            accFourTokensAmount, { from: accountFour, value: (Number(commissionOffer) + Number(cryptoProposalAmount)) });  // check offers
+            accFourTokensAmount, { from: accountFour, value: cryptoProposalAmount });  // check offers
 
         let offersAmount = new BN(3);
         let lotOffersInfo = await MarketPlace.getLotsOffers(lotId, { from: accountTwo });
@@ -689,8 +689,7 @@ contract("proposal NFT functionality", async accounts => {
 
         const tokenbits = (new BN(10)).pow(new BN(18));
 
-        let cryptoProposalAmount = new BN(10); // from "make offer with cryptocurrancy"
-        let commision = commissionOffer / tokenbits;
+        let cryptoProposalAmount = new BN(1); // from "make offer with cryptocurrancy"
         
         let accOneCryptoBalanceBefore = (await web3.eth.getBalance(accountOne) / tokenbits).toFixed(0);
 
@@ -698,7 +697,7 @@ contract("proposal NFT functionality", async accounts => {
 
         let accOneCryptoBalanceAfter = (await web3.eth.getBalance(accountOne) / tokenbits).toFixed(0);
 
-        assert.equal((Number(accOneCryptoBalanceBefore) + Number(cryptoProposalAmount) + Number(commision)), accOneCryptoBalanceAfter, 
+        assert.equal(new BN(accOneCryptoBalanceBefore).add(cryptoProposalAmount), accOneCryptoBalanceAfter, 
             "balance of crypto after canceled is wrong");
     });
 
@@ -848,7 +847,7 @@ contract("proposal NFT functionality", async accounts => {
 
         let lotOffers = await MarketPlace.getLotsOffers(lotId, { from: accountTwo });
 
-        let cryptoProposalAmount = new BN(10).mul(tokenbits);
+        let cryptoProposalAmount = new BN(1).mul(tokenbits);
         let receivedCommission = await MarketPlace.marketCommission({ from: accountTwo });
         
         let accTwoCryptoBalanceBefore = (await web3.eth.getBalance(accountTwo));
