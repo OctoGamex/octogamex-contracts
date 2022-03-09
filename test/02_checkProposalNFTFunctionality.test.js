@@ -316,6 +316,27 @@ contract("proposal NFT functionality", async accounts => {
         assert.equal(String(lotOffersInfo.length), offersAmount, "amount of offers is wrong");
     });
 
+    it("check if user who made offer (NFT + tokens) with this NFT cannot put it up for sell", async () => {
+        let accOneLotsIds = [];
+        let getInfoAccOne = await MarketPlace.getInfo(accountOne, { from: accountOne });
+
+        for(let i = 0; i < getInfoAccOne.userLots.length; i++) {
+            accOneLotsIds.push(Number(getInfoAccOne.userLots[i]));
+        }
+
+        const tokenbits = (new BN(10)).pow(new BN(18));
+        let lotPrice = (new BN(1)).mul(tokenbits);
+        let date = await web3.eth.getBlock("latest");
+        let lotStartDate = (new BN(date.timestamp)).add(new BN(30));
+
+        let openForOffers = true;
+
+        await expectRevert(
+            MarketPlace.sell(accOneLotsIds[3], constants.ZERO_ADDRESS, lotPrice, openForOffers, lotStartDate, { from: accountOne }),
+            "revert"
+        );
+    });
+
     it("make offer with cryptocurrancy", async () => {
         let accTwoLotsIds = [];
         let getInfoAccTwo = await MarketPlace.getInfo(accountTwo, { from: accountTwo });
@@ -381,6 +402,27 @@ contract("proposal NFT functionality", async accounts => {
         let lotOffersInfo = await MarketPlace.getLotsOffers(lotId, { from: accountTwo });
 
         assert.equal(String(lotOffersInfo.length), offersAmount, "amount of offers is wrong");
+    });
+
+    it("check if user who made offer (NFT + crypto) with this NFT cannot put it up for sell", async () => {
+        let accOneLotsIds = [];
+        let getInfoAccOne = await MarketPlace.getInfo(accountOne, { from: accountOne });
+
+        for(let i = 0; i < getInfoAccOne.userLots.length; i++) {
+            accOneLotsIds.push(Number(getInfoAccOne.userLots[i]));
+        }
+
+        const tokenbits = (new BN(10)).pow(new BN(18));
+        let lotPrice = (new BN(1)).mul(tokenbits);
+        let date = await web3.eth.getBlock("latest");
+        let lotStartDate = (new BN(date.timestamp)).add(new BN(30));
+
+        let openForOffers = false;
+
+        await expectRevert(
+            MarketPlace.sell(accOneLotsIds[5], constants.ZERO_ADDRESS, lotPrice, openForOffers, lotStartDate, { from: accountOne }),
+            "revert"
+        );
     });
 
     it("shoud NOT make offer with tokens and cryptocurrancy", async () => {
@@ -481,6 +523,48 @@ contract("proposal NFT functionality", async accounts => {
         let lotOffersInfo = await MarketPlace.getLotsOffers(lotId, { from: accountTwo });
 
         assert.equal(String(lotOffersInfo.length), offersAmount, "amount of offers is wrong");
+    });
+
+    it("check if user who made offer (NFT + tokens) with this NFT cannot put it up for sell", async () => {
+        let accOneLotsIds = [];
+        let getInfoAccOne = await MarketPlace.getInfo(accountOne, { from: accountOne });
+
+        for(let i = 0; i < getInfoAccOne.userLots.length; i++) {
+            accOneLotsIds.push(Number(getInfoAccOne.userLots[i]));
+        }
+
+        const tokenbits = (new BN(10)).pow(new BN(18));
+        let lotPrice = (new BN(1)).mul(tokenbits);
+        let date = await web3.eth.getBlock("latest");
+        let lotStartDate = (new BN(date.timestamp)).add(new BN(30));
+
+        let openForOffers = false;
+
+        await expectRevert(
+            MarketPlace.sell(accOneLotsIds[7], constants.ZERO_ADDRESS, lotPrice, openForOffers, lotStartDate, { from: accountOne }),
+            "revert"
+        );
+    });
+
+    it("check if user who made offer (NFT) with this NFT cannot put it up for sell", async () => {
+        let accThreeLotsIds = [];
+        let getInfoAccThree = await MarketPlace.getInfo(accountThree, { from: accountThree });
+
+        for(let i = 0; i < getInfoAccThree.userLots.length; i++) {
+            accThreeLotsIds.push(Number(getInfoAccThree.userLots[i]));
+        }
+
+        const tokenbits = (new BN(10)).pow(new BN(18));
+        let lotPrice = (new BN(1)).mul(tokenbits);
+        let date = await web3.eth.getBlock("latest");
+        let lotStartDate = (new BN(date.timestamp)).add(new BN(30));
+
+        let openForOffers = false;
+
+        await expectRevert(
+            MarketPlace.sell(accThreeLotsIds[7], constants.ZERO_ADDRESS, lotPrice, openForOffers, lotStartDate, { from: accountThree }),
+            "revert"
+        );
     });
 
     it("check 'NFT_Offer' functionality with NFT-1155 for tokens", async () => {
@@ -937,26 +1021,7 @@ contract("proposal NFT functionality", async accounts => {
         );
     });
 
-    it("check if user who made offer cannot put up for sell", async () => {
-        let accThreeLotsIds = [];
-        let getInfoAccThree = await MarketPlace.getInfo(accountThree, { from: accountThree });
-
-        for(let i = 0; i < getInfoAccThree.userLots.length; i++) {
-            accThreeLotsIds.push(Number(getInfoAccThree.userLots[i]));
-        }
-
-        const tokenbits = (new BN(10)).pow(new BN(18));
-        let lotPrice = (new BN(1)).mul(tokenbits);
-        let lotStartDate = Math.floor(Date.now() / 1000);
-
-        let openForOffers = false;
-
-        await expectRevert(
-            MarketPlace.sell(accThreeLotsIds[7], constants.ZERO_ADDRESS, lotPrice, openForOffers, lotStartDate, { from: accountThree }),
-            "revert"
-        );
-
-    });
+    
 
     it("check return of unselected offers", async () => {
         const tokenbits = (new BN(10)).pow(new BN(18));
