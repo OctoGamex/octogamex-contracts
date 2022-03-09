@@ -321,7 +321,7 @@ contract("sell NFT with offers functionality", async accounts => {
         let cryptoProposalAmount = new BN(5).mul(tokenbits);
 
         await MarketPlace.makeOffer(lotId, accThreeExchangeNFTindexes, constants.ZERO_ADDRESS, 
-            tokensAmount, { from: accountThree, value: (Number(commissionOffer) + Number(cryptoProposalAmount)) });
+            tokensAmount, { from: accountThree, value: cryptoProposalAmount });
 
         let offersAmount = new BN(1);
         let lotOffersInfo = await MarketPlace.getLotsOffers(lotId, { from: accountTwo });
@@ -473,7 +473,7 @@ contract("sell NFT with offers functionality", async accounts => {
         let cryptoProposalAmount = new BN(3).mul(tokenbits);
 
         await MarketPlace.makeOffer(lotId, accFourExchangeNFTindexes, constants.ZERO_ADDRESS, 
-            tokensAmount, { from: accountFour, value: (Number(commissionOffer) + Number(cryptoProposalAmount)) });
+            tokensAmount, { from: accountFour, value: cryptoProposalAmount });
 
         let offersAmount = new BN(2);
         let lotOffersInfo = await MarketPlace.getLotsOffers(lotId, { from: accountTwo });
@@ -557,7 +557,6 @@ contract("sell NFT with offers functionality", async accounts => {
         const tokenbits = (new BN(10)).pow(new BN(18));
 
         let cryptoProposalAmount = new BN(3); // from "make offer with crypto (for cancel)"
-        let commision = commissionOffer / tokenbits;
         
         let accFourCryptoBalanceBefore = (await web3.eth.getBalance(accountFour) / tokenbits).toFixed(0);
 
@@ -565,7 +564,7 @@ contract("sell NFT with offers functionality", async accounts => {
 
         let accFourCryptoBalanceAfter = (await web3.eth.getBalance(accountFour) / tokenbits).toFixed(0);
 
-        assert.equal((Number(accFourCryptoBalanceBefore) + Number(cryptoProposalAmount) + Number(commision)), accFourCryptoBalanceAfter, 
+        assert.equal((Number(accFourCryptoBalanceBefore) + Number(cryptoProposalAmount)), accFourCryptoBalanceAfter, 
             "balance of crypto after canceled is wrong");
     });
 

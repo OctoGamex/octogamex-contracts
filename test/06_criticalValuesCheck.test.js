@@ -153,11 +153,9 @@ contract("critical values check", async accounts => {
 
         let proposalsAmount = 10;
 
-        let priceWithCommission = cryptoProposalAmount.add(commissionOffer);
-
         for(let i = 0; i < proposalsAmount; i++){
             await MarketPlace.makeOffer(lotId, exchangeNFTindexes, constants.ZERO_ADDRESS, 
-                tokensAmount, { from: accountTwo, value: priceWithCommission });
+                tokensAmount, { from: accountTwo, value: cryptoProposalAmount });
         }
 
         let offersAmount = new BN(proposalsAmount);
@@ -177,7 +175,6 @@ contract("critical values check", async accounts => {
         const tokenbits = (new BN(10)).pow(new BN(18));
 
         let cryptoProposalAmount = new BN(1);
-        let commision = commissionOffer / tokenbits;
         
         let cryptoBalanceBefore = (await web3.eth.getBalance(accountTwo) / tokenbits).toFixed(0);
 
@@ -186,7 +183,7 @@ contract("critical values check", async accounts => {
 
         let cryptoBalanceAfter = (await web3.eth.getBalance(accountTwo) / tokenbits).toFixed(0);
 
-        assert.equal((Number(cryptoBalanceBefore) + Number(cryptoProposalAmount) + Number(commision)), cryptoBalanceAfter, 
+        assert.equal((Number(cryptoBalanceBefore) + Number(cryptoProposalAmount)), cryptoBalanceAfter, 
             "balance of crypto after canceled is wrong");
     });
 
