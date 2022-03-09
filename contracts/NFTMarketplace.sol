@@ -480,11 +480,12 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                 contractAddress == address(0x0),
             "8"
         );
-        require(date - block.timestamp <= 2692000, "18");
 
         if(date < block.timestamp){
             date = block.timestamp;
         }
+
+        require(date - block.timestamp <= 2692000, "18");
 
         if (price == 0) {
             exchangeSell(index, date, lotType.Exchange, true);
@@ -748,7 +749,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                             currency(
                                 address(0),
                                 calculateCommission(
-                                    msg.value - offerCommission,
+                                    msg.value,
                                     lots[index].creationInfo.contractAddress
                                 ),
                                 msg.value
