@@ -706,22 +706,28 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                 tokenAddress == address(0x0),
                 "17"
             );
-            if(lotIndex.length > 0 && msg.value == offerCommission){
-                //nft
-                require(
-                    msg.value == offerCommission,
-                    "16"
-                );
-                offers.push(
-                    offer(
-                        msg.sender,
-                        index,
-                        lotIndex,
-                        currency(address(0), 0, 0)
-                    )
-                );
-            } else {
-                if (lotIndex.length != 0) {
+            if(lotIndex.length != 0) {
+                for (uint256 i = 0; i < lotIndex.length; i++) {
+                    require(
+                        lots[lotIndex[i]].creationInfo.owner == msg.sender &&
+                        lotIndex[i] != index &&
+                        lots[lotIndex[i]].offered == false,
+                        "14"
+                    );
+                    lots[lotIndex[i]].offered = true;
+                }
+
+                if(msg.value == offerCommission) {
+                    //nft
+                    offers.push(
+                        offer(
+                            msg.sender,
+                            index,
+                            lotIndex,
+                            currency(address(0), 0, 0)
+                        )
+                    );
+                } else {
                     // crypto with nft
                     cryptoValue = msg.value - offerCommission;
                     offers.push(
@@ -739,26 +745,25 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                             )
                         )
                     );
-                } else {
-                    // crypto
-                    offers.push(
-                        offer(
-                            msg.sender,
-                            index,
-                            lotIndex,
-                            currency(
-                                address(0),
-                                calculateCommission(
-                                    msg.value,
-                                    lots[index].creationInfo.contractAddress
-                                ),
-                                msg.value
-                            )
-                        )
-                    );
                 }
+            }else {
+                // crypto
+                offers.push(
+                    offer(
+                        msg.sender,
+                        index,
+                        lotIndex,
+                        currency(
+                            address(0),
+                            calculateCommission(
+                                msg.value,
+                                lots[index].creationInfo.contractAddress
+                            ),
+                            msg.value
+                        )
+                    )
+                );
             }
-
         }
         offerOwner[msg.sender].push(offers.length - 1);
         lotOffers[index].push(offers.length - 1);
