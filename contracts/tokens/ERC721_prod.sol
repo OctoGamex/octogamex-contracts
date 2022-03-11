@@ -3,7 +3,7 @@ pragma solidity ^0.8.7;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract ERC721_prod is ERC721('Asd', "ASD"), Ownable {
+contract ERC721_prod is ERC721('Octo Test Collection', "OTC"), Ownable {
     uint256 public constant TOTAL_SUPPLY_LIMIT = 1000;
 
     uint256 public totalSupply;
