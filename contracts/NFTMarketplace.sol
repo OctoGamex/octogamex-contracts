@@ -719,6 +719,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
 
                 if(msg.value == offerCommission) {
                     //nft
+                    cryptoValue = msg.value - offerCommission;
                     offers.push(
                         offer(
                             msg.sender,
