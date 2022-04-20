@@ -94,6 +94,7 @@ contract Auction is VariablesTypes {
             lot.isERC1155,
             lot.openForOffers
         ) = marketplace.lots(lotID);
+        require(step >= 10, "step must be >= 10" );
         require(
             lot.creationInfo.owner == msg.sender && lot.selling == lotType.None && step <= 1000 && amount > 0,
             "You are not owner or too big a step or start price 0"
