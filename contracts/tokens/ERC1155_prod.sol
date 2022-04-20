@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract ERC1155_prod is ERC1155, Ownable {
-    uint256 public constant TOTAL_SUPPLY_LIMIT = 1500;
+    uint256 public constant TOTAL_SUPPLY_LIMIT = 10000;
     string public name = "Octo Test Collection";
     string public symbol = "OTC";
 
