@@ -712,9 +712,12 @@ contract("auction NFT functionality", async accounts => {
 
         let fourthBidAmount = (new BN(1)).mul(tokenbits);
 
-        await Auction.makeBid(lotId, fourthBidAmount, { from: accountThree });
-
-        winningBetsNFT1155.push(fourthBidAmount.add(thirdBidAmount));
+        await expectRevert(
+            Auction.makeBid(lotId, fourthBidAmount, { from: accountThree }),
+            "revert"
+        );
+        // winningBetsNFT1155.push(fourthBidAmount.add(thirdBidAmount));
+        winningBetsNFT1155.push(thirdBidAmount);
     });
 
     it("make bids for crypto with NFT-721", async () => {
@@ -770,10 +773,14 @@ contract("auction NFT functionality", async accounts => {
 
         let fourthBidAmount = new BN(10000);    
 
-        await Auction.makeBid(lotId, tokensAmount, { from: accountThree, value: fourthBidAmount });
+        await expectRevert(
+            Auction.makeBid(lotId, tokensAmount, { from: accountThree, value: fourthBidAmount }),
+            "revert"
+        )
 
         // if the same user makes a bet, the previous bet is not returned to this user, the bets are added
-        winningBetsNFT721.push(fourthBidAmount.add(thirdBidAmount));
+        // winningBetsNFT721.push(fourthBidAmount.add(thirdBidAmount));
+        winningBetsNFT721.push(thirdBidAmount);
     });
 
     it("make bids for crypto with NFT-1155", async () => {

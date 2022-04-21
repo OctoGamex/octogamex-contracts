@@ -191,7 +191,7 @@ contract("Auction: check bids amount with zero steps", async accounts => {
 
         let lotStartDate = contractDate.add(tenSecond);
         let lotEndDate = lotStartDate.add(new BN(oneDay)); // in one day after start auction
-        let step = new BN(0); 
+        let step = new BN(10); 
         const tokenbits = (new BN(10)).pow(new BN(18));
         let tokensAmount = new BN(100).mul(tokenbits);
 
@@ -223,7 +223,7 @@ contract("Auction: check bids amount with zero steps", async accounts => {
 
         let lotStartDate = contractDate.add(tenSecond);
         let lotEndDate = lotStartDate.add(new BN(twoDays)); // in two days after start auction
-        let step = new BN(0);
+        let step = new BN(10);
         const tokenbits = (new BN(10)).pow(new BN(18));
         let cryptoAmount = new BN(2).mul(tokenbits);
 
@@ -255,7 +255,7 @@ contract("Auction: check bids amount with zero steps", async accounts => {
 
         let lotStartDate = contractDate.add(tenSecond);
         let lotEndDate = lotStartDate.add(new BN(oneDay)); // in one day after start auction
-        let step = new BN(0);
+        let step = new BN(10);
         const tokenbits = (new BN(10)).pow(new BN(18));
         let tokensAmount = new BN(25).mul(tokenbits);
 
@@ -287,7 +287,7 @@ contract("Auction: check bids amount with zero steps", async accounts => {
 
         let lotStartDate = contractDate.add(tenSecond);
         let lotEndDate = lotStartDate.add(new BN(twoDays)); // in two days after start auction
-        let step = new BN(0);
+        let step = new BN(10);
         const tokenbits = (new BN(10)).pow(new BN(18));
         let cryptoAmount = new BN(2).mul(tokenbits);
 
