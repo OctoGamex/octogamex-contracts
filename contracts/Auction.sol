@@ -165,12 +165,11 @@ contract Auction is VariablesTypes {
                 lot.auction.startAuction <= block.timestamp && lot.selling == lotType.Auction,
             "Lot not on auction"
         );
+        require(lot.auction.lastBid != msg.sender, "you are already the owner of the last bid");
+
         if (lot.price.contractAddress == address(0x0)) {
-            if (lot.auction.lastBid != msg.sender) {
-                require(
-                    msg.value >= lot.auction.nextStep,
-                    "Not enought payment"
-                );
+//!            if (lot.auction.lastBid != msg.sender) {
+                require(msg.value >= lot.auction.nextStep, "Not enought payment");
                 lot.auction.nextStep =
                     msg.value +
                     (msg.value * lot.auction.step) /
@@ -186,25 +185,26 @@ contract Auction is VariablesTypes {
                     msg.value
                 );
                 lot.auction.lastBid = msg.sender;
-            } else {
-                uint256 newPrice = lot.price.buyerPrice + msg.value;
-                lot.price = currency(
-                    address(0x0),
-                    newPrice -
-                        (newPrice * marketplace.marketCommission()) /
-                        1000,
-                    newPrice
-                );
-                lot.auction.nextStep =
-                    newPrice +
-                    (newPrice * lot.auction.step) /
-                    1000;
-            }
+//!           }
+//!            else {
+//!                uint256 newPrice = lot.price.buyerPrice + msg.value;
+//!                lot.price = currency(
+//!                    address(0x0),
+//!                    newPrice -
+//!                        (newPrice * marketplace.marketCommission()) /
+//!                        1000,
+//!                    newPrice
+//!                );
+//!                lot.auction.nextStep =
+//!                    newPrice +
+//!                    (newPrice * lot.auction.step) /
+//!                    1000;
+//!            }
         } else {
             require(amount > 0, "You send 0 tokens!");
             ERC20 tokenContract = ERC20(lot.price.contractAddress);
             tokenContract.transferFrom(msg.sender, address(this), amount);
-            if (lot.auction.lastBid != msg.sender) {
+//!            if (lot.auction.lastBid != msg.sender) {
                 require(amount >= lot.auction.nextStep, "Not enought payment");
                 if (lot.price.sellerPrice != 0) {
                     tokenContract.transfer(
@@ -222,18 +222,19 @@ contract Auction is VariablesTypes {
                     (amount * lot.auction.step) /
                     1000;
                 lot.auction.lastBid = msg.sender;
-            } else {
-                uint256 newPrice = lot.price.buyerPrice + amount;
-                lot.price.buyerPrice = newPrice;
-                lot.price.sellerPrice =
-                    newPrice -
-                    (newPrice * marketplace.marketCommission()) /
-                    1000;
-                lot.auction.nextStep =
-                    newPrice +
-                    (newPrice * lot.auction.step) /
-                    1000;
-            }
+//!            }
+//!            else {
+//!                uint256 newPrice = lot.price.buyerPrice + amount;
+//!                lot.price.buyerPrice = newPrice;
+//!                lot.price.sellerPrice =
+//!                    newPrice -
+//!                    (newPrice * marketplace.marketCommission()) /
+//!                    1000;
+//!                lot.auction.nextStep =
+//!                    newPrice +
+//!                    (newPrice * lot.auction.step) /
+//!                    1000;
+//!            }
         }
         marketplace.auctionLot(lotID, lot);
         emit BidMaked(block.timestamp, lotID, msg.sender, msg.value != 0 ? msg.value : amount);
