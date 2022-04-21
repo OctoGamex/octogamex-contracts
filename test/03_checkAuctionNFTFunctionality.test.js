@@ -772,7 +772,7 @@ contract("auction NFT functionality", async accounts => {
         assert.equal((new BN(accFourCryptoBalAfter)).add(gasFee), accFourCryptoBalBefore, "four address crypto didn't return");
 
         let fourthBidAmount = new BN(10000);    
-
+        
         await expectRevert(
             Auction.makeBid(lotId, tokensAmount, { from: accountThree, value: fourthBidAmount }),
             "revert"

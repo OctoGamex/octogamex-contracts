@@ -174,7 +174,34 @@ contract("Auction: check bids amount with zero steps", async accounts => {
         "after add NFT-1155 to Market Place amount is wrong (accThree)");
     });
 
-    it("start auction NFT-721 with zero steps for tokens", async () => {
+    it("expect revert if param step is slow than 10 in func 'startAuction'", async () => {
+        let getInfoAccOne = await MarketPlace.getInfo(accountOne, { from: accountOne });
+
+        let accOneLotsIds = [];      
+
+        for(let i = 0; i < getInfoAccOne.userLots.length; i++) {
+            accOneLotsIds.push(Number(getInfoAccOne.userLots[i]));
+        }
+
+        let lotId = accOneLotsIds[0];
+
+        let contractDate = await Auction.time();
+        let oneDay = 1 * 24 * 3600;
+        let tenSecond = new BN(10);
+
+        let lotStartDate = contractDate.add(tenSecond);
+        let lotEndDate = lotStartDate.add(new BN(oneDay)); // in one day after start auction
+        let step = new BN(9); 
+        const tokenbits = (new BN(10)).pow(new BN(18));
+        let tokensAmount = new BN(100).mul(tokenbits);
+
+        await expectRevert(
+            Auction.startAuction(lotId, lotStartDate, lotEndDate, step, ERC20Address, tokensAmount, { from: accountOne }),
+            "revert"
+        );
+    });
+
+    it("start auction NFT-721 for tokens", async () => {
         let getInfoAccOne = await MarketPlace.getInfo(accountOne, { from: accountOne });
 
         let accOneLotsIds = [];      
@@ -206,7 +233,7 @@ contract("Auction: check bids amount with zero steps", async accounts => {
         assert.equal(lotInfo.price.contractAddress, ERC20Address, "token address is wrong");
     });
 
-    it("start auction NFT-721 with zero steps for cryptocurrancy", async () => {
+    it("start auction NFT-721 for cryptocurrancy", async () => {
         let getInfoAccOne = await MarketPlace.getInfo(accountOne, { from: accountOne });
 
         let accOneLotsIds = [];      
@@ -238,7 +265,7 @@ contract("Auction: check bids amount with zero steps", async accounts => {
         assert.equal(lotInfo.price.contractAddress, constants.ZERO_ADDRESS, "token address is wrong");
     });
 
-    it("start auction NFT-1155 with zero steps for tokens", async () => {
+    it("start auction NFT-1155 for tokens", async () => {
         let getInfoAccTwo = await MarketPlace.getInfo(accountTwo, { from: accountTwo });
 
         let accTwoLotsIds = [];      
@@ -270,7 +297,7 @@ contract("Auction: check bids amount with zero steps", async accounts => {
         assert.equal(lotInfo.price.contractAddress, ERC20Address, "token address is wrong");
     });
 
-    it("start auction NFT-1155 with zero steps for crypto", async () => {
+    it("start auction NFT-1155 for crypto", async () => {
         let getInfoAccTwo = await MarketPlace.getInfo(accountTwo, { from: accountTwo });
 
         let accTwoLotsIds = [];      
