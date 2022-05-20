@@ -168,9 +168,22 @@ contract("sell NFT functionality", async accounts => {
         let addNFTNum = 8; // max 10
         let lotType = 0; // lotType.None
 
-        for(let i = 0; i < addNFTNum; i++) {
-            await MarketPlace.add(ERC1155Address, NFT1155id, NFT1155value, isERC1155, lotType, NFTdata, { from: accountOne });
-        }      
+        let receipt;
+        let date;
+        for(let i = 0; i < addNFTNum; i++) {           
+            receipt = await MarketPlace.add(ERC1155Address, NFT1155id, NFT1155value, isERC1155, lotType, NFTdata, { from: accountOne });
+            date = (await web3.eth.getBlock("latest")).timestamp;
+
+            expectEvent(receipt, 'AddNFT', {
+                user: accountOne,
+                contractAddress: ERC1155Address,
+                NFT_ID: NFT1155id,
+                lotID: new BN(i),
+                datetime: new BN(date),
+                amount: NFT1155value,
+                typeOfLot: new BN(lotType)
+            });
+        }     
 
         let accOneBalanceAfterTransfer = await ERC1155.balanceOf.call(MarketPlaceAddress, NFT1155id, { from: accountOne });
 
@@ -183,8 +196,19 @@ contract("sell NFT functionality", async accounts => {
         let NFT721value = new BN(1);
         let isERC1155 = false;
         let lotType = 0; // lotType.None
-
-        await MarketPlace.add(ERC721Address, NFT721id, NFT721value, isERC1155, lotType, NFTdata, { from: accountOne });
+        
+        let receipt = await MarketPlace.add(ERC721Address, NFT721id, NFT721value, isERC1155, lotType, NFTdata, { from: accountOne });
+        let date = (await web3.eth.getBlock("latest")).timestamp;
+        
+        expectEvent(receipt, 'AddNFT', {
+            user: accountOne,
+            contractAddress: ERC721Address,
+            NFT_ID: NFT721id,
+            lotID: new BN(8),
+            datetime: new BN(date),
+            amount: NFT721value,
+            typeOfLot: new BN(lotType)
+        });
 
         let accOneBalanceAfterTransfer = await ERC721.balanceOf.call(MarketPlaceAddress, { from: accountOne });
 

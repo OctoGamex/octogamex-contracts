@@ -128,10 +128,23 @@ contract("proposal NFT functionality", async accounts => {
         let addNFTNum = 10; // max 10
         let lotType = 3; // lotType.Exchange
 
+        let receipt;
+        let date;
         for(let i = 0; i < addNFTNum; i++) {
-            await MarketPlace.add(ERC1155Address, accOneNFT1155id, accOneNFT1155value, isERC1155, lotType, NFTdata, { from: accountOne });
+            receipt = await MarketPlace.add(ERC1155Address, accOneNFT1155id, accOneNFT1155value, isERC1155, lotType, NFTdata, { from: accountOne });
+            date = (await web3.eth.getBlock("latest")).timestamp;
             await MarketPlace.add(ERC1155Address, accThreeNFT1155id, accThreeNFT1155value, isERC1155, lotType, NFTdata, { from: accountThree });
-        }        
+
+            expectEvent(receipt, 'AddNFT', {
+                user: accountOne,
+                contractAddress: ERC1155Address,
+                NFT_ID: accOneNFT1155id,
+                lotID: ((i == 0) ? new BN(i) : (i == 1) ? new BN(i + 1) : new BN(i * 2)),
+                datetime: new BN(date),
+                amount: accOneNFT1155value,
+                typeOfLot: new BN(lotType)
+            });
+        } 
 
         let accOneBalanceAfterTransfer = await ERC1155.balanceOf.call(MarketPlaceAddress, accOneNFT1155id, { from: accountOne });
         let accThreeBalanceAfterTransfer = await ERC1155.balanceOf.call(MarketPlaceAddress, accThreeNFT1155id, { from: accountThree });
@@ -153,8 +166,21 @@ contract("proposal NFT functionality", async accounts => {
         let isERC1155 = false;
         let lotType = 3; // lotType.Exchange
 
-        for(let i = 0; i < addNFT721Num; i++) {
-            await MarketPlace.add(ERC721Address, NFT721ids[i], NFT721value, isERC1155, lotType, NFTdata, { from: accountTwo });
+        let receipt;
+        let date;
+        for(let i = 0; i < addNFT721Num; i++) {           
+            receipt = await MarketPlace.add(ERC721Address, NFT721ids[i], NFT721value, isERC1155, lotType, NFTdata, { from: accountTwo });
+            date = (await web3.eth.getBlock("latest")).timestamp;
+
+            expectEvent(receipt, 'AddNFT', {
+                user: accountTwo,
+                contractAddress: ERC721Address,
+                NFT_ID: NFT721ids[i],
+                lotID: new BN(i + 20), // addNFTNum * 2 (ERC1155 from accountOne & accountThree)
+                datetime: new BN(date),
+                amount: NFT721value,
+                typeOfLot: new BN(lotType)
+            });
         }
 
         let userLotsIds = [];
