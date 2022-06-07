@@ -29,6 +29,20 @@ contract NFTMarketplace is Ownable, VariablesTypes {
     mapping(address => bool) public collectionAdmin;
     mapping(address => bool) public commissionAdmin;
 
+    event commissionMarket(
+        uint256 commisssion
+    );
+    event commissionCollection(
+        address contractNFT,
+        uint256 commisssion
+    );
+    event collectionAdd(
+        address auctionContract,
+        bool canTransfer
+    );
+    event commissionOffer(
+        uint256 commisssion
+    );
     event AddNFT(
         address user,
         address contractAddress,
@@ -131,6 +145,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
     {
         require(NFT_Collections[contractNFT] == true && collections[contractNFT].owner != address(0x0), "2");
         collections[contractNFT].commission = commission;
+        emit commissionCollection(contractNFT, commission);
     }
 
     function setCollectionOwner(address contractAddress, address owner)
@@ -162,6 +177,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
     function setMarketCommission(uint256 commission) public onlyAdminCommission {
         require(commission <= 1000, "4");
         marketCommission = commission;
+        emit commissionMarket(marketCommission);
     }
 
     /**
@@ -169,6 +185,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
      */
     function setOfferCommission(uint256 comission) public onlyAdminCommission {
         offerCommission = comission;
+        emit commissionOffer(offerCommission);
     }
 
     function calculateCommission(uint256 price, address collectionCommission)
@@ -215,6 +232,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
             address(auctionContract),
             true
         );
+        emit collectionAdd(contractAddress, canTransfer);
     }
 
     /**
@@ -1052,13 +1070,13 @@ contract NFTMarketplace is Ownable, VariablesTypes {
      * @param data, data what can be added to transaction.
      * @notice Need for receive many NFT1155 with difference id.
      */
-    function onERC1155BatchReceived(
+     function onERC1155BatchReceived(
          address operator,
          address from,
          uint256[] calldata ids,
          uint256[] calldata values,
          bytes calldata data
-     ) external pure returns (bytes4) {   //todo=================
+     ) external pure returns (bytes4) {
          return
              bytes4(
                  keccak256(
