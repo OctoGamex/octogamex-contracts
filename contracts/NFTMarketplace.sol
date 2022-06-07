@@ -104,12 +104,12 @@ contract NFTMarketplace is Ownable, VariablesTypes {
     }
 
     modifier onlyAdminCollection() {
-        require(collectionAdmin[msg.sender] || msg.sender == owner(), '1');
+        require(collectionAdmin[msg.sender] || msg.sender == owner(), "19");
         _;
     }
 
     modifier onlyAdminCommission() {
-        require(commissionAdmin[msg.sender] || msg.sender == owner(), '1');
+        require(commissionAdmin[msg.sender] || msg.sender == owner(), "19");
         _;
     }
 
@@ -123,16 +123,16 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         setWallet(wallet);
     }
 
-    function setCollectionAdmin(address _address, bool param) external onlyOwner{
+    function setCollectionAdmin(address _address, bool _isAdmin) external onlyOwner{
         require(_address != address(0), "0");
-        require(param != collectionAdmin[_address], "2");
-        collectionAdmin[_address] = param;
+        require(_isAdmin != collectionAdmin[_address], "0");
+        collectionAdmin[_address] = _isAdmin;
     }
 
-    function setCommissionAdmin(address _address, bool param) external onlyOwner {
+    function setCommissionAdmin(address _address, bool _isAdmin) external onlyOwner {
         require(_address != address(0), "0");
-        require(param != commissionAdmin[_address], "2");
-        commissionAdmin[_address] = param;
+        require(_isAdmin != commissionAdmin[_address], "0");
+        commissionAdmin[_address] = _isAdmin;
     }
 
     function setAuctionContract(address contractAddress) external onlyOwner {
@@ -725,6 +725,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                         amount > 0 && msg.value == offerCommission,
                         "15"
                     );
+                    cryptoValue = msg.value - offerCommission;
                     sendERC20(tokenAddress, msg.sender, address(this), amount);
                     offers.push(
                         offer(
