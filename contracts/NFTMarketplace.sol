@@ -26,7 +26,23 @@ contract NFTMarketplace is Ownable, VariablesTypes {
     mapping(address => bool) public NFT_Collections; // if return true, then NFT stay on this contract, else revert transaction
     mapping(address => mapping(address => bool)) public NFT_ERC20_Supports; // NFT address => ERC20 tokens address => does supported
     mapping(address => collectionInfo) public collections; // collection comission in percents
+    mapping(address => bool) public collectionAdmin;
+    mapping(address => bool) public commissionAdmin;
 
+    event commissionMarket(
+        uint256 commisssion
+    );
+    event commissionCollection(
+        address contractNFT,
+        uint256 commisssion
+    );
+    event collectionAdd(
+        address auctionContract,
+        bool canTransfer
+    );
+    event commissionOffer(
+        uint256 commisssion
+    );
     event AddNFT(
         address user,
         address contractAddress,
@@ -87,6 +103,16 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         _;
     }
 
+    modifier onlyAdminCollection() {
+        require(collectionAdmin[msg.sender] || msg.sender == owner(), "19");
+        _;
+    }
+
+    modifier onlyAdminCommission() {
+        require(commissionAdmin[msg.sender] || msg.sender == owner(), "19");
+        _;
+    }
+
     constructor(
         uint256 commission,
         uint256 commissionOffer,
@@ -97,21 +123,34 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         setWallet(wallet);
     }
 
+    function setCollectionAdmin(address _address, bool _isAdmin) external onlyOwner{
+        require(_address != address(0), "0");
+        require(_isAdmin != collectionAdmin[_address], "0");
+        collectionAdmin[_address] = _isAdmin;
+    }
+
+    function setCommissionAdmin(address _address, bool _isAdmin) external onlyOwner {
+        require(_address != address(0), "0");
+        require(_isAdmin != commissionAdmin[_address], "0");
+        commissionAdmin[_address] = _isAdmin;
+    }
+
     function setAuctionContract(address contractAddress) external onlyOwner {
         auctionContract = Auction(contractAddress);
     }
 
     function setCollectionCommission(address contractNFT, uint256 commission)
         external
-        onlyOwner
+        onlyAdminCommission
     {
         require(NFT_Collections[contractNFT] == true && collections[contractNFT].owner != address(0x0), "2");
         collections[contractNFT].commission = commission;
+        emit commissionCollection(contractNFT, commission);
     }
 
     function setCollectionOwner(address contractAddress, address owner)
         external
-        onlyOwner
+        onlyAdminCommission
     {
         require(
             NFT_Collections[contractAddress] == true && owner != address(0x0),
@@ -135,16 +174,18 @@ contract NFTMarketplace is Ownable, VariablesTypes {
      * 100 = 10 %.
      * 1000 = 100 %.
      */
-    function setMarketCommission(uint256 commission) public onlyOwner {
+    function setMarketCommission(uint256 commission) public onlyAdminCommission {
         require(commission <= 1000, "4");
         marketCommission = commission;
+        emit commissionMarket(marketCommission);
     }
 
     /**
      * @param comission, amount of cryptocurrency what users pay for offers.
      */
-    function setOfferCommission(uint256 comission) public onlyOwner {
+    function setOfferCommission(uint256 comission) public onlyAdminCommission {
         offerCommission = comission;
+        emit commissionOffer(offerCommission);
     }
 
     function calculateCommission(uint256 price, address collectionCommission)
@@ -183,7 +224,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
      */
     function setNFT_Collection(address contractAddress, bool canTransfer)
         external
-        onlyOwner
+        onlyAdminCollection
         checkContract(contractAddress)
     {
         NFT_Collections[contractAddress] = canTransfer;
@@ -191,6 +232,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
             address(auctionContract),
             true
         );
+        emit collectionAdd(contractAddress, canTransfer);
     }
 
     /**
@@ -203,7 +245,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         address NFT_Address,
         address[] memory ERC20_Address,
         bool[] memory canTransfer
-    ) external onlyOwner checkContract(NFT_Address) {
+    ) external onlyAdminCollection checkContract(NFT_Address) {
         for (uint256 i = 0; i < ERC20_Address.length; i++) {
             require(Address.isContract(ERC20_Address[i]), "1");
             ERC20(ERC20_Address[i]).name();
@@ -683,6 +725,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                         amount > 0 && msg.value == offerCommission,
                         "15"
                     );
+                    cryptoValue = msg.value - offerCommission;
                     sendERC20(tokenAddress, msg.sender, address(this), amount);
                     offers.push(
                         offer(
@@ -903,21 +946,6 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         emit ChoosedOffer(lotID, offerID, block.timestamp);
     }
 
-    function getLotsOffers(uint256 indexes)
-        external
-        view
-        returns (uint256[] memory getLot)
-    {
-        getLot = lotOffers[indexes];
-    }
-
-    function getLots(uint256 indexes)
-        external
-        view
-        returns (lotInfo memory getLot)
-    {
-        getLot = lots[indexes];
-    }
 
     function getLotsLength() external view returns (uint256 length) {
         length = lots.length;
@@ -1043,18 +1071,18 @@ contract NFTMarketplace is Ownable, VariablesTypes {
      * @param data, data what can be added to transaction.
      * @notice Need for receive many NFT1155 with difference id.
      */
-    // function onERC1155BatchReceived(
-    //     address operator,
-    //     address from,
-    //     uint256[] calldata ids,
-    //     uint256[] calldata values,
-    //     bytes calldata data
-    // ) external pure returns (bytes4) {
-    //     return
-    //         bytes4(
-    //             keccak256(
-    //                 "onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"
-    //             )
-    //         );
-    // }
+     function onERC1155BatchReceived(
+         address operator,
+         address from,
+         uint256[] calldata ids,
+         uint256[] calldata values,
+         bytes calldata data
+     ) external pure returns (bytes4) {
+         return
+             bytes4(
+                 keccak256(
+                     "onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"
+                 )
+             );
+     }
 }

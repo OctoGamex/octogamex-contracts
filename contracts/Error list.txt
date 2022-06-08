@@ -1,3 +1,4 @@
+0 - Is the zero address or status admin is alredy correct
 1 - It's not contract (on set NFTCollection or ERC20Support)
 2 - NFT not supported (not supported NFT collection on set collection commission or set collection owner)
 3 - You do not have enough rights (on try change lot info if caller not auction contract)
@@ -16,3 +17,4 @@
 16 - You don't send commission (when offer have only NFT)
 17 - You try send crypto and tokens (in offer)
 18 - Wrong date
+19 - Caller is not the owner or admin
