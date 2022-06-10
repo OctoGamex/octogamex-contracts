@@ -14,7 +14,7 @@ const {
 
 contract("collection commission functionality", async accounts => {
     // commission - wallet for collection commission
-    const [deployer, commissionNFT1155, commissionNFT721, accountOne, accountTwo, accountThree, accountFour] = accounts;
+    const [deployer, walletCommission1155, walletCommission721, accountOne, accountTwo, accountThree, accountFour] = accounts;
 
     let ERC1155, ERC721, ERC20, MarketPlace, Auction;
     let ERC1155Address, ERC721Address, ERC20Address, MarketPlaceAddress, AuctionAddress;
@@ -60,47 +60,47 @@ contract("collection commission functionality", async accounts => {
         await MarketPlace.setERC20_Support(ERC1155Address, [ERC20Address], [isERC20Supported], { from: deployer });
         await MarketPlace.setERC20_Support(ERC721Address, [ERC20Address], [isERC20Supported], { from: deployer });
 
-        // await MarketPlace.setCollectionOwner(ERC1155Address, commissionNFT1155, { from: deployer });
+        // await MarketPlace.setCollectionOwner(ERC1155Address, walletCommission1155, { from: deployer });
     });
 
     it("expect revert if setCollectionOwner func call not owner for NFT 1155", async () => {
         await expectRevert(
-            MarketPlace.setCollectionOwner(ERC1155Address, commissionNFT1155, { from: commissionNFT1155 }),
-            "Ownable: caller is not the owner"
+            MarketPlace.setCollectionOwner(ERC1155Address, walletCommission1155, { from: walletCommission1155 }),
+            "19"
         );
     });
 
     it("expect revert if setCollectionOwner func call not owner for NFT 1155", async () => {
         await expectRevert(
-            MarketPlace.setCollectionCommission(ERC1155Address, collectionCommission, { from: commissionNFT1155 }),
-            "Ownable: caller is not the owner"
+            MarketPlace.setCollectionCommission(ERC1155Address, collectionCommission, { from: walletCommission1155 }),
+            "19"
         );
     });
 
     it("expect revert if setCollectionOwner func call not owner for NFT 721", async () => {
         await expectRevert(
-            MarketPlace.setCollectionOwner(ERC721Address, commissionNFT721, { from: commissionNFT721 }),
-            "Ownable: caller is not the owner"
+            MarketPlace.setCollectionOwner(ERC721Address, walletCommission721, { from: walletCommission721 }),
+            "19"
         );
     });
 
     it("expect revert if setCollectionOwner func call not owner for NFT 721", async () => {
         await expectRevert(
-            MarketPlace.setCollectionCommission(ERC721Address, collectionCommission, { from: commissionNFT721 }),
-            "Ownable: caller is not the owner"
+            MarketPlace.setCollectionCommission(ERC721Address, collectionCommission, { from: walletCommission721 }),
+            "19"
         );
     });
 
     it("expect revert func setCollectionOwner if setNFT_Collection is false for NFT 1155", async () => {
         await expectRevert(
-            MarketPlace.setCollectionOwner(ERC1155Address, commissionNFT1155, { from: deployer }),
+            MarketPlace.setCollectionOwner(ERC1155Address, walletCommission1155, { from: deployer }),
             "revert"
         );
     });
 
     it("expect revert func setCollectionOwner if setNFT_Collection is false for NFT 721", async () => {
         await expectRevert(
-            MarketPlace.setCollectionOwner(ERC721Address, commissionNFT721, { from: deployer }),
+            MarketPlace.setCollectionOwner(ERC721Address, walletCommission721, { from: deployer }),
             "revert"
         );
     });
@@ -119,15 +119,87 @@ contract("collection commission functionality", async accounts => {
         );
     });
 
-    it("setNFT_Collection, setCollectionOwner & setCollectionCommission", async () => {
+    it("set NFT collections & set wallets for commission of collections", async () => {
         let canTransfer = true;
         await MarketPlace.setNFT_Collection(ERC1155Address, canTransfer, { from: deployer });
         await MarketPlace.setNFT_Collection(ERC721Address, canTransfer, { from: deployer });
 
-        await MarketPlace.setCollectionOwner(ERC1155Address, commissionNFT1155, { from: deployer });
-        await MarketPlace.setCollectionOwner(ERC721Address, commissionNFT721, { from: deployer });
+        // 1155
+        let coll_1155_InfoBefore = await MarketPlace.collections(ERC1155Address, { from: deployer });
+        let initColl_1155_Wallet = coll_1155_InfoBefore.owner;
+
+        assert.equal(initColl_1155_Wallet, constants.ZERO_ADDRESS, 
+            "expect initial wallet for commission is equal to zero address");
+
+        // 721
+        let coll_721_InfoBefore = await MarketPlace.collections(ERC721Address, { from: deployer });
+        let initColl_721_Wallet = coll_721_InfoBefore.owner;
+    
+        assert.equal(initColl_721_Wallet, constants.ZERO_ADDRESS, 
+            "expect initial wallet for commission is equal to zero address");
+
+        await MarketPlace.setCollectionOwner(ERC1155Address, walletCommission1155, { from: deployer });
+        await MarketPlace.setCollectionOwner(ERC721Address, walletCommission721, { from: deployer });
+
+        // 1155
+        let coll_1155_InfoAfter = await MarketPlace.collections(ERC1155Address, { from: deployer });
+        let newColl_1155_Wallet = coll_1155_InfoAfter.owner;
+
+        assert.equal(newColl_1155_Wallet, walletCommission1155, "wallet for collection commission is wrong");
+
+        // 721
+        let coll_721_InfoAfter = await MarketPlace.collections(ERC721Address, { from: deployer });
+        let newColl_721_Wallet = coll_721_InfoAfter.owner;
+
+        assert.equal(newColl_721_Wallet, walletCommission721, "wallet for collection commission is wrong");
+    });
+
+    it("set collection commission", async () => {
+        // 1155
+        let coll_1155_InfoBefore = await MarketPlace.collections(ERC1155Address, { from: deployer });
+        let initColl_1155_Commission = coll_1155_InfoBefore.commission;
+
+        assert.equal(initColl_1155_Commission, 0, 
+            "expect initial commission for collection is equal to zero");
+
+        // 721
+        let coll_721_InfoBefore = await MarketPlace.collections(ERC721Address, { from: deployer });
+        let initColl_721_Commission = coll_721_InfoBefore.commission;
+    
+        assert.equal(initColl_721_Commission, 0, 
+            "expect initial commission for collection is equal to zero");
 
         await MarketPlace.setCollectionCommission(ERC1155Address, collectionCommission, { from: deployer });
         await MarketPlace.setCollectionCommission(ERC721Address, collectionCommission, { from: deployer });
+
+        // 1155
+        let coll_1155_InfoAfter = await MarketPlace.collections(ERC1155Address, { from: deployer });
+        let newColl_1155_Commission = coll_1155_InfoAfter.commission;
+
+        assert.equal(newColl_1155_Commission, Number(collectionCommission), "commission for ERC-1155 collection is wrong");
+
+        // 721
+        let coll_721_InfoAfter = await MarketPlace.collections(ERC721Address, { from: deployer });
+        let newColl_721_Commission = coll_721_InfoAfter.commission;
+
+        assert.equal(newColl_721_Commission, Number(collectionCommission), "commission for ERC-721 collection is wrong");
+    });
+
+    it("expect revert if collection ERC-1155 commission is more than 100%", async () => {
+        let wrongCollCommission = new BN(1001);
+
+        await expectRevert(
+            MarketPlace.setCollectionCommission(ERC1155Address, wrongCollCommission, { from: deployer }),
+            "revert"
+        )     
+    });
+
+    it("expect revert if collection ERC-721 commission is more than 100%", async () => {
+        let wrongCollCommission = new BN(1001);
+
+        await expectRevert(
+            MarketPlace.setCollectionCommission(ERC721Address, wrongCollCommission, { from: deployer }),
+            "revert"
+        )
     });
 });

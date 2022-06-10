@@ -148,7 +148,7 @@ contract("sell NFT with offers functionality", async accounts => {
             userLotsIds.push(Number(getInfo.userLots[i]));
         }
 
-        let lotInfo = await MarketPlace.getLots([userLotsIds[0]], { from: accountTwo });  
+        let lotInfo = await MarketPlace.lots([userLotsIds[0]], { from: accountTwo });  
         assert.equal(accountTwo, lotInfo.creationInfo.owner, "lot information is wrong");
 
         let accTwoBalanceAfterTransfer = await ERC721.balanceOf.call(MarketPlaceAddress, { from: accountTwo });

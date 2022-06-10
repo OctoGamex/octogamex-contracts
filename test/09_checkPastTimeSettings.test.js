@@ -108,7 +108,7 @@ contract("check if time is less than block time", async accounts => {
             userLotsIds.push(Number(getInfo.userLots[i]));
         }
         
-        let lotInfo = await MarketPlace.getLots([userLotsIds[0]], { from: accountOne });  
+        let lotInfo = await MarketPlace.lots([userLotsIds[0]], { from: accountOne });  
         assert.equal(accountOne, lotInfo.creationInfo.owner, "lot information is wrong");
 
         let accOneBalanceAfterTransfer = await ERC721.balanceOf.call(MarketPlaceAddress, { from: accountOne });
@@ -217,7 +217,7 @@ contract("check if time is less than block time", async accounts => {
         await Auction.startAuction(lotId, lotStartDate, lotEndDate, step, ERC20Address, tokensAmount, { from: accountOne });
         let latestBlock = await web3.eth.getBlock("latest");
 
-        let lotInfo = await MarketPlace.getLots(lotId, { from: accountOne });
+        let lotInfo = await MarketPlace.lots(lotId, { from: accountOne });
 
         assert.equal(lotInfo.auction.startAuction, latestBlock.timestamp, "first lot start date is wrong");
         assert.equal(lotInfo.auction.endAuction, lotEndDate, "first lot end date is wrong");
@@ -296,7 +296,7 @@ contract("check if time is less than block time", async accounts => {
 
         await Auction.startAuction(lotId, lotStartDate, lotEndDate, step, ERC20Address, tokensAmount, { from: accountTwo });
         let latestBlock = await web3.eth.getBlock("latest");
-        let lotInfo = await MarketPlace.getLots(lotId, { from: accountTwo });
+        let lotInfo = await MarketPlace.lots(lotId, { from: accountTwo });
 
         assert.equal(lotInfo.auction.startAuction, latestBlock.timestamp, "first lot start date is wrong");
         assert.equal(lotInfo.auction.endAuction, lotEndDate, "first lot end date is wrong");

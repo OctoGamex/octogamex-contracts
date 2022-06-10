@@ -124,13 +124,13 @@ contract NFTMarketplace is Ownable, VariablesTypes {
     }
 
     function setCollectionAdmin(address _address, bool _isAdmin) external onlyOwner{
-        require(_address != address(0), "0");
+        // require(_address != address(0), "0");
         require(_isAdmin != collectionAdmin[_address], "0");
         collectionAdmin[_address] = _isAdmin;
     }
 
     function setCommissionAdmin(address _address, bool _isAdmin) external onlyOwner {
-        require(_address != address(0), "0");
+        // require(_address != address(0), "0");
         require(_isAdmin != commissionAdmin[_address], "0");
         commissionAdmin[_address] = _isAdmin;
     }
@@ -1063,6 +1063,14 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         return 0x150b7a02; // bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"))
     }
 
+    function getLotsOffers(uint256 indexes)
+        external
+        view
+        returns (uint256[] memory getLot)
+    {
+        getLot = lotOffers[indexes];
+    }
+
     /**
      * @param operator, user address who transfer NFT to contract.
      * @param from, user address from which NFT was sended.
@@ -1071,18 +1079,18 @@ contract NFTMarketplace is Ownable, VariablesTypes {
      * @param data, data what can be added to transaction.
      * @notice Need for receive many NFT1155 with difference id.
      */
-     function onERC1155BatchReceived(
-         address operator,
-         address from,
-         uint256[] calldata ids,
-         uint256[] calldata values,
-         bytes calldata data
-     ) external pure returns (bytes4) {
-         return
-             bytes4(
-                 keccak256(
-                     "onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"
-                 )
-             );
-     }
+    //  function onERC1155BatchReceived(
+    //      address operator,
+    //      address from,
+    //      uint256[] calldata ids,
+    //      uint256[] calldata values,
+    //      bytes calldata data
+    //  ) external pure returns (bytes4) {
+    //      return
+    //          bytes4(
+    //              keccak256(
+    //                  "onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"
+    //              )
+    //          );
+    //  }
 }

@@ -75,7 +75,7 @@ contract("sell NFT functionality", async accounts => {
 
         await expectRevert(
             MarketPlace.setMarketCommission(marketCommission, {from: accountOne}),
-            "Ownable: caller is not the owner"
+            "19"
         );
     });
 
@@ -95,7 +95,7 @@ contract("sell NFT functionality", async accounts => {
 
         await expectRevert(
             MarketPlace.setOfferCommission(offerCommission, {from: accountOne}),
-            "Ownable: caller is not the owner"
+            "19"
         );
     });
 
@@ -637,7 +637,7 @@ contract("sell NFT functionality", async accounts => {
             isERC1155, startDate, ERC20Address, tokensAmount, openForOffers, NFTdata, { from: accountThree });
 
         let lotLength = await MarketPlace.getLotsLength();
-        let lotInfo = await MarketPlace.getLots(lotLength - 1, { from: accountThree });
+        let lotInfo = await MarketPlace.lots(lotLength - 1, { from: accountThree });
         
         assert.equal(lotInfo.creationInfo.owner, accountThree, "lot owner is wrong");
         assert.equal(lotInfo.creationInfo.contractAddress, ERC1155Address, "lot NFT contract address is wrong");
@@ -666,7 +666,7 @@ contract("sell NFT functionality", async accounts => {
             isERC1155, startDate, constants.ZERO_ADDRESS, cryptoAmount, openForOffers, NFTdata, { from: accountThree });
 
         let lotLength = await MarketPlace.getLotsLength();
-        let lotInfo = await MarketPlace.getLots(lotLength - 1, { from: accountThree });
+        let lotInfo = await MarketPlace.lots(lotLength - 1, { from: accountThree });
         
         assert.equal(lotInfo.creationInfo.owner, accountThree, "lot owner is wrong");
         assert.equal(lotInfo.creationInfo.contractAddress, ERC1155Address, "lot NFT contract address is wrong");
@@ -694,7 +694,7 @@ contract("sell NFT functionality", async accounts => {
             isERC1155, startDate, ERC20Address, tokensAmount, openForOffers, NFTdata, { from: accountThree });
 
         let lotLength = await MarketPlace.getLotsLength();
-        let lotInfo = await MarketPlace.getLots(lotLength - 1, { from: accountThree });
+        let lotInfo = await MarketPlace.lots(lotLength - 1, { from: accountThree });
         
         assert.equal(lotInfo.creationInfo.owner, accountThree, "lot owner is wrong");
         assert.equal(lotInfo.creationInfo.contractAddress, ERC1155Address, "lot NFT contract address is wrong");
@@ -720,7 +720,7 @@ contract("sell NFT functionality", async accounts => {
             isERC1155, startDate, ERC20Address, tokensAmount, openForOffers, NFTdata, { from: accountThree });
 
         let lotLength = await MarketPlace.getLotsLength();
-        let lotInfo = await MarketPlace.getLots(lotLength - 1, { from: accountThree });
+        let lotInfo = await MarketPlace.lots(lotLength - 1, { from: accountThree });
         
         assert.equal(lotInfo.creationInfo.owner, accountThree, "lot owner is wrong");
         assert.equal(lotInfo.creationInfo.contractAddress, ERC721Address, "lot NFT contract address is wrong");
@@ -758,7 +758,7 @@ contract("sell NFT functionality", async accounts => {
             isERC1155, startDate, constants.ZERO_ADDRESS, cryptoAmount, openForOffers, NFTdata, { from: accountThree });
 
         let lotLength = await MarketPlace.getLotsLength();
-        let lotInfo = await MarketPlace.getLots(lotLength - 1, { from: accountThree });
+        let lotInfo = await MarketPlace.lots(lotLength - 1, { from: accountThree });
         
         assert.equal(lotInfo.creationInfo.owner, accountThree, "lot owner is wrong");
         assert.equal(lotInfo.creationInfo.contractAddress, ERC721Address, "lot NFT contract address is wrong");
