@@ -14,16 +14,15 @@ const expectEvent = require('@openzeppelin/test-helpers/src/expectEvent');
 contract("Marketplace: checking the possibility of adding an admin and the possibilities of an admin", async accounts => {
     const [deployer, collectionAdmin, commissionAdmin, accountOne, accountTwo] = accounts;
 
-    let firstCollection_1155, secondCollection_1155, firstCollection_721, secondCollection_721, frstERC20;
+    let firstCollection_1155, secondCollection_1155, firstCollection_721, frstERC20;
     let MarketPlace;
-    let fstClctn_1155Address, scndClctn_1155Address, fstClctn_721Address, scndClctn_721Address, frstERC20Address;
+    let fstClctn_1155Address, scndClctn_1155Address, fstClctn_721Address, frstERC20Address;
     let MarketPlaceAddress;
 
     before(async () => {
         firstCollection_1155 = await NFT1155.new({from: deployer});
         secondCollection_1155 = await NFT1155.new({from: deployer});
         firstCollection_721 = await NFT721.new({from: deployer});
-        secondCollection_721 = await NFT721.new({from: deployer});
         frstERC20 = await Tokens.new({from: deployer});
 
         fstClctn_1155Address = firstCollection_1155.address;
@@ -70,9 +69,19 @@ contract("Marketplace: checking the possibility of adding an admin and the possi
             "19"
         );
 
+        await expectRevert(
+            MarketPlace.setCollectionOwner(fstClctn_721Address, collectionAdmin, { from: collectionAdmin }),
+            "19"
+        );
+
         let collectionCommission = new BN(300);
         await expectRevert(
             MarketPlace.setCollectionCommission(fstClctn_1155Address, collectionCommission, { from: collectionAdmin }),
+            "19"
+        );
+
+        await expectRevert(
+            MarketPlace.setCollectionCommission(fstClctn_721Address, collectionCommission, { from: collectionAdmin }),
             "19"
         );
     });
@@ -308,9 +317,20 @@ contract("Marketplace: checking the possibility of adding an admin and the possi
 
     it(`check that owner can add himself to collection-admin, but don't add to commission-admin 
         and try to add collection and change commission`, async () => {
-            
+
         let isAdmin = true;
         await MarketPlace.setCollectionAdmin(deployer, isAdmin, { from: deployer });
+
+        let canTransfer = true;
+        let setCollectionReceipt = await MarketPlace.setNFT_Collection(scndClctn_1155Address, canTransfer, { from: deployer });
+        
+        expectEvent(setCollectionReceipt, 'collectionAdd', {
+            auctionContract: scndClctn_1155Address,
+            canTransfer: canTransfer
+        });
+
+        let isNFT_Collection = await MarketPlace.NFT_Collections(scndClctn_1155Address);
+        assert.equal(isNFT_Collection, true, "adress of collection is not on Marketplace NFT Collections");
 
         let collectionCommission = new BN(250);
 
@@ -336,6 +356,7 @@ contract("Marketplace: checking the possibility of adding an admin and the possi
             commisssion: offerCommission
         });
 
-
+        let newOfferCommission = await MarketPlace.offerCommission({from: deployer});
+        assert.equal(offerCommission, Number(newOfferCommission), "offer commission has not been changed to the new one");
     });
 })
