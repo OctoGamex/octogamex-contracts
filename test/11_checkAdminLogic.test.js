@@ -129,6 +129,13 @@ contract("Marketplace: checking the possibility of adding an admin and the possi
         );
     });
 
+    it("expect revert if commission-admin try to change commission wallet", async () => {
+        await expectRevert(
+            MarketPlace.setWallet(commissionAdmin, { from: commissionAdmin }),
+            "Ownable: caller is not the owner"
+        );
+    });
+
     it("check possibility of adding marketplace commission", async () => {
         let initialMarketCommission = await MarketPlace.marketCommission({from: deployer});
         let marketCommission = new BN(150);
@@ -289,7 +296,7 @@ contract("Marketplace: checking the possibility of adding an admin and the possi
             MarketPlace.setCommissionAdmin(constants.ZERO_ADDRESS, isAdmin, { from: deployer }),
             "0"
         );
-    })
+    });
 
     it("expect revert if owner adding zero addresses as collection-admin", async () => {
         let isAdmin = true;
@@ -298,5 +305,6 @@ contract("Marketplace: checking the possibility of adding an admin and the possi
             MarketPlace.setCollectionAdmin(constants.ZERO_ADDRESS, isAdmin, { from: deployer }),
             "0"
         );
-    })
+    });
+
 })
