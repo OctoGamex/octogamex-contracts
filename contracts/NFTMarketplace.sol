@@ -143,6 +143,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         external
         onlyAdminCommission
     {
+        require(commission <= 1000, "4");
         require(NFT_Collections[contractNFT] == true && collections[contractNFT].owner != address(0x0), "2");
         collections[contractNFT].commission = commission;
         emit commissionCollection(contractNFT, commission);
