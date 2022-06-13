@@ -143,7 +143,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         external
         onlyAdminCommission
     {
-        require(NFT_Collections[contractNFT] == true && collections[contractNFT].owner != address(0x0), "2");
+        require(NFT_Collections[contractNFT] && collections[contractNFT].owner != address(0), "2");
         collections[contractNFT].commission = commission;
         emit commissionCollection(contractNFT, commission);
     }
@@ -153,7 +153,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         onlyAdminCommission
     {
         require(
-            NFT_Collections[contractAddress] == true && owner != address(0x0),
+            NFT_Collections[contractAddress] && owner != address(0),
             "2"
         );
         collections[contractAddress].owner = owner;
@@ -211,7 +211,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
      */
     function setWallet(address newWallet) public onlyOwner {
         require(
-            newWallet != address(0x0) && newWallet != marketWallet,
+            newWallet != address(0) && newWallet != marketWallet,
             "5"
         );
         marketWallet = newWallet;
@@ -263,7 +263,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         bytes memory data,
         bool isERC1155
     ) internal {
-        if (isERC1155 == true) {
+        if (isERC1155) {
             ERC1155 NFT_Contract = ERC1155(contractAddress);
             NFT_Contract.safeTransferFrom(from, to, id, value, data);
         } else {
@@ -336,14 +336,14 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         lotType typeOfLot,
         bytes memory data
     ) public {
-        require(value > 0 && contractAddress != address(0x0), "6");
+        require(value > 0 && contractAddress != address(0), "6");
         if(ERC1155(contractAddress).isApprovedForAll(contractAddress, address(auctionContract))){
             ERC1155(contractAddress).setApprovalForAll(
                 address(auctionContract),
                 true
             );
         }
-        if (isERC1155 == true) {
+        if (isERC1155) {
             sendNFT(
                 contractAddress,
                 msg.sender,
@@ -364,8 +364,8 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                     ),
                     lotType.None,
                     0,
-                    currency(address(0x0), 0, 0),
-                    auctionInfo(0, 0, 0, 0, address(0x0)),
+                    currency(address(0), 0, 0),
+                    auctionInfo(0, 0, 0, 0, address(0)),
                     false,
                     isERC1155,
                     false
@@ -401,8 +401,8 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                     ),
                     lotType.None,
                     0,
-                    currency(address(0x0), 0, 0),
-                    auctionInfo(0, 0, 0, 0, address(0x0)),
+                    currency(address(0), 0, 0),
+                    auctionInfo(0, 0, 0, 0, address(0)),
                     false,
                     isERC1155,
                     false
@@ -516,10 +516,8 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         );
         require(
             NFT_ERC20_Supports[lots[index].creationInfo.contractAddress][
-                contractAddress
-            ] ==
-                true ||
-                contractAddress == address(0x0),
+                contractAddress] ||
+                contractAddress == address(0),
             "8"
         );
 
@@ -672,18 +670,17 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         uint256 cryptoValue = msg.value;
         // create offer
         require(
-            lots[index].creationInfo.contractAddress != address(0x0) &&
+            lots[index].creationInfo.contractAddress != address(0) &&
             lots[index].selling != lotType.None &&
             lots[index].selling != lotType.Auction &&
-            lots[index].openForOffers == true,
+            lots[index].openForOffers,
             "12"
         );
         require(
             NFT_ERC20_Supports[lots[index].creationInfo.contractAddress][
             tokenAddress
-            ] ==
-            true ||
-            tokenAddress == address(0x0),
+            ] ||
+            tokenAddress == address(0),
             "8"
         );
         if (amount > 0) {
@@ -746,7 +743,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
             }
         } else {
             require(
-                tokenAddress == address(0x0),
+                tokenAddress == address(0),
                 "17"
             );
             if(lotIndex.length != 0) {
@@ -946,6 +943,14 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         emit ChoosedOffer(lotID, offerID, block.timestamp);
     }
 
+    function getLotsOffers(uint256 indexes)
+    external
+    view
+    returns (uint256[] memory getLot)
+    {
+        getLot = lotOffers[indexes];
+    }
+
 
     function getLotsLength() external view returns (uint256 length) {
         length = lots.length;
@@ -981,7 +986,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         bytes calldata data
     ) external returns (bytes4) {
         require(
-            NFT_Collections[msg.sender] == true,
+            NFT_Collections[msg.sender],
             "2"
         );
         if (operator != address(this)) {
@@ -1009,7 +1014,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                     uint256(lotType.None)
                 );
             } else {
-                revert("Use our site");
+                revert("20");
             }
         }
         return 0xf23a6e61; // bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes")))
@@ -1029,7 +1034,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         bytes calldata data
     ) public virtual returns (bytes4) {
         require(
-            NFT_Collections[msg.sender] == true,
+            NFT_Collections[msg.sender],
             "2"
         );
         if (operator != address(this)) {
@@ -1057,7 +1062,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                     uint256(lotType.None)
                 );
             } else {
-                revert("Use our site!");
+                revert("20");
             }
         }
         return 0x150b7a02; // bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"))
@@ -1071,18 +1076,18 @@ contract NFTMarketplace is Ownable, VariablesTypes {
      * @param data, data what can be added to transaction.
      * @notice Need for receive many NFT1155 with difference id.
      */
-     function onERC1155BatchReceived(
-         address operator,
-         address from,
-         uint256[] calldata ids,
-         uint256[] calldata values,
-         bytes calldata data
-     ) external pure returns (bytes4) {
-         return
-             bytes4(
-                 keccak256(
-                     "onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"
-                 )
-             );
-     }
+//     function onERC1155BatchReceived(
+//         address operator,
+//         address from,
+//         uint256[] calldata ids,
+//         uint256[] calldata values,
+//         bytes calldata data
+//     ) external pure returns (bytes4) {
+//         return
+//             bytes4(
+//                 keccak256(
+//                     "onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"
+//                 )
+//             );
+//     }
 }
