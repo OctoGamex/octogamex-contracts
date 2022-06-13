@@ -124,14 +124,12 @@ contract NFTMarketplace is Ownable, VariablesTypes {
     }
 
     function setCollectionAdmin(address _address, bool _isAdmin) external onlyOwner{
-        require(_address != address(0), "0");
-        require(_isAdmin != collectionAdmin[_address], "0");
+        require(_address != address(0) && _isAdmin != collectionAdmin[_address], "0");
         collectionAdmin[_address] = _isAdmin;
     }
 
     function setCommissionAdmin(address _address, bool _isAdmin) external onlyOwner {
-        require(_address != address(0), "0");
-        require(_isAdmin != commissionAdmin[_address], "0");
+        require(_address != address(0) && _isAdmin != commissionAdmin[_address], "0");
         commissionAdmin[_address] = _isAdmin;
     }
 
