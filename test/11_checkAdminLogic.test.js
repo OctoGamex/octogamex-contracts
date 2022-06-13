@@ -10,6 +10,7 @@ const {
     time,
     constants
 } = require('@openzeppelin/test-helpers');
+const expectEvent = require('@openzeppelin/test-helpers/src/expectEvent');
 
 contract("Marketplace: checking the possibility of adding an admin and the possibilities of an admin", async accounts => {
     const [deployer, collectionAdmin, commissionAdmin, accountOne, accountTwo] = accounts;
@@ -79,7 +80,13 @@ contract("Marketplace: checking the possibility of adding an admin and the possi
 
     it("check possibility of adding collection by admin", async () => {
         let canTransfer = true;
-        await MarketPlace.setNFT_Collection(fstClctn_1155Address, canTransfer, { from: collectionAdmin });       
+        let receipt = await MarketPlace.setNFT_Collection(fstClctn_1155Address, canTransfer, { from: collectionAdmin });
+        
+        expectEvent(receipt, 'collectionAdd', {
+            auctionContract: fstClctn_1155Address,
+            canTransfer: canTransfer
+        });
+
         let isNFT_Collection = await MarketPlace.NFT_Collections(fstClctn_1155Address);
         assert.equal(isNFT_Collection, true, "adress of collection is not on Marketplace NFT Collections");
     });
@@ -126,7 +133,12 @@ contract("Marketplace: checking the possibility of adding an admin and the possi
         let initialMarketCommission = await MarketPlace.marketCommission({from: deployer});
         let marketCommission = new BN(150);
 
-        await MarketPlace.setMarketCommission(marketCommission, { from: commissionAdmin });
+        let receipt = await MarketPlace.setMarketCommission(marketCommission, { from: commissionAdmin });
+
+        expectEvent(receipt, 'commissionMarket', {
+            commisssion: marketCommission
+        });
+
         let newMarketCommision = await MarketPlace.marketCommission({from: commissionAdmin});
 
         assert.notEqual(initialMarketCommission, newMarketCommision, "initial and new market commision is the same");
@@ -138,7 +150,12 @@ contract("Marketplace: checking the possibility of adding an admin and the possi
         const tokenbits = (new BN(10)).pow(new BN(18));
         let offerCommission = new BN(1).mul(tokenbits);
         
-        await MarketPlace.setOfferCommission(offerCommission, { from: commissionAdmin });
+        let receipt = await MarketPlace.setOfferCommission(offerCommission, { from: commissionAdmin });
+
+        expectEvent(receipt, 'commissionOffer', {
+            commisssion: offerCommission
+        });
+
         let newOfferCommission = await MarketPlace.offerCommission({from: commissionAdmin});
 
         assert.notEqual(initialOfferCommission, newOfferCommission, "initial and new offer commision is the same");
@@ -167,7 +184,12 @@ contract("Marketplace: checking the possibility of adding an admin and the possi
             "new wallet for commission has not been changed to the new one");
 
         // set new collection commission
-        await MarketPlace.setCollectionCommission(fstClctn_1155Address, collectionCommission, { from: commissionAdmin });
+        let commisionReceipt = await MarketPlace.setCollectionCommission(fstClctn_1155Address, collectionCommission, { from: commissionAdmin });
+
+        expectEvent(commisionReceipt, 'commissionCollection', {
+            contractNFT: fstClctn_1155Address,
+            commisssion: collectionCommission
+        })
         
         newCollectionInfo = await MarketPlace.collections(fstClctn_1155Address, { from: deployer });
         let newCollectionCommission = newCollectionInfo.commission;
