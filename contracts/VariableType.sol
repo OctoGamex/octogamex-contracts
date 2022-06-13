@@ -55,8 +55,8 @@ interface VariablesTypes{
         currency price;
     }
 
-    struct returnInfo {
-        address user;
-        uint256 amount;
-    }
+//    struct returnInfo {
+//        address user;
+//        uint256 amount;
+//    }
 }

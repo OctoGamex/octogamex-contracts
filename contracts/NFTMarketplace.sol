@@ -509,7 +509,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
     ) public {
         require(
             lots[index].creationInfo.owner == msg.sender &&
-                lots[index].offered == false &&
+                !lots[index].offered &&
                 lots[index].selling == lotType.None, // user must be owner and not added to offer
             "7"
         );
@@ -710,7 +710,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                     require(
                         lots[lotIndex[i]].creationInfo.owner == msg.sender &&
                         lotIndex[i] != index &&
-                        lots[lotIndex[i]].offered == false,
+                        !lots[lotIndex[i]].offered,
                         "14"
                     );
                     lots[lotIndex[i]].offered = true;
@@ -750,7 +750,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
                     require(
                         lots[lotIndex[i]].creationInfo.owner == msg.sender &&
                         lotIndex[i] != index &&
-                        lots[lotIndex[i]].offered == false,
+                        !lots[lotIndex[i]].offered,
                         "14"
                     );
                     lots[lotIndex[i]].offered = true;
