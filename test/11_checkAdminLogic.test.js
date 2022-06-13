@@ -2,7 +2,6 @@ const NFT1155 = artifacts.require("TestERC1155");
 const NFT721 = artifacts.require("TestERC721");
 const Tokens = artifacts.require("TestERC20");
 const Marketplace = artifacts.require("NFTMarketplace");
-const AuctionContract = artifacts.require("Auction");
 
 const {
     BN, 
@@ -16,9 +15,9 @@ contract("Marketplace: checking the possibility of adding an admin and the possi
     const [deployer, collectionAdmin, commissionAdmin, accountOne, accountTwo] = accounts;
 
     let firstCollection_1155, secondCollection_1155, firstCollection_721, secondCollection_721, frstERC20;
-    let MarketPlace, Auction;
+    let MarketPlace;
     let fstClctn_1155Address, scndClctn_1155Address, fstClctn_721Address, scndClctn_721Address, frstERC20Address;
-    let MarketPlaceAddress, AuctionAddress;
+    let MarketPlaceAddress;
 
     before(async () => {
         firstCollection_1155 = await NFT1155.new({from: deployer});
@@ -196,7 +195,7 @@ contract("Marketplace: checking the possibility of adding an admin and the possi
         expectEvent(commisionReceipt, 'commissionCollection', {
             contractNFT: fstClctn_1155Address,
             commisssion: collectionCommission
-        })
+        });
         
         newCollectionInfo = await MarketPlace.collections(fstClctn_1155Address, { from: deployer });
         let newCollectionCommission = newCollectionInfo.commission;
@@ -307,4 +306,36 @@ contract("Marketplace: checking the possibility of adding an admin and the possi
         );
     });
 
+    it(`check that owner can add himself to collection-admin, but don't add to commission-admin 
+        and try to add collection and change commission`, async () => {
+            
+        let isAdmin = true;
+        await MarketPlace.setCollectionAdmin(deployer, isAdmin, { from: deployer });
+
+        let collectionCommission = new BN(250);
+
+        let commisionReceipt = await MarketPlace.setCollectionCommission(fstClctn_1155Address, collectionCommission, { from: deployer });
+
+        expectEvent(commisionReceipt, 'commissionCollection', {
+            contractNFT: fstClctn_1155Address,
+            commisssion: collectionCommission
+        });
+
+        let newCollectionInfo = await MarketPlace.collections(fstClctn_1155Address, { from: deployer });
+        let newCollectionCommission = newCollectionInfo.commission;
+
+        assert.equal(collectionCommission, Number(newCollectionCommission), 
+            "new commission for collection has not been changed to the new one");
+
+        const tokenbits = (new BN(10)).pow(new BN(18));
+        let offerCommission = new BN(3).mul(tokenbits);
+        
+        let receipt = await MarketPlace.setOfferCommission(offerCommission, { from: deployer });
+
+        expectEvent(receipt, 'commissionOffer', {
+            commisssion: offerCommission
+        });
+
+
+    });
 })
