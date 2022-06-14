@@ -7,10 +7,11 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 import "./VariableType.sol";
 import "./Auction.sol";
 
-contract NFTMarketplace is Ownable, VariablesTypes {
+contract NFTMarketplace is Ownable, Pausable, VariablesTypes {
     uint256 public marketCommission; // Market comission in percents
     uint256 public offerCommission; // Fixed comission for create proposition
 
@@ -123,7 +124,15 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         setWallet(wallet);
     }
 
-    function setCollectionAdmin(address _address, bool _isAdmin) external onlyOwner{
+    function setPause() public onlyOwner{
+        _pause();
+    }
+
+    function setUnpause() public onlyOwner{
+        _unpause();
+    }
+
+    function setCollectionAdmin(address _address, bool _isAdmin) external onlyOwner {
         require(_address != address(0) && _isAdmin != collectionAdmin[_address], "0");
         collectionAdmin[_address] = _isAdmin;
     }
@@ -160,6 +169,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
 
     function auctionLot(uint256 lotID, VariablesTypes.lotInfo memory lot)
         external
+        whenNotPaused
     {
         require(
             msg.sender == address(auctionContract),
@@ -334,7 +344,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         bool isERC1155,
         lotType typeOfLot,
         bytes memory data
-    ) public {
+    ) public whenNotPaused {
         require(value > 0 && contractAddress != address(0), "6");
         if(ERC1155(contractAddress).isApprovedForAll(contractAddress, address(auctionContract))){
             ERC1155(contractAddress).setApprovalForAll(
@@ -441,7 +451,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         uint256 price,
         bool openForOffers,
         bytes memory data
-    ) external {
+    ) external whenNotPaused {
         add(contractAddress, id, value, isERC1155, lotType.FixedPrice, data);
         uint256 lotID = lots.length - 1;
         sell(lotID, tokenAddress, price, openForOffers, startDate);
@@ -467,7 +477,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         address tokenAddress,
         uint256 amount,
         bytes memory data
-    ) external payable {
+    ) external payable whenNotPaused {
         uint256[] memory lotIDs = new uint256[](contractAddress.length);
         for (uint256 i = 0; i < contractAddress.length; i++) {
             add(
@@ -506,7 +516,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         uint256 price,
         bool openForOffers,
         uint256 date
-    ) public {
+    ) public whenNotPaused {
         require(
             lots[index].creationInfo.owner == msg.sender &&
                 !lots[index].offered &&
@@ -592,7 +602,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
      * - NFT is selling.
      * - user send transaction after start selling.
      */
-    function buy(uint256 index, bytes memory data) external payable {
+    function buy(uint256 index, bytes memory data) external payable whenNotPaused {
         lotInfo memory lot = lots[index];
         require(
             lot.selling == lotType.FixedPrice &&
@@ -824,7 +834,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
      *
      * - `offer owner` and `transcation creator` it's one person.
      */
-    function cancelOffer(uint256 index) external {
+    function cancelOffer(uint256 index) external whenNotPaused {
         require(
             offers[index].owner == msg.sender,
             "9"
@@ -867,7 +877,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         uint256 lotID,
         uint256 offerID,
         bytes memory data
-    ) external {
+    ) external whenNotPaused {
         require(
             lots[lotID].creationInfo.owner == msg.sender &&
                 offers[offerID].lotID == lotID,
@@ -983,7 +993,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         uint256 id,
         uint256 value,
         bytes calldata data
-    ) external returns (bytes4) {
+    ) external whenNotPaused returns (bytes4) {
         require(
             NFT_Collections[msg.sender],
             "2"
@@ -1031,7 +1041,7 @@ contract NFTMarketplace is Ownable, VariablesTypes {
         address from,
         uint256 id,
         bytes calldata data
-    ) public virtual returns (bytes4) {
+    ) public virtual whenNotPaused returns (bytes4) {
         require(
             NFT_Collections[msg.sender],
             "2"
