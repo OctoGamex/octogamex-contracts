@@ -16,11 +16,11 @@ contract Admin is Ownable {
     uint256 public marketCommission; // Market comission in percents
     uint256 public offerCommission; // Fixed comission for create proposition
 
-    mapping(address => bool) public collectionAdmin;
-    mapping(address => bool) public commissionAdmin;
     mapping(address => bool) public NFT_Collections; // if return true, then NFT stay on this contract, else revert transaction
     mapping(address => mapping(address => bool)) public NFT_ERC20_Supports; // NFT address => ERC20 tokens address => does supported
     mapping(address => collectionInfo) public collections; // collection comission in percents
+    mapping(address => bool) public collectionAdmin;
+    mapping(address => bool) public commissionAdmin;
 
     event collectionAdd(
         address auctionContract,
@@ -71,11 +71,7 @@ contract Admin is Ownable {
      * @param canTransfer, if true, then we can take NFT from this contract, else revert transaction.
      * @notice setter for NFT collection support.
      */
-    function setNFT_Collection(address contractAddress, bool canTransfer)
-    external
-    onlyAdminCollection
-    checkContract(contractAddress)
-    {
+    function setNFT_Collection(address contractAddress, bool canTransfer) external onlyAdminCollection checkContract(contractAddress) {
         NFT_Collections[contractAddress] = canTransfer;
         ERC1155(contractAddress).setApprovalForAll(
             address(auctionContract),
@@ -122,10 +118,7 @@ contract Admin is Ownable {
         emit commissionOffer(offerCommission);
     }
 
-    function setCollectionCommission(address contractNFT, uint256 commission)
-    external
-    onlyAdminCommission
-    {
+    function setCollectionCommission(address contractNFT, uint256 commission) external onlyAdminCommission {
         require(NFT_Collections[contractNFT] && collections[contractNFT].owner != address(0), "2");
         require(commission <= 1000, "4");
         collections[contractNFT].commission = commission;

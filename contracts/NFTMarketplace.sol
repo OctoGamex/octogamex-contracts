@@ -91,7 +91,7 @@ contract NFTMarketplace is Ownable, Pausable, VariablesTypes {
         _pause();
     }
 
-    function setUnpause() public onlyOwner{
+    function unPause() public onlyOwner{
         _unpause();
     }
 
@@ -111,7 +111,7 @@ contract NFTMarketplace is Ownable, Pausable, VariablesTypes {
     }
 
     function calculateCommission(uint256 price, address collectionCommission) public view returns (uint256){
-        (uint256 commission, address owner) = adminContract.collections(collectionCommission);
+        (uint256 commission, address owner) = getCollectionsInfo(collectionCommission);
         return price - (price * (commission + adminContract.marketCommission())) / 1000;
     }
 
@@ -158,13 +158,17 @@ contract NFTMarketplace is Ownable, Pausable, VariablesTypes {
         return (price * commission) / 1000;
     }
 
+    function getCollectionsInfo(address contractAddress) public view returns (uint256, address) {
+        return  adminContract.collections(contractAddress);
+    }
+
     function sendCrypto(
         lotInfo memory lot,
         uint256 sellerPrice,
         uint256 buyerPrice
     ) internal {
         payable(lot.creationInfo.owner).transfer(sellerPrice);
-        (uint256 commission, address owner) = adminContract.collections(
+        (uint256 commission, address owner) = getCollectionsInfo(
             lot.creationInfo.contractAddress
         );
         if (adminContract.marketCommission() > 0) {
@@ -433,7 +437,7 @@ contract NFTMarketplace is Ownable, Pausable, VariablesTypes {
         }
     }
 
-    function getBack(uint256 index, bytes memory data) external {
+    function getBack(uint256 index, bytes memory data) external whenNotPaused {
         returnNFT(index, data);
     }
 
@@ -499,7 +503,7 @@ contract NFTMarketplace is Ownable, Pausable, VariablesTypes {
                 );
             }
 
-            (uint256 commission, address owner) = adminContract.collections(
+            (uint256 commission, address owner) = getCollectionsInfo(
                 lot.creationInfo.contractAddress
             );
             if (commission > 0) {
@@ -811,7 +815,7 @@ contract NFTMarketplace is Ownable, Pausable, VariablesTypes {
                 );
             }
 
-            (uint256 commission, address owner) = adminContract.collections(
+            (uint256 commission, address owner) = getCollectionsInfo(
                 lot.creationInfo.contractAddress
             );
             if (commission > 0) {

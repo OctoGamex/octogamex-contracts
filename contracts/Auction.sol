@@ -10,8 +10,9 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "./NFTMarketplace.sol";
 import "./VariableType.sol";
 import "./Admin.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 
-contract Auction is VariablesTypes {
+contract Auction is Ownable, Pausable, VariablesTypes {
     NFTMarketplace public marketplace;
     Admin adminContract;
 
@@ -57,7 +58,7 @@ contract Auction is VariablesTypes {
         address tokenAddress,
         uint256 amount,
         bytes memory data
-    ) external {
+    ) external whenNotPaused {
         if (isERC1155 == true) {
             ERC1155 NFT_Contract = ERC1155(contractAddress);
             NFT_Contract.safeTransferFrom(msg.sender, address(marketplace), id, value, data);
@@ -85,7 +86,7 @@ contract Auction is VariablesTypes {
         uint256 step,
         address tokenAddress,
         uint256 amount
-    ) public {
+    ) public whenNotPaused{
         lotInfo memory lot;
         (
             lot.creationInfo,
@@ -151,7 +152,7 @@ contract Auction is VariablesTypes {
      * @param amount, value of ERC20 tokens for bid.
      * @notice Make bid in auction.
      */
-    function makeBid(uint256 lotID, uint256 amount) external payable {
+    function makeBid(uint256 lotID, uint256 amount) external payable whenNotPaused{
         lotInfo memory lot;
         (
             lot.creationInfo,
@@ -218,7 +219,7 @@ contract Auction is VariablesTypes {
      * @param data, data what can be added to transaction.
      * @notice Send bid to NFT owner, NFT to auction winner.
      */
-    function endAuction(uint256 lotID, bytes memory data) external {
+    function endAuction(uint256 lotID, bytes memory data) external whenNotPaused {
         lotInfo memory lot;
         (
             lot.creationInfo,
@@ -312,7 +313,7 @@ contract Auction is VariablesTypes {
         emit AuctionEnd(block.timestamp, lotID, lot.creationInfo.amount, false);
     }
 
-    function finishAuction(uint256 lotID, bytes memory data) external {
+    function finishAuction(uint256 lotID, bytes memory data) external whenNotPaused {
         lotInfo memory lot;
         (
             lot.creationInfo,
@@ -346,5 +347,13 @@ contract Auction is VariablesTypes {
         delete lot;
         marketplace.auctionLot(lotID, lot);
         emit AuctionEnd(block.timestamp, lotID, lot.creationInfo.amount, true);
+    }
+
+    function setPause() public onlyOwner{
+        _pause();
+    }
+
+    function unPause() public onlyOwner{
+        _unpause();
     }
 }
