@@ -9,12 +9,15 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "./NFTMarketplace.sol";
 import "./VariableType.sol";
+import "./Admin.sol";
 
 contract Auction is VariablesTypes {
     NFTMarketplace public marketplace;
+    Admin adminContract;
 
-    constructor(address market) {
+    constructor(address market, address admin) {
         marketplace = NFTMarketplace(market);
+        adminContract = Admin(admin);
     }
 
     event AuctionStart(
@@ -110,7 +113,7 @@ contract Auction is VariablesTypes {
 
         require(startDate - block.timestamp <= 2692000 && endDate - startDate <= 7998000, "18");
         require(
-            marketplace.NFT_ERC20_Supports(
+            adminContract.NFT_ERC20_Supports(
                 lot.creationInfo.contractAddress,
                 tokenAddress
             ) ==
@@ -179,7 +182,7 @@ contract Auction is VariablesTypes {
                 lot.price = currency(
                     address(0x0),
                     msg.value -
-                        (msg.value * marketplace.marketCommission()) /
+                        (msg.value * adminContract.marketCommission()) /
                         1000,
                     msg.value
                 );
@@ -198,7 +201,7 @@ contract Auction is VariablesTypes {
                 lot.price.buyerPrice = amount;
                 lot.price.sellerPrice =
                     amount -
-                    (amount * marketplace.marketCommission()) /
+                    (amount * adminContract.marketCommission()) /
                     1000;
                 lot.auction.nextStep =
                     amount +
@@ -267,10 +270,10 @@ contract Auction is VariablesTypes {
             }
         }
         if (lot.price.sellerPrice != 0) {
-            (uint256 commission, address owner) = marketplace.collections(
+            (uint256 commission, address owner) = adminContract.collections(
                 lot.creationInfo.contractAddress
             );
-            uint256 marketCommission = marketplace.marketCommission();
+            uint256 marketCommission = adminContract.marketCommission();
             if (lot.price.contractAddress == address(0x0)) {
                 payable(lot.creationInfo.owner).transfer(lot.price.sellerPrice);
                 if (marketCommission > 0) {
@@ -293,7 +296,7 @@ contract Auction is VariablesTypes {
                     tokenContract.transfer(
                         marketWallet,
                         (lot.price.buyerPrice *
-                            marketplace.marketCommission()) / 1000
+                            adminContract.marketCommission()) / 1000
                     );
                 }
                 if (commission > 0) {
