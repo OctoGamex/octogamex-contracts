@@ -48,11 +48,11 @@ contract NFTMarketplace is Ownable, Pausable, VariablesTypes {
         uint256 indexed datetime,
         uint256 amount
     );
-    event GetBack(
-        uint256 indexed lotID,
-        uint256 indexed datetime,
-        uint256 amount
-    );
+    // event GetBack(
+    //     uint256 indexed lotID,
+    //     uint256 indexed datetime,
+    //     uint256 amount
+    // );
     event MakeOffer(
         address indexed user,
         uint256 indexed lotID,
@@ -62,22 +62,22 @@ contract NFTMarketplace is Ownable, Pausable, VariablesTypes {
         uint256[] itemLotIds,
         uint256 tokenValue
     );
-    event ChoosedOffer(
-        uint256 indexed lotID,
-        uint256 indexed offerID,
-        uint256 indexed datetime
-    );
-    event RevertedOffer(
-        uint256 indexed lotID,
-        uint256 indexed offerID,
-        uint256 indexed datetime
-    );
-    event ExchangeNFT(
-        uint256 indexed startDate,
-        uint256 indexed lotID,
-        address indexed owner,
-        uint256 amount
-    );
+    // event ChoosedOffer(
+    //     uint256 indexed lotID,
+    //     uint256 indexed offerID,
+    //     uint256 indexed datetime
+    // );
+    // event RevertedOffer(
+    //     uint256 indexed lotID,
+    //     uint256 indexed offerID,
+    //     uint256 indexed datetime
+    // );
+    // event ExchangeNFT(
+    //     uint256 indexed startDate,
+    //     uint256 indexed lotID,
+    //     address indexed owner,
+    //     uint256 amount
+    // );
 
     constructor(
         address wallet,
@@ -419,12 +419,12 @@ contract NFTMarketplace is Ownable, Pausable, VariablesTypes {
 
         if (price == 0) {
             exchangeSell(index, date, lotType.Exchange, true);
-            emit ExchangeNFT(
-                date,
-                index,
-                msg.sender,
-                lots[index].creationInfo.amount
-            );
+            // emit ExchangeNFT(
+            //     date,
+            //     index,
+            //     msg.sender,
+            //     lots[index].creationInfo.amount
+            // );
         } else {
             lots[index].price.sellerPrice = calculateCommission(
                 price,
@@ -467,11 +467,11 @@ contract NFTMarketplace is Ownable, Pausable, VariablesTypes {
             data,
             lot.isERC1155
         );
-        emit GetBack(
-            index,
-            block.timestamp,
-            lots[index].creationInfo.amount
-        );
+        // emit GetBack(
+        //     index,
+        //     block.timestamp,
+        //     lots[index].creationInfo.amount
+        // );
     }
 
     /**
@@ -743,7 +743,7 @@ contract NFTMarketplace is Ownable, Pausable, VariablesTypes {
                 returnNFT(localOffer.lotsOffer[i], "");
             }
         }
-        emit RevertedOffer(localOffer.lotID, index, block.timestamp);
+        // emit RevertedOffer(localOffer.lotID, index, block.timestamp);
     }
 
     /**
@@ -833,7 +833,7 @@ contract NFTMarketplace is Ownable, Pausable, VariablesTypes {
                 );
             }
         }
-        emit ChoosedOffer(lotID, offerID, block.timestamp);
+        // emit ChoosedOffer(lotID, offerID, block.timestamp);
     }
 
 

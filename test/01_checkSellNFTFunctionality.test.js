@@ -414,12 +414,12 @@ contract("sell NFT functionality", async accounts => {
         let receipt = await MarketPlace.sell(userLotsIds[4], constants.ZERO_ADDRESS, lotPrice, openForOffers, lotStartDate, { from: accountOne });
         let lotInfo = await MarketPlace.lots(userLotsIds[4], { from: accountOne });
 
-        expectEvent(receipt, "ExchangeNFT", {
-            startDate: lotStartDate,
-            lotID: new BN(userLotsIds[4]),
-            owner: accountOne,
-            amount: lotInfo.creationInfo.amount
-        });
+        // expectEvent(receipt, "ExchangeNFT", {
+        //     startDate: lotStartDate,
+        //     lotID: new BN(userLotsIds[4]),
+        //     owner: accountOne,
+        //     amount: lotInfo.creationInfo.amount
+        // });
 
         assert.equal(lotStartDate, Number(lotInfo.sellStart), "start date of lot is wrong");
         assert.equal(lotPrice, Number(lotInfo.price.buyerPrice), "lot price is wrong");
@@ -442,12 +442,12 @@ contract("sell NFT functionality", async accounts => {
         let receipt = await MarketPlace.sell(userLotsIds[5], ERC20Address, lotPrice, openForOffers, lotStartDate, { from: accountOne });
         let lotInfo = await MarketPlace.lots(userLotsIds[5], { from: accountOne });
 
-        expectEvent(receipt, "ExchangeNFT", {
-            startDate: lotStartDate,
-            lotID: new BN(userLotsIds[5]),
-            owner: accountOne,
-            amount: lotInfo.creationInfo.amount
-        });
+        // expectEvent(receipt, "ExchangeNFT", {
+        //     startDate: lotStartDate,
+        //     lotID: new BN(userLotsIds[5]),
+        //     owner: accountOne,
+        //     amount: lotInfo.creationInfo.amount
+        // });
       
         assert.equal(lotStartDate, Number(lotInfo.sellStart), "start date of lot is wrong");
         assert.equal(lotPrice, Number(lotInfo.price.buyerPrice), "lot price is wrong");
@@ -498,11 +498,11 @@ contract("sell NFT functionality", async accounts => {
         let date = (await web3.eth.getBlock("latest")).timestamp;
         let lotInfo = await MarketPlace.lots(userLotsIds[7], { from: accountOne });
 
-        expectEvent(receipt, "GetBack", {
-            lotID: new BN(userLotsIds[7]),
-            datetime: new BN(date),
-            amount: lotInfo.creationInfo.amount
-        });
+        // expectEvent(receipt, "GetBack", {
+        //     lotID: new BN(userLotsIds[7]),
+        //     datetime: new BN(date),
+        //     amount: lotInfo.creationInfo.amount
+        // });
 
         assert.equal(lotInfo.creationInfo.owner, constants.ZERO_ADDRESS, "NFT owner didn'n get back NFT (creationInfo.owner)");
         assert.equal(lotInfo.creationInfo.amount, 0, "NFT owner didn'n get back NFT (creationInfo.amount)");
