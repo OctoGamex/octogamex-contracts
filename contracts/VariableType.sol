@@ -10,11 +10,6 @@ interface VariablesTypes{
         Exchange
     } // lot type
 
-    struct collectionInfo{
-        uint256 commission;
-        address owner;
-    }
-
     struct lotInfo {
         lotStart creationInfo;
         lotType selling;
@@ -54,9 +49,4 @@ interface VariablesTypes{
         uint256[] lotsOffer; // array of lot index
         currency price;
     }
-
-//    struct returnInfo {
-//        address user;
-//        uint256 amount;
-//    }
 }
