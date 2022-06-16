@@ -2,6 +2,7 @@ const NFT1155 = artifacts.require("TestERC1155");
 const NFT721 = artifacts.require("TestERC721");
 const Tokens = artifacts.require("TestERC20");
 const Marketplace = artifacts.require("NFTMarketplace");
+const Admin = artifacts.require("Admin");
 
 const {
     BN, 
@@ -14,10 +15,10 @@ const expectEvent = require('@openzeppelin/test-helpers/src/expectEvent');
 contract("Marketplace: checking the possibility of adding an admin and the possibilities of an admin", async accounts => {
     const [deployer, collectionAdmin, commissionAdmin, accountOne, accountTwo] = accounts;
 
+    let MarketPlace, AdminContract;
+    let MarketPlaceAddress, AdminContractAddress;
     let firstCollection_1155, secondCollection_1155, firstCollection_721, frstERC20;
-    let MarketPlace;
     let fstClctn_1155Address, scndClctn_1155Address, fstClctn_721Address, frstERC20Address;
-    let MarketPlaceAddress;
 
     before(async () => {
         firstCollection_1155 = await NFT1155.new({from: deployer});
@@ -30,22 +31,25 @@ contract("Marketplace: checking the possibility of adding an admin and the possi
         fstClctn_721Address = firstCollection_721.address;
         frstERC20Address = frstERC20.address;
 
+        AdminContract = await Admin.deployed({from: deployer});
+        AdminContractAddress = AdminContract.address;
+
         MarketPlace = await Marketplace.deployed({from: deployer});
         MarketPlaceAddress = MarketPlace.address;
     });
 
     it("check possibility of adding collection-admin", async () => {
         let isAdmin = true;
-        await MarketPlace.setCollectionAdmin(collectionAdmin, isAdmin, { from: deployer });
+        await AdminContract.setCollectionAdmin(collectionAdmin, isAdmin, { from: deployer });
 
-        let isCollectionAdmin = await MarketPlace.collectionAdmin(collectionAdmin, { from: deployer });
+        let isCollectionAdmin = await AdminContract.collectionAdmin(collectionAdmin, { from: deployer });
         assert.equal(isCollectionAdmin, isAdmin, "address is not added as collection admin");
     });
 
     it("expect revert if owner try to re-adding collection-admin", async () => {
         let isAdmin = true;
         await expectRevert(
-            MarketPlace.setCollectionAdmin(collectionAdmin, isAdmin, { from: deployer }),
+            AdminContract.setCollectionAdmin(collectionAdmin, isAdmin, { from: deployer }),
             "0"
         );
     });
@@ -53,64 +57,64 @@ contract("Marketplace: checking the possibility of adding an admin and the possi
     it("expect revert if collection-admin try to set commissions", async () => {
         let marketCommission = new BN(100);
         await expectRevert(
-            MarketPlace.setMarketCommission(marketCommission, { from: collectionAdmin }),
+            AdminContract.setMarketCommission(marketCommission, { from: collectionAdmin }),
             "19"
         );
 
         const tokenbits = (new BN(10)).pow(new BN(18));
         let offerCommission = new BN(3).mul(tokenbits);
         await expectRevert(
-            MarketPlace.setOfferCommission(offerCommission, { from: collectionAdmin }),
+            AdminContract.setOfferCommission(offerCommission, { from: collectionAdmin }),
             "19"
         );
 
         await expectRevert(
-            MarketPlace.setCollectionOwner(fstClctn_1155Address, collectionAdmin, { from: collectionAdmin }),
+            AdminContract.setCollectionOwner(fstClctn_1155Address, collectionAdmin, { from: collectionAdmin }),
             "19"
         );
 
         await expectRevert(
-            MarketPlace.setCollectionOwner(fstClctn_721Address, collectionAdmin, { from: collectionAdmin }),
+            AdminContract.setCollectionOwner(fstClctn_721Address, collectionAdmin, { from: collectionAdmin }),
             "19"
         );
 
         let collectionCommission = new BN(300);
         await expectRevert(
-            MarketPlace.setCollectionCommission(fstClctn_1155Address, collectionCommission, { from: collectionAdmin }),
+            AdminContract.setCollectionCommission(fstClctn_1155Address, collectionCommission, { from: collectionAdmin }),
             "19"
         );
 
         await expectRevert(
-            MarketPlace.setCollectionCommission(fstClctn_721Address, collectionCommission, { from: collectionAdmin }),
+            AdminContract.setCollectionCommission(fstClctn_721Address, collectionCommission, { from: collectionAdmin }),
             "19"
         );
     });
 
     it("check possibility of adding collection by admin", async () => {
         let canTransfer = true;
-        let receipt = await MarketPlace.setNFT_Collection(fstClctn_1155Address, canTransfer, { from: collectionAdmin });
+        let receipt = await AdminContract.setNFT_Collection(fstClctn_1155Address, canTransfer, { from: collectionAdmin });
         
         expectEvent(receipt, 'collectionAdd', {
             auctionContract: fstClctn_1155Address,
             canTransfer: canTransfer
         });
 
-        let isNFT_Collection = await MarketPlace.NFT_Collections(fstClctn_1155Address);
+        let isNFT_Collection = await AdminContract.NFT_Collections(fstClctn_1155Address);
         assert.equal(isNFT_Collection, true, "adress of collection is not on Marketplace NFT Collections");
     });
 
     it("check possibility of adding token to collection by admin", async () => {
         let isERC20Supported = true;
-        await MarketPlace.setERC20_Support(fstClctn_1155Address, [frstERC20Address], [isERC20Supported], { from: collectionAdmin });
-        let isfrstERC20Supports = await MarketPlace.NFT_ERC20_Supports(fstClctn_1155Address, frstERC20Address, { from: collectionAdmin });
+        await AdminContract.setERC20_Support(fstClctn_1155Address, [frstERC20Address], [isERC20Supported], { from: collectionAdmin });
+        let isfrstERC20Supports = await AdminContract.NFT_ERC20_Supports(fstClctn_1155Address, frstERC20Address, { from: collectionAdmin });
         assert.equal(isfrstERC20Supports, isERC20Supported, "adress of frstERC20 is not supported");
     });
 
     it("check possibility of adding commission-admin", async () => {
         let isAdmin = true;
-        await MarketPlace.setCommissionAdmin(commissionAdmin, isAdmin, { from: deployer });
+        await AdminContract.setCommissionAdmin(commissionAdmin, isAdmin, { from: deployer });
 
-        let isCommissionAdmin = await MarketPlace.commissionAdmin(commissionAdmin, { from: deployer });
+        let isCommissionAdmin = await AdminContract.commissionAdmin(commissionAdmin, { from: deployer });
         assert.equal(isCommissionAdmin, isAdmin, "address is not added as commission admin");
     });
 
@@ -118,7 +122,7 @@ contract("Marketplace: checking the possibility of adding an admin and the possi
         let isAdmin = true;
 
         await expectRevert(
-            MarketPlace.setCommissionAdmin(commissionAdmin, isAdmin, { from: deployer }),
+            AdminContract.setCommissionAdmin(commissionAdmin, isAdmin, { from: deployer }),
             "0"
         );
     });
@@ -126,13 +130,13 @@ contract("Marketplace: checking the possibility of adding an admin and the possi
     it("expect revert if commission-admin try to add collection or token for collection", async () => {
         let canTransfer = true;
         await expectRevert(
-            MarketPlace.setNFT_Collection(fstClctn_1155Address, canTransfer, { from: commissionAdmin }),
+            AdminContract.setNFT_Collection(fstClctn_1155Address, canTransfer, { from: commissionAdmin }),
             "19"
         );
 
         let isERC20Supported = true;
         await expectRevert(
-            MarketPlace.setERC20_Support(fstClctn_1155Address, [frstERC20Address], [isERC20Supported], { from: commissionAdmin }),
+            AdminContract.setERC20_Support(fstClctn_1155Address, [frstERC20Address], [isERC20Supported], { from: commissionAdmin }),
             "19"
         );
     });
@@ -145,40 +149,40 @@ contract("Marketplace: checking the possibility of adding an admin and the possi
     });
 
     it("check possibility of adding marketplace commission", async () => {
-        let initialMarketCommission = await MarketPlace.marketCommission({from: deployer});
+        let initialMarketCommission = await AdminContract.marketCommission({from: deployer});
         let marketCommission = new BN(150);
 
-        let receipt = await MarketPlace.setMarketCommission(marketCommission, { from: commissionAdmin });
+        let receipt = await AdminContract.setMarketCommission(marketCommission, { from: commissionAdmin });
 
         expectEvent(receipt, 'commissionMarket', {
             commisssion: marketCommission
         });
 
-        let newMarketCommision = await MarketPlace.marketCommission({from: commissionAdmin});
+        let newMarketCommision = await AdminContract.marketCommission({from: commissionAdmin});
 
         assert.notEqual(initialMarketCommission, newMarketCommision, "initial and new market commision is the same");
         assert.equal(marketCommission, Number(newMarketCommision), "market commission has not been changed to the new one");
     });
 
     it("check possibility of adding offer commission", async () => {
-        let initialOfferCommission = await MarketPlace.offerCommission({from: deployer});
+        let initialOfferCommission = await AdminContract.offerCommission({from: deployer});
         const tokenbits = (new BN(10)).pow(new BN(18));
         let offerCommission = new BN(1).mul(tokenbits);
         
-        let receipt = await MarketPlace.setOfferCommission(offerCommission, { from: commissionAdmin });
+        let receipt = await AdminContract.setOfferCommission(offerCommission, { from: commissionAdmin });
 
         expectEvent(receipt, 'commissionOffer', {
             commisssion: offerCommission
         });
 
-        let newOfferCommission = await MarketPlace.offerCommission({from: commissionAdmin});
+        let newOfferCommission = await AdminContract.offerCommission({from: commissionAdmin});
 
         assert.notEqual(initialOfferCommission, newOfferCommission, "initial and new offer commision is the same");
         assert.equal(offerCommission, Number(newOfferCommission), "offer commission has not been changed to the new one");
     });
 
     it("check possibility of adding collection commission and wallet", async () => {
-        let collectionInfo = await MarketPlace.collections(fstClctn_1155Address, { from: deployer });
+        let collectionInfo = await AdminContract.collections(fstClctn_1155Address, { from: deployer });
         let initCollectionCommission = collectionInfo.commission;
         let initCollectionWalletCommission = collectionInfo.owner;
         let collectionCommission = new BN(200);
@@ -188,9 +192,9 @@ contract("Marketplace: checking the possibility of adding an admin and the possi
             "expect initial wallet for commission is equal to zero address");
         
         // set new wallet for collection
-        await MarketPlace.setCollectionOwner(fstClctn_1155Address, collectionAdmin, { from: commissionAdmin });
+        await AdminContract.setCollectionOwner(fstClctn_1155Address, collectionAdmin, { from: commissionAdmin });
 
-        let newCollectionInfo = await MarketPlace.collections(fstClctn_1155Address, { from: deployer });
+        let newCollectionInfo = await AdminContract.collections(fstClctn_1155Address, { from: deployer });
         let newCollectionWalletCommission = newCollectionInfo.owner;
 
         assert.notEqual(initCollectionWalletCommission, collectionAdmin, 
@@ -199,14 +203,14 @@ contract("Marketplace: checking the possibility of adding an admin and the possi
             "new wallet for commission has not been changed to the new one");
 
         // set new collection commission
-        let commisionReceipt = await MarketPlace.setCollectionCommission(fstClctn_1155Address, collectionCommission, { from: commissionAdmin });
+        let commisionReceipt = await AdminContract.setCollectionCommission(fstClctn_1155Address, collectionCommission, { from: commissionAdmin });
 
         expectEvent(commisionReceipt, 'commissionCollection', {
             contractNFT: fstClctn_1155Address,
             commisssion: collectionCommission
         });
         
-        newCollectionInfo = await MarketPlace.collections(fstClctn_1155Address, { from: deployer });
+        newCollectionInfo = await AdminContract.collections(fstClctn_1155Address, { from: deployer });
         let newCollectionCommission = newCollectionInfo.commission;
 
         assert.notEqual(initCollectionWalletCommission, collectionCommission, 
@@ -219,16 +223,16 @@ contract("Marketplace: checking the possibility of adding an admin and the possi
 
     it("owner should have possibility to take collection-admin rights back", async () => {
         let isAdmin = false;
-        await MarketPlace.setCollectionAdmin(collectionAdmin, isAdmin, { from: deployer });
+        await AdminContract.setCollectionAdmin(collectionAdmin, isAdmin, { from: deployer });
 
-        let isCollectionAdmin = await MarketPlace.collectionAdmin(collectionAdmin, { from: deployer });
+        let isCollectionAdmin = await AdminContract.collectionAdmin(collectionAdmin, { from: deployer });
         assert.equal(isCollectionAdmin, isAdmin, "address is not deleted as collection admin");
     });
 
     it("expect revert if deleted collection-admin adding collection", async () => {
         let canTransfer = true;
         await expectRevert( 
-            MarketPlace.setNFT_Collection(fstClctn_1155Address, canTransfer, { from: collectionAdmin }),
+            AdminContract.setNFT_Collection(fstClctn_1155Address, canTransfer, { from: collectionAdmin }),
             "19"
         );
     });
@@ -236,16 +240,16 @@ contract("Marketplace: checking the possibility of adding an admin and the possi
     it("expect revert if deleted collection-admin adding token to collection", async () => {
         let isERC20Supported = true;
         await expectRevert( 
-            MarketPlace.setERC20_Support(fstClctn_1155Address, [frstERC20Address], [isERC20Supported], { from: collectionAdmin }),
+            AdminContract.setERC20_Support(fstClctn_1155Address, [frstERC20Address], [isERC20Supported], { from: collectionAdmin }),
             "19"
         );
     });
 
     it("owner should have possibility to take commission-admin rights back", async () => {
         let isAdmin = false;
-        await MarketPlace.setCommissionAdmin(commissionAdmin, isAdmin, { from: deployer });
+        await AdminContract.setCommissionAdmin(commissionAdmin, isAdmin, { from: deployer });
 
-        let isCommissionAdmin = await MarketPlace.commissionAdmin(commissionAdmin, { from: deployer });
+        let isCommissionAdmin = await AdminContract.commissionAdmin(commissionAdmin, { from: deployer });
         assert.equal(isCommissionAdmin, isAdmin, "address is not deleted as commission admin");
     });
 
@@ -253,7 +257,7 @@ contract("Marketplace: checking the possibility of adding an admin and the possi
         let marketCommission = new BN(200);
 
         await expectRevert(
-            MarketPlace.setMarketCommission(marketCommission, { from: commissionAdmin }),
+            AdminContract.setMarketCommission(marketCommission, { from: commissionAdmin }),
             "19"
         );       
     });
@@ -263,14 +267,14 @@ contract("Marketplace: checking the possibility of adding an admin and the possi
         let offerCommission = new BN(2).mul(tokenbits);
         
         await expectRevert(
-            MarketPlace.setOfferCommission(offerCommission, { from: commissionAdmin }),
+            AdminContract.setOfferCommission(offerCommission, { from: commissionAdmin }),
             "19"
         );
     });
 
     it("expect revert if deleted commission-admin adding collection wallet for commission", async () => {
         await expectRevert(
-            MarketPlace.setCollectionOwner(fstClctn_1155Address, collectionAdmin, { from: commissionAdmin }),
+            AdminContract.setCollectionOwner(fstClctn_1155Address, collectionAdmin, { from: commissionAdmin }),
             "19"
         );
     });
@@ -279,7 +283,7 @@ contract("Marketplace: checking the possibility of adding an admin and the possi
         let collectionCommission = new BN(300);
 
         await expectRevert(
-            MarketPlace.setCollectionCommission(fstClctn_1155Address, collectionCommission, { from: commissionAdmin }),
+            AdminContract.setCollectionCommission(fstClctn_1155Address, collectionCommission, { from: commissionAdmin }),
             "19"
         );
     });
@@ -287,12 +291,12 @@ contract("Marketplace: checking the possibility of adding an admin and the possi
     it("expect revert if admins are not added by the owner, but by other admins", async () => {
         let isAdmin = true;
         await expectRevert(
-            MarketPlace.setCollectionAdmin(collectionAdmin, isAdmin, { from: commissionAdmin }),
+            AdminContract.setCollectionAdmin(collectionAdmin, isAdmin, { from: commissionAdmin }),
             "Ownable: caller is not the owner"
         );
 
         await expectRevert(
-            MarketPlace.setCommissionAdmin(commissionAdmin, isAdmin, { from: collectionAdmin }),
+            AdminContract.setCommissionAdmin(commissionAdmin, isAdmin, { from: collectionAdmin }),
             "Ownable: caller is not the owner"
         );
     });
@@ -301,7 +305,7 @@ contract("Marketplace: checking the possibility of adding an admin and the possi
         let isAdmin = true;
  
         await expectRevert(
-            MarketPlace.setCommissionAdmin(constants.ZERO_ADDRESS, isAdmin, { from: deployer }),
+            AdminContract.setCommissionAdmin(constants.ZERO_ADDRESS, isAdmin, { from: deployer }),
             "0"
         );
     });
@@ -310,7 +314,7 @@ contract("Marketplace: checking the possibility of adding an admin and the possi
         let isAdmin = true;
         
         await expectRevert(
-            MarketPlace.setCollectionAdmin(constants.ZERO_ADDRESS, isAdmin, { from: deployer }),
+            AdminContract.setCollectionAdmin(constants.ZERO_ADDRESS, isAdmin, { from: deployer }),
             "0"
         );
     });
@@ -319,29 +323,29 @@ contract("Marketplace: checking the possibility of adding an admin and the possi
         and try to add collection and change commission`, async () => {
 
         let isAdmin = true;
-        await MarketPlace.setCollectionAdmin(deployer, isAdmin, { from: deployer });
+        await AdminContract.setCollectionAdmin(deployer, isAdmin, { from: deployer });
 
         let canTransfer = true;
-        let setCollectionReceipt = await MarketPlace.setNFT_Collection(scndClctn_1155Address, canTransfer, { from: deployer });
+        let setCollectionReceipt = await AdminContract.setNFT_Collection(scndClctn_1155Address, canTransfer, { from: deployer });
         
         expectEvent(setCollectionReceipt, 'collectionAdd', {
             auctionContract: scndClctn_1155Address,
             canTransfer: canTransfer
         });
 
-        let isNFT_Collection = await MarketPlace.NFT_Collections(scndClctn_1155Address);
+        let isNFT_Collection = await AdminContract.NFT_Collections(scndClctn_1155Address);
         assert.equal(isNFT_Collection, true, "adress of collection is not on Marketplace NFT Collections");
 
         let collectionCommission = new BN(250);
 
-        let commisionReceipt = await MarketPlace.setCollectionCommission(fstClctn_1155Address, collectionCommission, { from: deployer });
+        let commisionReceipt = await AdminContract.setCollectionCommission(fstClctn_1155Address, collectionCommission, { from: deployer });
 
         expectEvent(commisionReceipt, 'commissionCollection', {
             contractNFT: fstClctn_1155Address,
             commisssion: collectionCommission
         });
 
-        let newCollectionInfo = await MarketPlace.collections(fstClctn_1155Address, { from: deployer });
+        let newCollectionInfo = await AdminContract.collections(fstClctn_1155Address, { from: deployer });
         let newCollectionCommission = newCollectionInfo.commission;
 
         assert.equal(collectionCommission, Number(newCollectionCommission), 
@@ -350,13 +354,13 @@ contract("Marketplace: checking the possibility of adding an admin and the possi
         const tokenbits = (new BN(10)).pow(new BN(18));
         let offerCommission = new BN(3).mul(tokenbits);
         
-        let receipt = await MarketPlace.setOfferCommission(offerCommission, { from: deployer });
+        let receipt = await AdminContract.setOfferCommission(offerCommission, { from: deployer });
 
         expectEvent(receipt, 'commissionOffer', {
             commisssion: offerCommission
         });
 
-        let newOfferCommission = await MarketPlace.offerCommission({from: deployer});
+        let newOfferCommission = await AdminContract.offerCommission({from: deployer});
         assert.equal(offerCommission, Number(newOfferCommission), "offer commission has not been changed to the new one");
     });
 })

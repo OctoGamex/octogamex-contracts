@@ -3,6 +3,7 @@ const NFT721 = artifacts.require("TestERC721");
 const Tokens = artifacts.require("TestERC20");
 const Marketplace = artifacts.require("NFTMarketplace");
 const AuctionContract = artifacts.require("Auction");
+const Admin = artifacts.require("Admin");
 
 const {
     BN,
@@ -15,8 +16,11 @@ const {
 contract("check revert transfer for setNFT_Collection with canTransfer param equal false", async accounts => {
     const [deployer, accountOne] = accounts;
 
-    let ERC1155, ERC721, ERC20, MarketPlace, Auction;
-    let ERC1155Address, ERC721Address, ERC20Address, MarketPlaceAddress, AuctionAddress;
+    let MarketPlace, Auction, AdminContract;
+    let MarketPlaceAddress, AuctionAddress, AdminContractAddress;
+
+    let ERC1155, ERC721, ERC20;
+    let ERC1155Address, ERC721Address, ERC20Address;
     
     const NFT1155id = new BN(2);
     const NFT721id = new BN(1); 
@@ -32,22 +36,25 @@ contract("check revert transfer for setNFT_Collection with canTransfer param equ
         ERC721Address = ERC721.address;
         ERC20Address = ERC20.address;
 
+        AdminContract = await Admin.deployed({from: deployer});
+        AdminContractAddress = AdminContract.address;
+
         MarketPlace = await Marketplace.deployed({from: deployer});
         MarketPlaceAddress = MarketPlace.address;
 
-        Auction = await AuctionContract.new(MarketPlaceAddress, {from: deployer});
+        Auction = await AuctionContract.new(MarketPlaceAddress, AdminContractAddress, {from: deployer});
         AuctionAddress = Auction.address;
 
         let canTransfer = false;
         await MarketPlace.setAuctionContract(AuctionAddress, { from: deployer });
-        let collection1155Receipt = await MarketPlace.setNFT_Collection(ERC1155Address, canTransfer, { from: deployer });
+        let collection1155Receipt = await AdminContract.setNFT_Collection(ERC1155Address, canTransfer, { from: deployer });
 
         expectEvent(collection1155Receipt, 'collectionAdd', {
             auctionContract: ERC1155Address,
             canTransfer: canTransfer
         });
 
-        let collection721Receipt = await MarketPlace.setNFT_Collection(ERC721Address, canTransfer, { from: deployer });
+        let collection721Receipt = await AdminContract.setNFT_Collection(ERC721Address, canTransfer, { from: deployer });
         
         expectEvent(collection721Receipt, 'collectionAdd', {
             auctionContract: ERC721Address,
@@ -55,14 +62,14 @@ contract("check revert transfer for setNFT_Collection with canTransfer param equ
         });
 
         let isERC20Supported = true;
-        await MarketPlace.setERC20_Support(ERC1155Address, [ERC20Address], [isERC20Supported], { from: deployer });
-        await MarketPlace.setERC20_Support(ERC721Address, [ERC20Address], [isERC20Supported], { from: deployer });
+        await AdminContract.setERC20_Support(ERC1155Address, [ERC20Address], [isERC20Supported], { from: deployer });
+        await AdminContract.setERC20_Support(ERC721Address, [ERC20Address], [isERC20Supported], { from: deployer });
     });
 
     it("revert if setNFT_Collection with wrong address", async () => {
         let canTransfer = false;
         await expectRevert(
-            MarketPlace.setNFT_Collection(constants.ZERO_ADDRESS, canTransfer, { from: deployer }),
+            AdminContract.setNFT_Collection(constants.ZERO_ADDRESS, canTransfer, { from: deployer }),
             "revert"
         );
     });
@@ -70,7 +77,7 @@ contract("check revert transfer for setNFT_Collection with canTransfer param equ
     it("revert if setERC20_Support with wrong address", async () => {
         let isERC20Supported = true;
         await expectRevert(
-            MarketPlace.setERC20_Support(ERC1155Address, [constants.ZERO_ADDRESS], [isERC20Supported], { from: deployer }),
+            AdminContract.setERC20_Support(ERC1155Address, [constants.ZERO_ADDRESS], [isERC20Supported], { from: deployer }),
             "revert"
         );
     });
@@ -78,13 +85,13 @@ contract("check revert transfer for setNFT_Collection with canTransfer param equ
     it("reset market commission", async () => {
         let marketCommission = new BN(150);
 
-        let receipt = await MarketPlace.setMarketCommission(marketCommission, {from: deployer});
+        let receipt = await AdminContract.setMarketCommission(marketCommission, {from: deployer});
 
         expectEvent(receipt, "commissionMarket", {
             commisssion: marketCommission
         });
 
-        let receivedMarketCommission = await MarketPlace.marketCommission({from: deployer});
+        let receivedMarketCommission = await AdminContract.marketCommission({from: deployer});
         assert.equal(Number(receivedMarketCommission), marketCommission, "market comission is wrong");
     });
 
@@ -92,13 +99,13 @@ contract("check revert transfer for setNFT_Collection with canTransfer param equ
         const tokenbits = (new BN(10)).pow(new BN(18));
         commissionOffer = new BN(5).mul(tokenbits);
 
-        let receipt = await MarketPlace.setOfferCommission(commissionOffer, {from: deployer});
+        let receipt = await AdminContract.setOfferCommission(commissionOffer, {from: deployer});
 
         expectEvent(receipt, "commissionOffer", {
             commisssion: commissionOffer
         });
 
-        let receivedOfferCommission = await MarketPlace.offerCommission({from: deployer});
+        let receivedOfferCommission = await AdminContract.offerCommission({from: deployer});
         assert.equal(Number(receivedOfferCommission), commissionOffer, "offer comission is wrong");
     });
 
