@@ -55,8 +55,10 @@ contract("auction NFT functionality", async accounts => {
         Auction = await AuctionContract.new(MarketPlaceAddress, AdminContractAddress, {from: deployer});
         AuctionAddress = Auction.address;
 
+        await AdminContract.setAuctionContract(AuctionAddress, { from: deployer });
+        await MarketPlace.setAuctionContract(AuctionAddress, { from: deployer });  
+
         let canTransfer = true;
-        await MarketPlace.setAuctionContract(AuctionAddress, { from: deployer });
         let collection1155Receipt = await AdminContract.setNFT_Collection(ERC1155Address, canTransfer, { from: deployer });
 
         expectEvent(collection1155Receipt, 'collectionAdd', {
