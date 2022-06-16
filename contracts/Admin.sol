@@ -37,6 +37,11 @@ contract Admin is Ownable {
         uint256 commisssion
     );
 
+    constructor(uint256 marketCommission, uint256 offerCommission) {
+        setMarketCommission(marketCommission);
+        setOfferCommission(offerCommission);
+    }
+
     modifier onlyAdminCollection() {
         require(collectionAdmin[msg.sender] || msg.sender == owner(), "19");
         _;

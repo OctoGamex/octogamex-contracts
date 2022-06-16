@@ -19,3 +19,4 @@
 18 - Wrong date
 19 - Caller is not the owner or admin
 20 - Use our site!
+21 - Invalid admin address

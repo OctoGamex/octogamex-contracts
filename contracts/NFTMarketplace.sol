@@ -14,8 +14,8 @@ import "./Admin.sol";
 
 contract NFTMarketplace is Ownable, Pausable, VariablesTypes {
     address public marketWallet; // Address for transfer comission
-    Auction auctionContract;
-    Admin adminContract;
+    Auction public auctionContract;
+    Admin public adminContract;
 
     lotInfo[] public lots; // array of NFT lot
     offer[] public offers; // array of offers to lots
@@ -84,7 +84,7 @@ contract NFTMarketplace is Ownable, Pausable, VariablesTypes {
         address admin
     ) {
         setWallet(wallet);
-        adminContract = Admin(admin);
+        setAdminContract(admin);
     }
 
     function setPause() public onlyOwner{
@@ -129,6 +129,14 @@ contract NFTMarketplace is Ownable, Pausable, VariablesTypes {
             "5"
         );
         marketWallet = newWallet;
+    }
+
+    function setAdminContract(address newAdmin) public onlyOwner {
+        require(
+            newAdmin != address(0) && newAdmin != address(adminContract),
+            "21"
+        );
+        adminContract = Admin(newAdmin);
     }
 
 
