@@ -50,8 +50,19 @@ contract("auction NFT functionality", async accounts => {
 
         let canTransfer = true;
         await MarketPlace.setAuctionContract(AuctionAddress, { from: deployer });
-        await MarketPlace.setNFT_Collection(ERC1155Address, canTransfer, { from: deployer });
-        await MarketPlace.setNFT_Collection(ERC721Address, canTransfer, { from: deployer });
+        let collection1155Receipt = await MarketPlace.setNFT_Collection(ERC1155Address, canTransfer, { from: deployer });
+
+        expectEvent(collection1155Receipt, 'collectionAdd', {
+            auctionContract: ERC1155Address,
+            canTransfer: canTransfer
+        });
+
+        let collection721Receipt = await MarketPlace.setNFT_Collection(ERC721Address, canTransfer, { from: deployer });
+
+        expectEvent(collection721Receipt, 'collectionAdd', {
+            auctionContract: ERC721Address,
+            canTransfer: canTransfer
+        });
 
         let isERC20Supported = true;
         await MarketPlace.setERC20_Support(ERC1155Address, [ERC20Address], [isERC20Supported], { from: deployer });
@@ -61,7 +72,11 @@ contract("auction NFT functionality", async accounts => {
     it("reset market commission", async () => {
         let marketCommission = new BN(150);
 
-        await MarketPlace.setMarketCommission(marketCommission, {from: deployer});
+        let receipt = await MarketPlace.setMarketCommission(marketCommission, {from: deployer});
+
+        expectEvent(receipt, "commissionMarket", {
+            commisssion: marketCommission
+        });
 
         let receivedMarketCommission = await MarketPlace.marketCommission({from: deployer});
         assert.equal(Number(receivedMarketCommission), marketCommission, "market comission is wrong");
@@ -71,7 +86,11 @@ contract("auction NFT functionality", async accounts => {
         const tokenbits = (new BN(10)).pow(new BN(18));
         commissionOffer = new BN(1).mul(tokenbits);
 
-        await MarketPlace.setOfferCommission(commissionOffer, {from: deployer});
+        let receipt = await MarketPlace.setOfferCommission(commissionOffer, {from: deployer});
+
+        expectEvent(receipt, "commissionOffer", {
+            commisssion: commissionOffer
+        });
 
         let receivedOfferCommission = await MarketPlace.offerCommission({from: deployer});
         assert.equal(Number(receivedOfferCommission), commissionOffer, "offer comission is wrong");
@@ -1190,7 +1209,11 @@ contract("auction NFT functionality", async accounts => {
     it("reset market commission", async () => {
         let marketCommission = new BN(0);
 
-        await MarketPlace.setMarketCommission(marketCommission, {from: deployer});
+        let receipt = await MarketPlace.setMarketCommission(marketCommission, {from: deployer});
+
+        expectEvent(receipt, "commissionMarket", {
+            commisssion: marketCommission
+        });
 
         let receivedMarketCommission = await MarketPlace.marketCommission({from: deployer});
         assert.equal(Number(receivedMarketCommission), marketCommission, "market comission is wrong");
@@ -1200,7 +1223,11 @@ contract("auction NFT functionality", async accounts => {
         const tokenbits = (new BN(10)).pow(new BN(18));
         commissionOffer = new BN(0);
 
-        await MarketPlace.setOfferCommission(commissionOffer, {from: deployer});
+        let receipt = await MarketPlace.setOfferCommission(commissionOffer, {from: deployer});
+
+        expectEvent(receipt, "commissionOffer", {
+            commisssion: commissionOffer
+        });
 
         let receivedOfferCommission = await MarketPlace.offerCommission({from: deployer});
         assert.equal(Number(receivedOfferCommission), commissionOffer, "offer comission is wrong");

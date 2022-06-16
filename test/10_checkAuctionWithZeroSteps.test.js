@@ -6,7 +6,8 @@ const AuctionContract = artifacts.require("Auction");
 
 const {
     BN, 
-    expectRevert, 
+    expectRevert,
+    expectEvent,
     time,
     constants
 } = require('@openzeppelin/test-helpers');
@@ -43,11 +44,22 @@ contract("Auction: check bids amount with zero steps", async accounts => {
 
         Auction = await AuctionContract.new(MarketPlaceAddress, {from: deployer});
         AuctionAddress = Auction.address;
-
-        let canTransfer = true;
         await MarketPlace.setAuctionContract(AuctionAddress, { from: deployer });
-        await MarketPlace.setNFT_Collection(ERC1155Address, canTransfer, { from: deployer });
-        await MarketPlace.setNFT_Collection(ERC721Address, canTransfer, { from: deployer });
+
+        let canTransfer = true;       
+        let collection1155Receipt = await MarketPlace.setNFT_Collection(ERC1155Address, canTransfer, { from: deployer });
+
+        expectEvent(collection1155Receipt, 'collectionAdd', {
+            auctionContract: ERC1155Address,
+            canTransfer: canTransfer
+        });
+
+        let collection721Receipt = await MarketPlace.setNFT_Collection(ERC721Address, canTransfer, { from: deployer });
+
+        expectEvent(collection721Receipt, 'collectionAdd', {
+            auctionContract: ERC721Address,
+            canTransfer: canTransfer
+        });
 
         let isERC20Supported = true;
         await MarketPlace.setERC20_Support(ERC1155Address, [ERC20Address], [isERC20Supported], { from: deployer });
@@ -57,7 +69,11 @@ contract("Auction: check bids amount with zero steps", async accounts => {
     it("reset market commission", async () => {
         let marketCommission = new BN(150);
 
-        await MarketPlace.setMarketCommission(marketCommission, {from: deployer});
+        let receipt = await MarketPlace.setMarketCommission(marketCommission, {from: deployer});
+
+        expectEvent(receipt, "commissionMarket", {
+            commisssion: marketCommission
+        });
 
         let receivedMarketCommission = await MarketPlace.marketCommission({from: deployer});
         assert.equal(Number(receivedMarketCommission), marketCommission, "market comission is wrong");
@@ -67,7 +83,11 @@ contract("Auction: check bids amount with zero steps", async accounts => {
         const tokenbits = (new BN(10)).pow(new BN(18));
         commissionOffer = new BN(1).mul(tokenbits);
 
-        await MarketPlace.setOfferCommission(commissionOffer, {from: deployer});
+        let receipt = await MarketPlace.setOfferCommission(commissionOffer, {from: deployer});
+
+        expectEvent(receipt, "commissionOffer", {
+            commisssion: commissionOffer
+        });
 
         let receivedOfferCommission = await MarketPlace.offerCommission({from: deployer});
         assert.equal(Number(receivedOfferCommission), commissionOffer, "offer comission is wrong");

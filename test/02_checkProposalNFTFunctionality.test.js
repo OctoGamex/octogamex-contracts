@@ -42,8 +42,19 @@ contract("proposal NFT functionality", async accounts => {
         MarketPlaceAddress = MarketPlace.address;
 
         let canTransfer = true;
-        await MarketPlace.setNFT_Collection(ERC1155Address, canTransfer, { from: deployer });
-        await MarketPlace.setNFT_Collection(ERC721Address, canTransfer, { from: deployer });
+        let collection1155Receipt = await MarketPlace.setNFT_Collection(ERC1155Address, canTransfer, { from: deployer });
+
+        expectEvent(collection1155Receipt, 'collectionAdd', {
+            auctionContract: ERC1155Address,
+            canTransfer: canTransfer
+        });
+
+        let collection721Receipt = await MarketPlace.setNFT_Collection(ERC721Address, canTransfer, { from: deployer });
+
+        expectEvent(collection721Receipt, 'collectionAdd', {
+            auctionContract: ERC721Address,
+            canTransfer: canTransfer
+        });
 
         let isERC20Supported = true;
         await MarketPlace.setERC20_Support(ERC1155Address, [ERC20Address], [isERC20Supported], { from: deployer });
@@ -53,7 +64,11 @@ contract("proposal NFT functionality", async accounts => {
     it("reset market commission", async () => {
         let marketCommission = new BN(150);
 
-        await MarketPlace.setMarketCommission(marketCommission, {from: deployer});
+        let receipt = await MarketPlace.setMarketCommission(marketCommission, {from: deployer});
+
+        expectEvent(receipt, "commissionMarket", {
+            commisssion: marketCommission
+        });
 
         let receivedMarketCommission = await MarketPlace.marketCommission({from: deployer});
         assert.equal(Number(receivedMarketCommission), marketCommission, "market comission is wrong");
@@ -63,7 +78,11 @@ contract("proposal NFT functionality", async accounts => {
         const tokenbits = (new BN(10)).pow(new BN(18));
         commissionOffer = new BN(5).mul(tokenbits);
 
-        await MarketPlace.setOfferCommission(commissionOffer, {from: deployer});
+        let receipt = await MarketPlace.setOfferCommission(commissionOffer, {from: deployer});
+
+        expectEvent(receipt, "commissionOffer", {
+            commisssion: commissionOffer
+        });
 
         let receivedOfferCommission = await MarketPlace.offerCommission({from: deployer});
         assert.equal(Number(receivedOfferCommission), commissionOffer, "offer comission is wrong");
@@ -211,11 +230,19 @@ contract("proposal NFT functionality", async accounts => {
 
         let lotInfo;
         let openForOffers = true;
+        let receipt;
 
         for(let i = 0; i < addNFT721Num; i++) {
-            await MarketPlace.sell(userLotsIds[i], constants.ZERO_ADDRESS, lotPrice, openForOffers, lotStartDate, { from: accountTwo });
+            receipt = await MarketPlace.sell(userLotsIds[i], constants.ZERO_ADDRESS, lotPrice, openForOffers, lotStartDate, { from: accountTwo });
 
             lotInfo = await MarketPlace.lots(userLotsIds[i], { from: accountTwo });
+
+            expectEvent(receipt, "ExchangeNFT", {
+                startDate: lotStartDate,
+                lotID: new BN(userLotsIds[i]),
+                owner: accountTwo,
+                amount: lotInfo.creationInfo.amount
+            });
      
             assert.equal(lotStartDate, Number(lotInfo.sellStart), "start date of lot is wrong");
             assert.equal(lotPrice, Number(lotInfo.price.buyerPrice), "lot price is wrong");
@@ -230,15 +257,15 @@ contract("proposal NFT functionality", async accounts => {
         let getInfoAccThree = await MarketPlace.getInfo(accountThree, { from: accountThree });
 
         for(let i = 0; i < getInfoAccOne.userLots.length; i++) {
-            accOneLotsIds.push(Number(getInfoAccOne.userLots[i]));
+            accOneLotsIds.push(new BN(getInfoAccOne.userLots[i]));
         }
 
         for(let i = 0; i < getInfoAccTwo.userLots.length; i++) {
-            accTwoLotsIds.push(Number(getInfoAccTwo.userLots[i]));
+            accTwoLotsIds.push(new BN(getInfoAccTwo.userLots[i]));
         }
 
         for(let i = 0; i < getInfoAccThree.userLots.length; i++) {
-            accThreeLotsIds.push(Number(getInfoAccThree.userLots[i]));
+            accThreeLotsIds.push(new BN(getInfoAccThree.userLots[i]));
         }
 
         let accOneExchangeNFTindexes = accOneLotsIds.slice(0, 2); // [0, 1]
@@ -247,11 +274,39 @@ contract("proposal NFT functionality", async accounts => {
 
         let lotId = accTwoLotsIds[0];
 
-        await MarketPlace.makeOffer(lotId, accOneExchangeNFTindexes, constants.ZERO_ADDRESS, 
+        let firstReceipt = await MarketPlace.makeOffer(lotId, accOneExchangeNFTindexes, constants.ZERO_ADDRESS, 
             tokensAmount, { from: accountOne, value: commissionOffer });
 
-        await MarketPlace.makeOffer(lotId, accThreeExchangeNFTindexes, constants.ZERO_ADDRESS, 
+        getInfoAccOne = await MarketPlace.getInfo(accountOne, { from: accountOne });      
+        let offersAccOneLength = getInfoAccOne.userOffers.length;
+        let offerIdAccOne = getInfoAccOne.userOffers[offersAccOneLength - 1];
+
+        expectEvent(firstReceipt, "MakeOffer", {
+            user: accountOne,
+            lotID: new BN(lotId),
+            offerID: offerIdAccOne,
+            tokenAddress: constants.ZERO_ADDRESS,
+            tokenAmount: tokensAmount,
+            itemLotIds: accOneExchangeNFTindexes,
+            tokenValue: new BN(0)
+        });
+
+        let secondReceipt = await MarketPlace.makeOffer(lotId, accThreeExchangeNFTindexes, constants.ZERO_ADDRESS, 
             tokensAmount, { from: accountThree, value: commissionOffer });
+
+        getInfoAccThree = await MarketPlace.getInfo(accountThree, { from: accountThree });      
+        let offersAccThreeLength = getInfoAccThree.userOffers.length;
+        let offerIdAccThree = getInfoAccThree.userOffers[offersAccThreeLength - 1];
+
+        expectEvent(secondReceipt, "MakeOffer", {
+            user: accountThree,
+            lotID: new BN(lotId),
+            offerID: offerIdAccThree,
+            tokenAddress: constants.ZERO_ADDRESS,
+            tokenAmount: tokensAmount,
+            itemLotIds: accThreeExchangeNFTindexes,
+            tokenValue: new BN(0)
+        });
 
         let offersAmount = new BN(2);
         let lotOffersInfo = await MarketPlace.getLotsOffers(lotId, { from: accountTwo });
@@ -294,9 +349,37 @@ contract("proposal NFT functionality", async accounts => {
         const tokenbits = (new BN(10)).pow(new BN(18));
         let tokensAmount = new BN(200).mul(tokenbits);
 
-        await MarketPlace.makeOffer(lotId, accOneExchangeNFTindexes, ERC20Address, tokensAmount, { from: accountOne }); 
+        let firstReceipt = await MarketPlace.makeOffer(lotId, accOneExchangeNFTindexes, ERC20Address, tokensAmount, { from: accountOne });
+        
+        let getInfoAccOne = await MarketPlace.getInfo(accountOne, { from: accountOne });      
+        let offersAccOneLength = getInfoAccOne.userOffers.length;
+        let offerIdAccOne = getInfoAccOne.userOffers[offersAccOneLength - 1];
 
-        await MarketPlace.makeOffer(lotId, accThreeExchangeNFTindexes, ERC20Address, tokensAmount, { from: accountThree });
+        expectEvent(firstReceipt, "MakeOffer", {
+            user: accountOne,
+            lotID: new BN(lotId),
+            offerID: offerIdAccOne,
+            tokenAddress: ERC20Address,
+            tokenAmount: tokensAmount,
+            itemLotIds: accOneExchangeNFTindexes,
+            tokenValue: new BN(0)
+        });
+
+        let secondReceipt = await MarketPlace.makeOffer(lotId, accThreeExchangeNFTindexes, ERC20Address, tokensAmount, { from: accountThree });
+
+        let getInfoAccThree = await MarketPlace.getInfo(accountThree, { from: accountThree });      
+        let offersAccThreeLength = getInfoAccThree.userOffers.length;
+        let offerIdAccThree = getInfoAccThree.userOffers[offersAccThreeLength - 1];
+
+        expectEvent(secondReceipt, "MakeOffer", {
+            user: accountThree,
+            lotID: new BN(lotId),
+            offerID: offerIdAccThree,
+            tokenAddress: ERC20Address,
+            tokenAmount: tokensAmount,
+            itemLotIds: accThreeExchangeNFTindexes,
+            tokenValue: new BN(0)
+        });
 
         let offersAmount = new BN(2);
         let lotOffersInfo = await MarketPlace.getLotsOffers(lotId, { from: accountTwo });
@@ -312,15 +395,15 @@ contract("proposal NFT functionality", async accounts => {
         let getInfoAccThree = await MarketPlace.getInfo(accountThree, { from: accountThree });
 
         for(let i = 0; i < getInfoAccOne.userLots.length; i++) {
-            accOneLotsIds.push(Number(getInfoAccOne.userLots[i]));
+            accOneLotsIds.push(new BN(getInfoAccOne.userLots[i]));
         }
 
         for(let i = 0; i < getInfoAccTwo.userLots.length; i++) {
-            accTwoLotsIds.push(Number(getInfoAccTwo.userLots[i]));
+            accTwoLotsIds.push(new BN(getInfoAccTwo.userLots[i]));
         }
 
         for(let i = 0; i < getInfoAccThree.userLots.length; i++) {
-            accThreeLotsIds.push(Number(getInfoAccThree.userLots[i]));
+            accThreeLotsIds.push(new BN(getInfoAccThree.userLots[i]));
         }
 
         let lotId = accTwoLotsIds[2];
@@ -330,11 +413,39 @@ contract("proposal NFT functionality", async accounts => {
         const tokenbits = (new BN(10)).pow(new BN(18));
         let tokensAmount = new BN(50).mul(tokenbits);
 
-        await MarketPlace.makeOffer(lotId, accOneExchangeNFTindexes, ERC20Address, 
+        let firstReceipt = await MarketPlace.makeOffer(lotId, accOneExchangeNFTindexes, ERC20Address, 
             tokensAmount, { from: accountOne, value: commissionOffer });
 
-        await MarketPlace.makeOffer(lotId, accThreeExchangeNFTindexes, ERC20Address, 
+        getInfoAccOne = await MarketPlace.getInfo(accountOne, { from: accountOne });      
+        let offersAccOneLength = getInfoAccOne.userOffers.length;
+        let offerIdAccOne = getInfoAccOne.userOffers[offersAccOneLength - 1];
+
+        expectEvent(firstReceipt, "MakeOffer", {
+            user: accountOne,
+            lotID: new BN(lotId),
+            offerID: offerIdAccOne,
+            tokenAddress: ERC20Address,
+            tokenAmount: tokensAmount,
+            itemLotIds: accOneExchangeNFTindexes,
+            tokenValue: new BN(0)
+        });
+
+        let secondReceipt = await MarketPlace.makeOffer(lotId, accThreeExchangeNFTindexes, ERC20Address, 
                 tokensAmount, { from: accountThree, value: commissionOffer });
+
+        getInfoAccThree = await MarketPlace.getInfo(accountThree, { from: accountThree });      
+        let offersAccThreeLength = getInfoAccThree.userOffers.length;
+        let offerIdAccThree = getInfoAccThree.userOffers[offersAccThreeLength - 1];
+
+        expectEvent(secondReceipt, "MakeOffer", {
+            user: accountThree,
+            lotID: new BN(lotId),
+            offerID: offerIdAccThree,
+            tokenAddress: ERC20Address,
+            tokenAmount: tokensAmount,
+            itemLotIds: accThreeExchangeNFTindexes,
+            tokenValue: new BN(0)
+        });
 
         let offersAmount = new BN(2);
         let lotOffersInfo = await MarketPlace.getLotsOffers(lotId, { from: accountTwo });
@@ -379,11 +490,39 @@ contract("proposal NFT functionality", async accounts => {
         let tokensAmount = new BN(0);
         let cryptoProposalAmount = new BN(1).mul(tokenbits);
 
-        await MarketPlace.makeOffer(lotId, accOneExchangeNFTindexes, constants.ZERO_ADDRESS, 
+        let firstReceipt = await MarketPlace.makeOffer(lotId, accOneExchangeNFTindexes, constants.ZERO_ADDRESS, 
             tokensAmount, { from: accountOne, value: cryptoProposalAmount });
 
-        await MarketPlace.makeOffer(lotId, accThreeExchangeNFTindexes, constants.ZERO_ADDRESS, 
+        let getInfoAccOne = await MarketPlace.getInfo(accountOne, { from: accountOne });      
+        let offersAccOneLength = getInfoAccOne.userOffers.length;
+        let offerIdAccOne = getInfoAccOne.userOffers[offersAccOneLength - 1];
+
+        expectEvent(firstReceipt, "MakeOffer", {
+            user: accountOne,
+            lotID: new BN(lotId),
+            offerID: offerIdAccOne,
+            tokenAddress: constants.ZERO_ADDRESS,
+            tokenAmount: tokensAmount,
+            itemLotIds: accOneExchangeNFTindexes,
+            tokenValue: new BN(cryptoProposalAmount)
+        });
+
+        let secondReceipt = await MarketPlace.makeOffer(lotId, accThreeExchangeNFTindexes, constants.ZERO_ADDRESS, 
             tokensAmount, { from: accountThree, value: cryptoProposalAmount });
+
+        let getInfoAccThree = await MarketPlace.getInfo(accountThree, { from: accountThree });      
+        let offersAccThreeLength = getInfoAccThree.userOffers.length;
+        let offerIdAccThree = getInfoAccThree.userOffers[offersAccThreeLength - 1];
+
+        expectEvent(secondReceipt, "MakeOffer", {
+            user: accountThree,
+            lotID: new BN(lotId),
+            offerID: offerIdAccThree,
+            tokenAddress: constants.ZERO_ADDRESS,
+            tokenAmount: tokensAmount,
+            itemLotIds: accThreeExchangeNFTindexes,
+            tokenValue: new BN(cryptoProposalAmount)
+        });
 
         let offersAmount = new BN(2);
         let lotOffersInfo = await MarketPlace.getLotsOffers(lotId, { from: accountTwo });
@@ -399,15 +538,15 @@ contract("proposal NFT functionality", async accounts => {
         let getInfoAccThree = await MarketPlace.getInfo(accountThree, { from: accountThree });
 
         for(let i = 0; i < getInfoAccOne.userLots.length; i++) {
-            accOneLotsIds.push(Number(getInfoAccOne.userLots[i]));
+            accOneLotsIds.push(new BN(getInfoAccOne.userLots[i]));
         }
 
         for(let i = 0; i < getInfoAccTwo.userLots.length; i++) {
-            accTwoLotsIds.push(Number(getInfoAccTwo.userLots[i]));
+            accTwoLotsIds.push(new BN(getInfoAccTwo.userLots[i]));
         }
 
         for(let i = 0; i < getInfoAccThree.userLots.length; i++) {
-            accThreeLotsIds.push(Number(getInfoAccThree.userLots[i]));
+            accThreeLotsIds.push(new BN(getInfoAccThree.userLots[i]));
         }
 
         let lotId = accTwoLotsIds[4];
@@ -418,11 +557,39 @@ contract("proposal NFT functionality", async accounts => {
         let tokensAmount = new BN(0);
         let cryptoProposalAmount = new BN(6).mul(tokenbits);
 
-        await MarketPlace.makeOffer(lotId, accOneExchangeNFTindexes, constants.ZERO_ADDRESS, 
+        let firstReceipt = await MarketPlace.makeOffer(lotId, accOneExchangeNFTindexes, constants.ZERO_ADDRESS, 
             tokensAmount, { from: accountOne, value: (Number(commissionOffer) + Number(cryptoProposalAmount)) });
 
-        await MarketPlace.makeOffer(lotId, accThreeExchangeNFTindexes, constants.ZERO_ADDRESS, 
+        getInfoAccOne = await MarketPlace.getInfo(accountOne, { from: accountOne });      
+        let offersAccOneLength = getInfoAccOne.userOffers.length;
+        let offerIdAccOne = getInfoAccOne.userOffers[offersAccOneLength - 1];
+
+        expectEvent(firstReceipt, "MakeOffer", {
+            user: accountOne,
+            lotID: new BN(lotId),
+            offerID: offerIdAccOne,
+            tokenAddress: constants.ZERO_ADDRESS,
+            tokenAmount: tokensAmount,
+            itemLotIds: accOneExchangeNFTindexes,
+            tokenValue: new BN(cryptoProposalAmount)
+        });
+
+        let secondReceipt = await MarketPlace.makeOffer(lotId, accThreeExchangeNFTindexes, constants.ZERO_ADDRESS, 
             tokensAmount, { from: accountThree, value: (Number(commissionOffer) + Number(cryptoProposalAmount)) });
+
+        getInfoAccThree = await MarketPlace.getInfo(accountThree, { from: accountThree });      
+        let offersAccThreeLength = getInfoAccThree.userOffers.length;
+        let offerIdAccThree = getInfoAccThree.userOffers[offersAccThreeLength - 1];
+
+        expectEvent(secondReceipt, "MakeOffer", {
+            user: accountThree,
+            lotID: new BN(lotId),
+            offerID: offerIdAccThree,
+            tokenAddress: constants.ZERO_ADDRESS,
+            tokenAmount: tokensAmount,
+            itemLotIds: accThreeExchangeNFTindexes,
+            tokenValue: new BN(cryptoProposalAmount)
+        });
 
         let offersAmount = new BN(2);
         let lotOffersInfo = await MarketPlace.getLotsOffers(lotId, { from: accountTwo });
@@ -509,15 +676,15 @@ contract("proposal NFT functionality", async accounts => {
         let getInfoAccThree = await MarketPlace.getInfo(accountThree, { from: accountThree });
 
         for(let i = 0; i < getInfoAccOne.userLots.length; i++) {
-            accOneLotsIds.push(Number(getInfoAccOne.userLots[i]));
+            accOneLotsIds.push(new BN(getInfoAccOne.userLots[i]));
         }
 
         for(let i = 0; i < getInfoAccTwo.userLots.length; i++) {
-            accTwoLotsIds.push(Number(getInfoAccTwo.userLots[i]));
+            accTwoLotsIds.push(new BN(getInfoAccTwo.userLots[i]));
         }
 
         for(let i = 0; i < getInfoAccThree.userLots.length; i++) {
-            accThreeLotsIds.push(Number(getInfoAccThree.userLots[i]));
+            accThreeLotsIds.push(new BN(getInfoAccThree.userLots[i]));
         }
 
         let lotId = accTwoLotsIds[7];
@@ -527,23 +694,65 @@ contract("proposal NFT functionality", async accounts => {
         let tokensAmount = new BN(150).mul(tokenbits);
 
         // accountOne make offer NFT + tokens
-        await MarketPlace.makeOffer(lotId, accOneExchangeNFTindexes, ERC20Address, 
+        let firstReceipt = await MarketPlace.makeOffer(lotId, accOneExchangeNFTindexes, ERC20Address, 
             tokensAmount, { from: accountOne, value: commissionOffer });
+
+        getInfoAccOne = await MarketPlace.getInfo(accountOne, { from: accountOne });      
+        let offersAccOneLength = getInfoAccOne.userOffers.length;
+        let offerIdAccOne = getInfoAccOne.userOffers[offersAccOneLength - 1];
+
+        expectEvent(firstReceipt, "MakeOffer", {
+            user: accountOne,
+            lotID: new BN(lotId),
+            offerID: offerIdAccOne,
+            tokenAddress: ERC20Address,
+            tokenAmount: tokensAmount,
+            itemLotIds: accOneExchangeNFTindexes,
+            tokenValue: new BN(0)
+        });
 
         let accThreeExchangeNFTindexes = accThreeLotsIds.slice(6, 10); // [6, 7, 8, 9]
         let accThreeTokensAmount = new BN(0);  
 
         // accountThree make offer NFT
-        await MarketPlace.makeOffer(lotId, accThreeExchangeNFTindexes, constants.ZERO_ADDRESS, 
+        let secondReceipt = await MarketPlace.makeOffer(lotId, accThreeExchangeNFTindexes, constants.ZERO_ADDRESS, 
             accThreeTokensAmount, { from: accountThree, value: commissionOffer });
+
+        getInfoAccThree = await MarketPlace.getInfo(accountThree, { from: accountThree });      
+        let offersAccThreeLength = getInfoAccThree.userOffers.length;
+        let offerIdAccThree = getInfoAccThree.userOffers[offersAccThreeLength - 1];
+
+        expectEvent(secondReceipt, "MakeOffer", {
+            user: accountThree,
+            lotID: new BN(lotId),
+            offerID: offerIdAccThree,
+            tokenAddress: constants.ZERO_ADDRESS,
+            tokenAmount: accThreeTokensAmount,
+            itemLotIds: accThreeExchangeNFTindexes,
+            tokenValue: new BN(0)
+        });
 
         let accFourExchangeNFTindexes = [];
         let accFourTokensAmount = new BN(0);  
         let cryptoProposalAmount = new BN(15).mul(tokenbits); 
 
         // accountFour make offer crypto
-        await MarketPlace.makeOffer(lotId, accFourExchangeNFTindexes, constants.ZERO_ADDRESS, 
+        let thirdReceipt = await MarketPlace.makeOffer(lotId, accFourExchangeNFTindexes, constants.ZERO_ADDRESS, 
             accFourTokensAmount, { from: accountFour, value: cryptoProposalAmount });  // check offers
+
+        let getInfoAccFour = await MarketPlace.getInfo(accountFour, { from: accountFour });      
+        let offersAccFourLength = getInfoAccFour.userOffers.length;
+        let offerIdAccFour = getInfoAccFour.userOffers[offersAccFourLength - 1];
+
+        expectEvent(thirdReceipt, "MakeOffer", {
+            user: accountFour,
+            lotID: new BN(lotId),
+            offerID: offerIdAccFour,
+            tokenAddress: constants.ZERO_ADDRESS,
+            tokenAmount: accFourTokensAmount,
+            itemLotIds: accFourExchangeNFTindexes,
+            tokenValue: new BN(cryptoProposalAmount)
+        });
 
         let offersAmount = new BN(3);
         let lotOffersInfo = await MarketPlace.getLotsOffers(lotId, { from: accountTwo });
@@ -610,8 +819,24 @@ contract("proposal NFT functionality", async accounts => {
         const tokenbits = (new BN(10)).pow(new BN(18));
         let tokensAmount = new BN(150).mul(tokenbits);
 
-        await MarketPlace.NFT_Offer([ERC1155Address], [accFourNFT1155id], [accFourNFT1155value], 
+        let receipt = await MarketPlace.NFT_Offer([ERC1155Address], [accFourNFT1155id], [accFourNFT1155value], 
             [isERC1155], lotId, ERC20Address, tokensAmount, NFTdata, { from: accountFour, value: commissionOffer });
+
+        let getInfoAccFour = await MarketPlace.getInfo(accountFour, { from: accountFour });
+        let lotsLength = getInfoAccFour.userLots.length;
+        let itemLotId = getInfoAccFour.userLots[lotsLength - 1];       
+        let offersLength = getInfoAccFour.userOffers.length;
+        let offerId = getInfoAccFour.userOffers[offersLength - 1];
+
+        expectEvent(receipt, "MakeOffer", {
+            user: accountFour,
+            lotID: new BN(lotId),
+            offerID: offerId,
+            tokenAddress: ERC20Address,
+            tokenAmount: tokensAmount,
+            itemLotIds: [new BN(itemLotId)],
+            tokenValue: new BN(0)
+        });
 
         let lotLength = await MarketPlace.getLotsLength();
         let lotInfo = await MarketPlace.lots(lotLength - 1, { from: accountFour });  
@@ -644,9 +869,25 @@ contract("proposal NFT functionality", async accounts => {
         let cryptoAmount = new BN(1).mul(tokenbits);
         let tokensAmount = new BN(0);
 
-        await MarketPlace.NFT_Offer([ERC1155Address], [accFourNFT1155id], [accFourNFT1155value], 
+        let receipt = await MarketPlace.NFT_Offer([ERC1155Address], [accFourNFT1155id], [accFourNFT1155value], 
             [isERC1155], lotId, constants.ZERO_ADDRESS, tokensAmount, NFTdata, 
             { from: accountFour, value: (Number(commissionOffer) + Number(cryptoAmount)) });
+
+        let getInfoAccFour = await MarketPlace.getInfo(accountFour, { from: accountFour });
+        let lotsLength = getInfoAccFour.userLots.length;
+        let itemLotId = getInfoAccFour.userLots[lotsLength - 1];       
+        let offersLength = getInfoAccFour.userOffers.length;
+        let offerId = getInfoAccFour.userOffers[offersLength - 1];
+
+        expectEvent(receipt, "MakeOffer", {
+            user: accountFour,
+            lotID: new BN(lotId),
+            offerID: offerId,
+            tokenAddress: constants.ZERO_ADDRESS,
+            tokenAmount: tokensAmount,
+            itemLotIds: [new BN(itemLotId)],
+            tokenValue: new BN(cryptoAmount)
+        });
 
         let lotLength = await MarketPlace.getLotsLength();
         let lotInfo = await MarketPlace.lots(lotLength - 1, { from: accountFour });  
@@ -678,8 +919,24 @@ contract("proposal NFT functionality", async accounts => {
         const tokenbits = (new BN(10)).pow(new BN(18));
         let tokensAmount = new BN(150).mul(tokenbits);
 
-        await MarketPlace.NFT_Offer([ERC721Address], [accFourNFT721ids[0]], [value], 
+        let receipt = await MarketPlace.NFT_Offer([ERC721Address], [accFourNFT721ids[0]], [value], 
             [isERC1155], lotId, ERC20Address, tokensAmount, NFTdata, { from: accountFour, value: commissionOffer });
+
+        let getInfoAccFour = await MarketPlace.getInfo(accountFour, { from: accountFour });
+        let lotsLength = getInfoAccFour.userLots.length;
+        let itemLotId = getInfoAccFour.userLots[lotsLength - 1];       
+        let offersLength = getInfoAccFour.userOffers.length;
+        let offerId = getInfoAccFour.userOffers[offersLength - 1];
+
+        expectEvent(receipt, "MakeOffer", {
+            user: accountFour,
+            lotID: new BN(lotId),
+            offerID: offerId,
+            tokenAddress: ERC20Address,
+            tokenAmount: tokensAmount,
+            itemLotIds: [new BN(itemLotId)],
+            tokenValue: new BN(0)
+        });
 
         let lotLength = await MarketPlace.getLotsLength();
         let lotInfo = await MarketPlace.lots(lotLength - 1, { from: accountFour });  
@@ -712,9 +969,25 @@ contract("proposal NFT functionality", async accounts => {
         let cryptoAmount = new BN(1).mul(tokenbits);
         let tokensAmount = new BN(0);
 
-        await MarketPlace.NFT_Offer([ERC721Address], [accFourNFT721ids[1]], [value], 
+        let receipt = await MarketPlace.NFT_Offer([ERC721Address], [accFourNFT721ids[1]], [value], 
             [isERC1155], lotId, constants.ZERO_ADDRESS, tokensAmount, NFTdata, 
             { from: accountFour, value: (Number(commissionOffer) + Number(cryptoAmount)) });
+
+        let getInfoAccFour = await MarketPlace.getInfo(accountFour, { from: accountFour });
+        let lotsLength = getInfoAccFour.userLots.length;
+        let itemLotId = getInfoAccFour.userLots[lotsLength - 1];       
+        let offersLength = getInfoAccFour.userOffers.length;
+        let offerId = getInfoAccFour.userOffers[offersLength - 1];
+
+        expectEvent(receipt, "MakeOffer", {
+            user: accountFour,
+            lotID: new BN(lotId),
+            offerID: offerId,
+            tokenAddress: constants.ZERO_ADDRESS,
+            tokenAmount: tokensAmount,
+            itemLotIds: [new BN(itemLotId)],
+            tokenValue: new BN(cryptoAmount)
+        });
 
         let lotLength = await MarketPlace.getLotsLength();
         let lotInfo = await MarketPlace.lots(lotLength - 1, { from: accountFour });  
@@ -739,7 +1012,17 @@ contract("proposal NFT functionality", async accounts => {
 
         let offeredNFTAmount = new BN(20); // from "make offer with NFT" [0, 1]
 
-        await MarketPlace.cancelOffer(lotOffers[0], { from: accountOne });
+        let lotId = (await MarketPlace.offers(lotOffers[0])).lotID;
+
+        let receipt = await MarketPlace.cancelOffer(lotOffers[0], { from: accountOne });
+        let date = (await web3.eth.getBlock("latest")).timestamp;
+
+        expectEvent(receipt, "RevertedOffer", {
+            lotID: new BN(lotId),
+            offerID: new BN(lotOffers[0]),
+            datetime: new BN(date)
+        });
+
         let accOneNFTBalance = await ERC1155.balanceOf(accountOne, accOneNFT1155id, { from: accountOne });
 
         assert.equal(Number(offeredNFTAmount), accOneNFTBalance, "offer with NFT is not canceled");
@@ -756,9 +1039,19 @@ contract("proposal NFT functionality", async accounts => {
         const tokenbits = (new BN(10)).pow(new BN(18));
         let tokensAmount = new BN(200).mul(tokenbits);
 
-        let accOneTokensBalanceBefore = await ERC20.balanceOf(accountOne, { from: accountOne });  
+        let accOneTokensBalanceBefore = await ERC20.balanceOf(accountOne, { from: accountOne });
 
-        await MarketPlace.cancelOffer(lotOffers[1], { from: accountOne });
+        let lotId = (await MarketPlace.offers(lotOffers[1])).lotID;
+
+        let receipt = await MarketPlace.cancelOffer(lotOffers[1], { from: accountOne });
+        let date = (await web3.eth.getBlock("latest")).timestamp;
+
+        expectEvent(receipt, "RevertedOffer", {
+            lotID: new BN(lotId),
+            offerID: new BN(lotOffers[1]),
+            datetime: new BN(date)
+        });
+
         let accOneTokensBalanceAfter = await ERC20.balanceOf(accountOne, { from: accountOne });
  
         assert.equal((Number(accOneTokensBalanceBefore) + Number(tokensAmount)), accOneTokensBalanceAfter, "balance of tokens after canceled is wrong"); // UNCOMMENTED
@@ -780,7 +1073,16 @@ contract("proposal NFT functionality", async accounts => {
         let accOneNFTBalanceBefore = await ERC1155.balanceOf(accountOne, accOneNFT1155id, { from: accountOne });
         let accOneTokensBalanceBefore = await ERC20.balanceOf(accountOne, { from: accountOne });  
 
-        await MarketPlace.cancelOffer(lotOffers[2], { from: accountOne });
+        let lotId = (await MarketPlace.offers(lotOffers[2])).lotID;
+
+        let receipt = await MarketPlace.cancelOffer(lotOffers[2], { from: accountOne });
+        let date = (await web3.eth.getBlock("latest")).timestamp;
+
+        expectEvent(receipt, "RevertedOffer", {
+            lotID: new BN(lotId),
+            offerID: new BN(lotOffers[2]),
+            datetime: new BN(date)
+        });
 
         let accOneNFTBalanceAfter = await ERC1155.balanceOf(accountOne, accOneNFT1155id, { from: accountOne });
         let accOneTokensBalanceAfter = await ERC20.balanceOf(accountOne, { from: accountOne });
@@ -803,7 +1105,16 @@ contract("proposal NFT functionality", async accounts => {
         
         let accOneCryptoBalanceBefore = (await web3.eth.getBalance(accountOne) / tokenbits).toFixed(0);
 
-        await MarketPlace.cancelOffer(lotOffers[3], { from: accountOne });
+        let lotId = (await MarketPlace.offers(lotOffers[3])).lotID;
+
+        let receipt = await MarketPlace.cancelOffer(lotOffers[3], { from: accountOne });
+        let date = (await web3.eth.getBlock("latest")).timestamp;
+
+        expectEvent(receipt, "RevertedOffer", {
+            lotID: new BN(lotId),
+            offerID: new BN(lotOffers[3]),
+            datetime: new BN(date)
+        });
 
         let accOneCryptoBalanceAfter = (await web3.eth.getBalance(accountOne) / tokenbits).toFixed(0);
 
@@ -828,7 +1139,16 @@ contract("proposal NFT functionality", async accounts => {
         let accOneNFTBalanceBefore = await ERC1155.balanceOf(accountOne, accOneNFT1155id, { from: accountOne });
         let accOneCryptoBalanceBefore = (await web3.eth.getBalance(accountOne) / tokenbits).toFixed(0);
 
-        await MarketPlace.cancelOffer(lotOffers[4], { from: accountOne });
+        let lotId = (await MarketPlace.offers(lotOffers[4])).lotID;
+
+        let receipt = await MarketPlace.cancelOffer(lotOffers[4], { from: accountOne });
+        let date = (await web3.eth.getBlock("latest")).timestamp;
+
+        expectEvent(receipt, "RevertedOffer", {
+            lotID: new BN(lotId),
+            offerID: new BN(lotOffers[4]),
+            datetime: new BN(date)
+        });
 
         let accOneNFTBalanceAfter = await ERC1155.balanceOf(accountOne, accOneNFT1155id, { from: accountOne });
         let accOneCryptoBalanceAfter = (await web3.eth.getBalance(accountOne) / tokenbits).toFixed(0);
@@ -858,7 +1178,7 @@ contract("proposal NFT functionality", async accounts => {
         let accTwoLotsIds = [];      
 
         for(let i = 0; i < getInfoAccTwo.userLots.length; i++) {
-            accTwoLotsIds.push(Number(getInfoAccTwo.userLots[i]));
+            accTwoLotsIds.push(new BN(getInfoAccTwo.userLots[i]));
         }
 
         let offeredNFTAmount = new BN(45); // from "make offer with NFT" [0, 1, 2]
@@ -867,7 +1187,14 @@ contract("proposal NFT functionality", async accounts => {
 
         let lotOffers = await MarketPlace.getLotsOffers(lotId, { from: accountTwo });
    
-        await MarketPlace.chooseOffer(lotId, lotOffers[1], NFTdata, { from: accountTwo });
+        let receipt = await MarketPlace.chooseOffer(lotId, lotOffers[1], NFTdata, { from: accountTwo });
+        let date = (await web3.eth.getBlock("latest")).timestamp;
+
+        expectEvent(receipt, "ChoosedOffer", {
+            lotID: lotId,
+            offerID: lotOffers[1],
+            datetime: new BN(date)
+        });
 
         let accThreeNFTBalance = await ERC721.balanceOf(accountThree, { from: accountThree });
         let accTwoNFTBalance = await ERC1155.balanceOf(accountTwo, accThreeNFT1155id, { from: accountTwo });
@@ -881,7 +1208,7 @@ contract("proposal NFT functionality", async accounts => {
         let accTwoLotsIds = [];      
 
         for(let i = 0; i < getInfoAccTwo.userLots.length; i++) {
-            accTwoLotsIds.push(Number(getInfoAccTwo.userLots[i]));
+            accTwoLotsIds.push(new BN(getInfoAccTwo.userLots[i]));
         }
 
         const tokenbits = (new BN(10)).pow(new BN(18));
@@ -895,7 +1222,14 @@ contract("proposal NFT functionality", async accounts => {
 
         let expectedTokensProfit = tokensAmount - ((tokensAmount.mul(receivedMarketCommission)).div(new BN(1000)));
 
-        await MarketPlace.chooseOffer(lotId, lotOffers[1], NFTdata, { from: accountTwo });
+        let receipt = await MarketPlace.chooseOffer(lotId, lotOffers[1], NFTdata, { from: accountTwo });
+        let date = (await web3.eth.getBlock("latest")).timestamp;
+
+        expectEvent(receipt, "ChoosedOffer", {
+            lotID: lotId,
+            offerID: lotOffers[1],
+            datetime: new BN(date)
+        });
 
         let accThreeNFTBalanceAfter = await ERC721.balanceOf(accountThree, { from: accountThree });
         let accTwoTokensBalanceAfter = await ERC20.balanceOf(accountTwo, { from: accountTwo });
@@ -912,7 +1246,7 @@ contract("proposal NFT functionality", async accounts => {
         let accTwoLotsIds = [];      
 
         for(let i = 0; i < getInfoAccTwo.userLots.length; i++) {
-            accTwoLotsIds.push(Number(getInfoAccTwo.userLots[i]));
+            accTwoLotsIds.push(new BN(getInfoAccTwo.userLots[i]));
         }
 
         let lotId = accTwoLotsIds[2];
@@ -928,7 +1262,14 @@ contract("proposal NFT functionality", async accounts => {
 
         let expectedTokensProfit = tokensAmount - ((tokensAmount.mul(receivedMarketCommission)).div(new BN(1000)));
 
-        await MarketPlace.chooseOffer(lotId, lotOffers[1], NFTdata, { from: accountTwo });
+        let receipt = await MarketPlace.chooseOffer(lotId, lotOffers[1], NFTdata, { from: accountTwo });
+        let date = (await web3.eth.getBlock("latest")).timestamp;
+
+        expectEvent(receipt, "ChoosedOffer", {
+            lotID: lotId,
+            offerID: lotOffers[1],
+            datetime: new BN(date)
+        });
        
         let accTwoNFTBalanceAfter = await ERC1155.balanceOf(accountTwo, accThreeNFT1155id, { from: accountTwo }); 
         let accTwoTokensBalanceAfter = await ERC20.balanceOf(accountTwo, { from: accountTwo });
@@ -949,7 +1290,7 @@ contract("proposal NFT functionality", async accounts => {
         let accTwoLotsIds = [];      
 
         for(let i = 0; i < getInfoAccTwo.userLots.length; i++) {
-            accTwoLotsIds.push(Number(getInfoAccTwo.userLots[i]));
+            accTwoLotsIds.push(new BN(getInfoAccTwo.userLots[i]));
         }
 
         let lotId = accTwoLotsIds[3];
@@ -964,6 +1305,13 @@ contract("proposal NFT functionality", async accounts => {
         let accThreeNFTBalanceBefore = await ERC721.balanceOf(accountThree, { from: accountThree });
 
         let receipt = await MarketPlace.chooseOffer(lotId, lotOffers[1], NFTdata, { from: accountTwo });
+        let date = (await web3.eth.getBlock("latest")).timestamp;
+
+        expectEvent(receipt, "ChoosedOffer", {
+            lotID: lotId,
+            offerID: lotOffers[1],
+            datetime: new BN(date)
+        });
 
         const gasUsed = receipt.receipt.gasUsed;
 
@@ -990,7 +1338,7 @@ contract("proposal NFT functionality", async accounts => {
         let accTwoLotsIds = [];      
 
         for(let i = 0; i < getInfoAccTwo.userLots.length; i++) {
-            accTwoLotsIds.push(Number(getInfoAccTwo.userLots[i]));
+            accTwoLotsIds.push(new BN(getInfoAccTwo.userLots[i]));
         }
 
         let lotId = accTwoLotsIds[4];
@@ -1007,6 +1355,13 @@ contract("proposal NFT functionality", async accounts => {
         let accThreeNFTBalanceBefore = await ERC721.balanceOf(accountThree, { from: accountThree });
 
         let receipt = await MarketPlace.chooseOffer(lotId, lotOffers[1], NFTdata, { from: accountTwo });
+        let date = (await web3.eth.getBlock("latest")).timestamp;
+
+        expectEvent(receipt, "ChoosedOffer", {
+            lotID: lotId,
+            offerID: lotOffers[1],
+            datetime: new BN(date)
+        });
 
         const gasUsed = receipt.receipt.gasUsed;
 
@@ -1056,7 +1411,7 @@ contract("proposal NFT functionality", async accounts => {
         let accTwoLotsIds = [];      
 
         for(let i = 0; i < getInfoAccTwo.userLots.length; i++) {
-            accTwoLotsIds.push(Number(getInfoAccTwo.userLots[i]));
+            accTwoLotsIds.push(new BN(getInfoAccTwo.userLots[i]));
         }
 
         let accTwoOfferedNFTAmount = new BN(60); // from "make several different offers" [6, 7, 8, 9]
@@ -1072,8 +1427,25 @@ contract("proposal NFT functionality", async accounts => {
         let lotId = accTwoLotsIds[7];
         let lotOffers = await MarketPlace.getLotsOffers(lotId, { from: accountTwo });
 
-        await MarketPlace.chooseOffer(lotId, lotOffers[1], NFTdata, { from: accountTwo });
-        await MarketPlace.cancelOffer(lotOffers[0], { from: accountOne });
+        let canceledLotId = (await MarketPlace.offers(lotOffers[0])).lotID;
+
+        let chooseOfferReceipt = await MarketPlace.chooseOffer(lotId, lotOffers[1], NFTdata, { from: accountTwo });
+        let date = (await web3.eth.getBlock("latest")).timestamp;
+
+        expectEvent(chooseOfferReceipt, "ChoosedOffer", {
+            lotID: lotId,
+            offerID: lotOffers[1],
+            datetime: new BN(date)
+        });
+
+        let receipt = await MarketPlace.cancelOffer(lotOffers[0], { from: accountOne });
+        date = (await web3.eth.getBlock("latest")).timestamp;
+
+        expectEvent(receipt, "RevertedOffer", {
+            lotID: new BN(canceledLotId),
+            offerID: new BN(lotOffers[0]),
+            datetime: new BN(date)
+        });
         
         let accThreeNFTBalanceAfter = await ERC721.balanceOf(accountThree, { from: accountThree });
         let accTwoNFTBalanceAfter = await ERC1155.balanceOf(accountTwo, accThreeNFT1155id, { from: accountTwo });
@@ -1103,10 +1475,33 @@ contract("proposal NFT functionality", async accounts => {
         const tokenbits = (new BN(10)).pow(new BN(18));
         let tokensAmount = new BN(10).mul(tokenbits);
 
-        await MarketPlace.makeOffer(lotId, accOneExchangeNFTindexes, ERC20Address, tokensAmount, { from: accountOne });
+        let firstReceipt = await MarketPlace.makeOffer(lotId, accOneExchangeNFTindexes, ERC20Address, tokensAmount, { from: accountOne });
+
+        let getInfoAccOne = await MarketPlace.getInfo(accountOne, { from: accountOne });      
+        let offersAccOneLength = getInfoAccOne.userOffers.length;
+        let offerIdAccOne = getInfoAccOne.userOffers[offersAccOneLength - 1];
+
+        expectEvent(firstReceipt, "MakeOffer", {
+            user: accountOne,
+            lotID: new BN(lotId),
+            offerID: offerIdAccOne,
+            tokenAddress: ERC20Address,
+            tokenAmount: tokensAmount,
+            itemLotIds: accOneExchangeNFTindexes,
+            tokenValue: new BN(0)
+        });
 
         let accTwoNFTBalanceBefore = await ERC721.balanceOf(accountTwo, { from: accountTwo });
-        await MarketPlace.getBack(lotId, NFTdata, { from: accountTwo });
+        let receipt = await MarketPlace.getBack(lotId, NFTdata, { from: accountTwo });
+        let date = (await web3.eth.getBlock("latest")).timestamp;
+        let lotInfo = await MarketPlace.lots(lotId, { from: accountTwo });
+
+        expectEvent(receipt, "GetBack", {
+            lotID: new BN(lotId),
+            datetime: new BN(date),
+            amount: lotInfo.creationInfo.amount
+        });
+
         let accTwoNFTBalanceAfter = await ERC721.balanceOf(accountTwo, { from: accountTwo });
 
         assert.equal(String(accTwoNFTBalanceAfter), accTwoNFTBalanceBefore.add(new BN(1)), "owner didn't return NFT back");

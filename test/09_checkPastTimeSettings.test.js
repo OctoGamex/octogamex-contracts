@@ -6,7 +6,8 @@ const AuctionContract = artifacts.require("Auction");
 
 const {
     BN,
-    constants
+    constants,
+    expectEvent
 } = require('@openzeppelin/test-helpers');
 
 contract("check if time is less than block time", async accounts => {
@@ -36,11 +37,22 @@ contract("check if time is less than block time", async accounts => {
 
         Auction = await AuctionContract.new(MarketPlaceAddress, {from: deployer});
         AuctionAddress = Auction.address;
-
-        let canTransfer = true;
         await MarketPlace.setAuctionContract(AuctionAddress, { from: deployer });
-        await MarketPlace.setNFT_Collection(ERC1155Address, canTransfer, { from: deployer });
-        await MarketPlace.setNFT_Collection(ERC721Address, canTransfer, { from: deployer });
+
+        let canTransfer = true;       
+        let collection1155Receipt = await MarketPlace.setNFT_Collection(ERC1155Address, canTransfer, { from: deployer });
+
+        expectEvent(collection1155Receipt, 'collectionAdd', {
+            auctionContract: ERC1155Address,
+            canTransfer: canTransfer
+        });
+
+        let collection721Receipt = await MarketPlace.setNFT_Collection(ERC721Address, canTransfer, { from: deployer });
+
+        expectEvent(collection721Receipt, 'collectionAdd', {
+            auctionContract: ERC721Address,
+            canTransfer: canTransfer
+        });
 
         let isERC20Supported = true;
         await MarketPlace.setERC20_Support(ERC1155Address, [ERC20Address], [isERC20Supported], { from: deployer });
@@ -50,7 +62,11 @@ contract("check if time is less than block time", async accounts => {
     it("reset market commission", async () => {
         let marketCommission = new BN(150);
 
-        await MarketPlace.setMarketCommission(marketCommission, {from: deployer});
+        let receipt = await MarketPlace.setMarketCommission(marketCommission, {from: deployer});
+
+        expectEvent(receipt, "commissionMarket", {
+            commisssion: marketCommission
+        });
 
         let receivedMarketCommission = await MarketPlace.marketCommission({from: deployer});
         assert.equal(Number(receivedMarketCommission), marketCommission, "market comission is wrong");
@@ -60,7 +76,11 @@ contract("check if time is less than block time", async accounts => {
         const tokenbits = (new BN(10)).pow(new BN(18));
         commissionOffer = new BN(1).mul(tokenbits);
 
-        await MarketPlace.setOfferCommission(commissionOffer, {from: deployer});
+        let receipt = await MarketPlace.setOfferCommission(commissionOffer, {from: deployer});
+
+        expectEvent(receipt, "commissionOffer", {
+            commisssion: commissionOffer
+        });
 
         let receivedOfferCommission = await MarketPlace.offerCommission({from: deployer});
         assert.equal(Number(receivedOfferCommission), commissionOffer, "offer comission is wrong");
@@ -157,15 +177,25 @@ contract("check if time is less than block time", async accounts => {
         const tokenbits = (new BN(10)).pow(new BN(18));
         let lotPrice = (new BN(1)).mul(tokenbits);
         let date = await web3.eth.getBlock("latest");
-        let lotStartDate = (new BN(date.timestamp)).sub(new BN(60));
-
+        let dateSub = new BN(60);
+        let lotStartDate = (new BN(date.timestamp)).sub(dateSub);
+        
         let openForOffers = false;
-        let lotId = userLotsIds[0];
+        let lotId = userLotsIds[0];    
 
-        await MarketPlace.sell(lotId, constants.ZERO_ADDRESS, lotPrice, openForOffers, lotStartDate, { from: accountOne });
+        let receipt = await MarketPlace.sell(lotId, constants.ZERO_ADDRESS, lotPrice, openForOffers, lotStartDate, { from: accountOne });
         date = await web3.eth.getBlock("latest");
-
         let lotInfo = await MarketPlace.lots(lotId, { from: accountOne });
+
+        expectEvent(receipt, "SellNFT", {
+            user: accountOne,
+            lotID: new BN(lotId),
+            startDate: lotStartDate.add(dateSub),
+            amount: lotInfo.creationInfo.amount,
+            price: lotPrice,
+            tokenAddress: constants.ZERO_ADDRESS,
+            openForOffer: openForOffers
+        });
 
         assert.equal(new BN(date.timestamp), String(lotInfo.sellStart), "start date of lot is wrong");
         assert.equal(lotPrice, lotInfo.price.buyerPrice, "lot price is wrong");
@@ -181,15 +211,22 @@ contract("check if time is less than block time", async accounts => {
 
         let lotPrice = new BN(0);
         let date = await web3.eth.getBlock("latest");
-        let lotStartDate = (new BN(date.timestamp)).sub(new BN(120));
-
+        let dateSub = new BN(500);
+        let lotStartDate = (new BN(date.timestamp)).sub(dateSub);
+    
         let openForOffers = true;
-        let lotId = userLotsIds[1];
+        let lotId = userLotsIds[1];     
 
-        await MarketPlace.sell(lotId, constants.ZERO_ADDRESS, lotPrice, openForOffers, lotStartDate, { from: accountOne });
+        let receipt = await MarketPlace.sell(lotId, constants.ZERO_ADDRESS, lotPrice, openForOffers, lotStartDate, { from: accountOne });
         date = await web3.eth.getBlock("latest");
-
         let lotInfo = await MarketPlace.lots(lotId, { from: accountOne });
+
+        // expectEvent(receipt, "ExchangeNFT", {
+        //     startDate: lotStartDate.add(dateSub),
+        //     lotID: new BN(lotId),
+        //     owner: accountOne,
+        //     amount: lotInfo.creationInfo.amount
+        // });
 
         assert.equal(new BN(date.timestamp), String(lotInfo.sellStart), "start date of lot is wrong");
         assert.equal(lotPrice, lotInfo.price.buyerPrice, "lot price is wrong");   
@@ -237,15 +274,25 @@ contract("check if time is less than block time", async accounts => {
         const tokenbits = (new BN(10)).pow(new BN(18));
         let lotPrice = (new BN(1)).mul(tokenbits);
         let date = await web3.eth.getBlock("latest");
-        let lotStartDate = (new BN(date.timestamp)).sub(new BN(60));
+        let dateSub = new BN(60);
+        let lotStartDate = (new BN(date.timestamp)).sub(dateSub);
 
         let openForOffers = false;
         let lotId = userLotsIds[0];
 
-        await MarketPlace.sell(lotId, constants.ZERO_ADDRESS, lotPrice, openForOffers, lotStartDate, { from: accountTwo });
+        let receipt = await MarketPlace.sell(lotId, constants.ZERO_ADDRESS, lotPrice, openForOffers, lotStartDate, { from: accountTwo });
         date = await web3.eth.getBlock("latest");
-
         let lotInfo = await MarketPlace.lots(lotId, { from: accountTwo });
+
+        // expectEvent(receipt, "SellNFT", {
+        //     user: accountTwo,
+        //     lotID: new BN(lotId),
+        //     startDate: lotStartDate.add(dateSub),
+        //     amount: lotInfo.creationInfo.amount,
+        //     price: lotPrice,
+        //     tokenAddress: constants.ZERO_ADDRESS,
+        //     openForOffer: openForOffers
+        // });
 
         assert.equal(new BN(date.timestamp), String(lotInfo.sellStart), "start date of lot is wrong");
         assert.equal(lotPrice, lotInfo.price.buyerPrice, "lot price is wrong");
@@ -261,15 +308,22 @@ contract("check if time is less than block time", async accounts => {
 
         let lotPrice = new BN(0);
         let date = await web3.eth.getBlock("latest");
-        let lotStartDate = (new BN(date.timestamp)).sub(new BN(120));
+        let dateSub = new BN(500);
+        let lotStartDate = (new BN(date.timestamp)).sub(dateSub);
 
         let openForOffers = true;
         let lotId = userLotsIds[1];
 
-        await MarketPlace.sell(lotId, constants.ZERO_ADDRESS, lotPrice, openForOffers, lotStartDate, { from: accountTwo });
+        let receipt = await MarketPlace.sell(lotId, constants.ZERO_ADDRESS, lotPrice, openForOffers, lotStartDate, { from: accountTwo });
         date = await web3.eth.getBlock("latest");
-
         let lotInfo = await MarketPlace.lots(lotId, { from: accountTwo });
+
+        // expectEvent(receipt, "ExchangeNFT", {
+        //     startDate: lotStartDate.add(dateSub),
+        //     lotID: new BN(lotId),
+        //     owner: accountTwo,
+        //     amount: lotInfo.creationInfo.amount
+        // });
 
         assert.equal(new BN(date.timestamp), String(lotInfo.sellStart), "start date of lot is wrong");
         assert.equal(lotPrice, lotInfo.price.buyerPrice, "lot price is wrong");   

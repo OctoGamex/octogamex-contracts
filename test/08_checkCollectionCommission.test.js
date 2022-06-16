@@ -49,12 +49,23 @@ contract("collection commission functionality", async accounts => {
         MarketPlaceAddress = MarketPlace.address;
 
         Auction = await AuctionContract.new(MarketPlaceAddress, {from: deployer});
-        AuctionAddress = Auction.address;
+        AuctionAddress = Auction.address;  
+        await MarketPlace.setAuctionContract(AuctionAddress, { from: deployer });
 
         let canTransfer = false;
-        await MarketPlace.setAuctionContract(AuctionAddress, { from: deployer });
-        await MarketPlace.setNFT_Collection(ERC1155Address, canTransfer, { from: deployer });
-        await MarketPlace.setNFT_Collection(ERC721Address, canTransfer, { from: deployer });
+        let collection1155Receipt = await MarketPlace.setNFT_Collection(ERC1155Address, canTransfer, { from: deployer });
+
+        expectEvent(collection1155Receipt, 'collectionAdd', {
+            auctionContract: ERC1155Address,
+            canTransfer: canTransfer
+        });
+
+        let collection721Receipt = await MarketPlace.setNFT_Collection(ERC721Address, canTransfer, { from: deployer });
+
+        expectEvent(collection721Receipt, 'collectionAdd', {
+            auctionContract: ERC721Address,
+            canTransfer: canTransfer
+        });
 
         let isERC20Supported = true;
         await MarketPlace.setERC20_Support(ERC1155Address, [ERC20Address], [isERC20Supported], { from: deployer });
@@ -121,8 +132,19 @@ contract("collection commission functionality", async accounts => {
 
     it("set NFT collections & set wallets for commission of collections", async () => {
         let canTransfer = true;
-        await MarketPlace.setNFT_Collection(ERC1155Address, canTransfer, { from: deployer });
-        await MarketPlace.setNFT_Collection(ERC721Address, canTransfer, { from: deployer });
+        let collection1155Receipt = await MarketPlace.setNFT_Collection(ERC1155Address, canTransfer, { from: deployer });
+
+        expectEvent(collection1155Receipt, 'collectionAdd', {
+            auctionContract: ERC1155Address,
+            canTransfer: canTransfer
+        });
+
+        let collection721Receipt = await MarketPlace.setNFT_Collection(ERC721Address, canTransfer, { from: deployer });
+
+        expectEvent(collection721Receipt, 'collectionAdd', {
+            auctionContract: ERC721Address,
+            canTransfer: canTransfer
+        });
 
         // 1155
         let coll_1155_InfoBefore = await MarketPlace.collections(ERC1155Address, { from: deployer });
@@ -169,8 +191,19 @@ contract("collection commission functionality", async accounts => {
         assert.equal(initColl_721_Commission, 0, 
             "expect initial commission for collection is equal to zero");
 
-        await MarketPlace.setCollectionCommission(ERC1155Address, collectionCommission, { from: deployer });
-        await MarketPlace.setCollectionCommission(ERC721Address, collectionCommission, { from: deployer });
+        let collComsn1155 = await MarketPlace.setCollectionCommission(ERC1155Address, collectionCommission, { from: deployer });
+
+        expectEvent(collComsn1155, "commissionCollection", {
+            contractNFT: ERC1155Address,
+            commisssion: collectionCommission
+        });
+
+        let collComsn721 = await MarketPlace.setCollectionCommission(ERC721Address, collectionCommission, { from: deployer });
+
+        expectEvent(collComsn721, "commissionCollection", {
+            contractNFT: ERC721Address,
+            commisssion: collectionCommission
+        });
 
         // 1155
         let coll_1155_InfoAfter = await MarketPlace.collections(ERC1155Address, { from: deployer });
