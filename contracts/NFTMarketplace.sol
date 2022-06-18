@@ -95,6 +95,15 @@ contract NFTMarketplace is Ownable, Pausable, VariablesTypes {
         _unpause();
     }
 
+    function setNFT_Collection(address contractAddress) external {
+        require(msg.sender == address(adminContract), "19");
+
+        ERC1155(contractAddress).setApprovalForAll(
+            address(auctionContract),
+            true
+        );
+    }
+
     function setAuctionContract(address contractAddress) external onlyOwner {
         auctionContract = Auction(contractAddress);
     }
