@@ -462,7 +462,7 @@ contract NFTMarketplace is Ownable, Pausable, VariablesTypes {
         }
     }
 
-    function getBack(uint256 index, bytes memory data) external whenNotPaused {
+    function getBack(uint256 index, bytes memory data) external {
         returnNFT(index, data);
     }
 
@@ -575,7 +575,7 @@ contract NFTMarketplace is Ownable, Pausable, VariablesTypes {
         uint256[] memory lotIndex,
         address tokenAddress,
         uint256 amount
-    ) public payable {
+    ) public payable whenNotPaused {
         uint256 cryptoValue = msg.value;
         // create offer
         require(
@@ -734,7 +734,7 @@ contract NFTMarketplace is Ownable, Pausable, VariablesTypes {
      *
      * - `offer owner` and `transcation creator` it's one person.
      */
-    function cancelOffer(uint256 index) external whenNotPaused {
+    function cancelOffer(uint256 index) external  {
         require(
             offers[index].owner == msg.sender,
             "9"
