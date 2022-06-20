@@ -4,10 +4,8 @@ import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./NFTMarketplace.sol";
-import "./Auction.sol";
 
 contract Admin is Ownable {
-    Auction auctionContract;
     NFTMarketplace public marketplace;
 
     struct collectionInfo{
@@ -62,11 +60,6 @@ contract Admin is Ownable {
     function setMarketContract(address contractAddress) external onlyOwner {
         marketplace = NFTMarketplace(contractAddress);
     }
-
-    function setAuctionContract(address contractAddress) external onlyOwner {
-        auctionContract = Auction(contractAddress);
-    }
-
     function setCollectionAdmin(address _address, bool _isAdmin) external onlyOwner {
         require(_address != address(0) && _isAdmin != collectionAdmin[_address], "0");
         collectionAdmin[_address] = _isAdmin;
