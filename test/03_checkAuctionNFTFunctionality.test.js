@@ -55,7 +55,7 @@ contract("auction NFT functionality", async accounts => {
         Auction = await AuctionContract.new(MarketPlaceAddress, AdminContractAddress, {from: deployer});
         AuctionAddress = Auction.address;
 
-        await AdminContract.setAuctionContract(AuctionAddress, { from: deployer });
+        await AdminContract.setMarketContract(MarketPlaceAddress, { from: deployer });
         await MarketPlace.setAuctionContract(AuctionAddress, { from: deployer });  
 
         let canTransfer = true;

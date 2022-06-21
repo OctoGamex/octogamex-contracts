@@ -185,6 +185,39 @@ contract("sell NFT functionality", async accounts => {
         await ERC721.mint(accountThree, threeNFT721id, { from: accountThree });
     });
 
+    it("expect revert if pause func caller is not owner", async () => {
+        await expectRevert(
+            MarketPlace.setPause({ from: accountOne }),
+            "Ownable: caller is not the owner"
+        );
+    });
+
+    it("owner should be able to call pause func", async () => {
+        await MarketPlace.setPause({ from: deployer });
+    });
+
+    it("expect revert of adding NFT if owner called pause func", async () => {
+        let NFT1155value = new BN(10);
+        let isERC1155 = true;
+        let lotType = 0; // lotType.None
+
+        await expectRevert(
+            MarketPlace.add(ERC1155Address, NFT1155id, NFT1155value, isERC1155, lotType, NFTdata, { from: accountOne }),
+            "Pausable: paused"
+        );       
+    });
+
+    it("expect revert if unpause func caller is not owner", async () => {
+        await expectRevert(
+            MarketPlace.unPause({ from: accountOne }),
+            "Ownable: caller is not the owner"
+        );
+    });
+
+    it("owner should be able to call unpause func", async () => {
+        await MarketPlace.unPause({ from: deployer });
+    });
+
     it("user should be able to add NFT ERC-1155", async () => {
         let accOneBalanceBeforeTransfer = await ERC1155.balanceOf.call(MarketPlaceAddress, NFT1155id, { from: accountOne });
 
@@ -283,6 +316,31 @@ contract("sell NFT functionality", async accounts => {
             MarketPlace.sell(userLotsIds[0], constants.ZERO_ADDRESS, lotPrice, openForOffers, lotStartDate, { from: accountOne }),
             "revert"
         );
+    });
+
+    it("expect revert of selling NFT if contract is on pause", async () => {
+        await MarketPlace.setPause({ from: deployer });
+
+        let userLotsIds = [];
+        let getInfo = await MarketPlace.getInfo(accountOne, { from: accountOne });
+
+        for(let i = 0; i < getInfo.userLots.length; i++) {
+            userLotsIds.push(Number(getInfo.userLots[i]));
+        }
+
+        const tokenbits = (new BN(10)).pow(new BN(18));
+        let lotPrice = (new BN(10)).mul(tokenbits);
+        let date = await web3.eth.getBlock("latest");
+        let lotStartDate = (new BN(date.timestamp)).add(new BN(5));
+
+        let openForOffers = false;
+
+        await expectRevert(
+            MarketPlace.sell(userLotsIds[0], constants.ZERO_ADDRESS, lotPrice, openForOffers, lotStartDate, { from: accountOne }),
+            "Pausable: paused"
+        );
+
+        await MarketPlace.unPause({ from: deployer });
     });
 
     it("sell NFT for cryptocurrency with zero address", async () => {
