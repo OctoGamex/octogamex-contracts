@@ -313,7 +313,7 @@ contract Auction is Ownable, Pausable, VariablesTypes {
         emit AuctionEnd(block.timestamp, lotID, lot.creationInfo.amount, false);
     }
 
-    function finishAuction(uint256 lotID, bytes memory data) external whenNotPaused {
+    function finishAuction(uint256 lotID, bytes memory data) external {
         lotInfo memory lot;
         (
             lot.creationInfo,

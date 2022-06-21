@@ -5,10 +5,10 @@ pragma solidity >=0.8.9;
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./Auction.sol";
+import "./NFTMarketplace.sol";
 
 contract Admin is Ownable {
-    Auction auctionContract;
+    NFTMarketplace public marketplace;
 
     struct collectionInfo{
         uint256 commission;
@@ -59,10 +59,9 @@ contract Admin is Ownable {
         _;
     }
 
-    function setAuctionContract(address contractAddress) external onlyOwner {
-        auctionContract = Auction(contractAddress);
+    function setMarketContract(address contractAddress) external onlyOwner {
+        marketplace = NFTMarketplace(contractAddress);
     }
-
     function setCollectionAdmin(address _address, bool _isAdmin) external onlyOwner {
         require(_address != address(0) && _isAdmin != collectionAdmin[_address], "0");
         collectionAdmin[_address] = _isAdmin;
@@ -80,10 +79,7 @@ contract Admin is Ownable {
      */
     function setNFT_Collection(address contractAddress, bool canTransfer) external onlyAdminCollection checkContract(contractAddress) {
         NFT_Collections[contractAddress] = canTransfer;
-        ERC1155(contractAddress).setApprovalForAll(
-            address(auctionContract),
-            true
-        );
+        marketplace.setNFT_Collection(contractAddress);
         emit collectionAdd(contractAddress, canTransfer);
     }
 
