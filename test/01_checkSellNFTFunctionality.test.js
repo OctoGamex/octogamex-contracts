@@ -49,6 +49,8 @@ contract("sell NFT functionality", async accounts => {
         MarketPlace = await Marketplace.deployed({from: deployer});
         MarketPlaceAddress = MarketPlace.address;
 
+        await AdminContract.setMarketContract(MarketPlaceAddress, { from: deployer });
+
         let isERC20Supported = true;
         await AdminContract.setERC20_Support(ERC1155Address, [ERC20Address], [isERC20Supported], { from: deployer });
         await AdminContract.setERC20_Support(ERC721Address, [ERC20Address], [isERC20Supported], { from: deployer });

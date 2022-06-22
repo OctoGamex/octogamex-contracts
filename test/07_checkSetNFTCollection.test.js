@@ -45,6 +45,8 @@ contract("check revert transfer for setNFT_Collection with canTransfer param equ
         Auction = await AuctionContract.new(MarketPlaceAddress, AdminContractAddress, {from: deployer});
         AuctionAddress = Auction.address;
 
+        await AdminContract.setMarketContract(MarketPlaceAddress, { from: deployer });
+
         let canTransfer = false;
         await MarketPlace.setAuctionContract(AuctionAddress, { from: deployer });
         let collection1155Receipt = await AdminContract.setNFT_Collection(ERC1155Address, canTransfer, { from: deployer });

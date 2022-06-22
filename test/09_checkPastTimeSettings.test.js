@@ -42,6 +42,8 @@ contract("check if time is less than block time", async accounts => {
         MarketPlace = await Marketplace.deployed({from: deployer});
         MarketPlaceAddress = MarketPlace.address;
 
+        await AdminContract.setMarketContract(MarketPlaceAddress, { from: deployer });
+
         Auction = await AuctionContract.new(MarketPlaceAddress, AdminContractAddress, {from: deployer});
         AuctionAddress = Auction.address;
         await MarketPlace.setAuctionContract(AuctionAddress, { from: deployer });

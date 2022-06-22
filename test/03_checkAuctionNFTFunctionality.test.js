@@ -1003,7 +1003,7 @@ contract("auction NFT functionality", async accounts => {
         let accTwoNFTBalanceAfter = await ERC721.balanceOf(accountTwo, { from: accountTwo });
         let accOneTokensBalanceAfter = await ERC20.balanceOf(accountOne, { from: accountOne });
         
-        let commission = await MarketPlace.marketCommission({ from: deployer });
+        let commission = await AdminContract.marketCommission({ from: deployer });
         
         let expectedNFT = accTwoNFTBalanceBefore.add(new BN(1));
         let expectedTokensReward = accOneTokensBalanceBefore.add(winningBet.sub((winningBet.mul(commission)).div(new BN(1000))));
@@ -1032,7 +1032,7 @@ contract("auction NFT functionality", async accounts => {
         let accThreeNFTBalanceAfter = await ERC1155.balanceOf(accountThree, accTwoNFT1155id, { from: accountThree });
         let accTwoTokensBalanceAfter = await ERC20.balanceOf(accountTwo, { from: accountTwo });
 
-        let commission = await MarketPlace.marketCommission({ from: deployer });
+        let commission = await AdminContract.marketCommission({ from: deployer });
         
         let expectedNFT = accThreeNFTBalanceBefore.add(new BN(10));
         let expectedTokensReward = accTwoTokensBalanceBefore.add(winningBet.sub((winningBet.mul(commission)).div(new BN(1000))));
@@ -1125,7 +1125,7 @@ contract("auction NFT functionality", async accounts => {
         let accThreeNFTBalanceAfter = await ERC721.balanceOf(accountThree, { from: accountThree });
         let accOneCryptoBalanceAfter = (await web3.eth.getBalance(accountOne));
 
-        let commission = await MarketPlace.marketCommission({ from: deployer });
+        let commission = await AdminContract.marketCommission({ from: deployer });
         let winningBet = winningBetsNFT721[1];
 
         let expectedNFT = accThreeNFTBalanceBefore.add(new BN(1));
@@ -1155,7 +1155,7 @@ contract("auction NFT functionality", async accounts => {
         let accOneNFTBalanceAfter = await ERC1155.balanceOf(accountOne, accTwoNFT1155id, { from: accountOne });
         let accTwoCryptoBalanceAfter = (await web3.eth.getBalance(accountTwo));
 
-        let commission = await MarketPlace.marketCommission({ from: deployer });
+        let commission = await AdminContract.marketCommission({ from: deployer });
         let winningBet = winningBetsNFT1155[1];
 
         let expectedNFT = accOneNFTBalanceBefore.add(new BN(10));

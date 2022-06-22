@@ -36,6 +36,8 @@ contract("Marketplace: checking the possibility of adding an admin and the possi
 
         MarketPlace = await Marketplace.deployed({from: deployer});
         MarketPlaceAddress = MarketPlace.address;
+
+        await AdminContract.setMarketContract(MarketPlaceAddress, { from: deployer });
     });
 
     it("check possibility of adding collection-admin", async () => {

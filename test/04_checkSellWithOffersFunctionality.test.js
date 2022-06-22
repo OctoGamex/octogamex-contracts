@@ -45,6 +45,8 @@ contract("sell NFT with offers functionality", async accounts => {
         MarketPlace = await Marketplace.deployed({from: deployer});
         MarketPlaceAddress = MarketPlace.address;
 
+        await AdminContract.setMarketContract(MarketPlaceAddress, { from: deployer });
+
         let canTransfer = true;
         let collection1155Receipt = await AdminContract.setNFT_Collection(ERC1155Address, canTransfer, { from: deployer });
 

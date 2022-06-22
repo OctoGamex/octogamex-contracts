@@ -54,6 +54,8 @@ contract("check that getBack func does not provide an opportunity to pick up lot
 
         Auction = await AuctionContract.new(MarketPlaceAddress, AdminContractAddress, {from: deployer});
         AuctionAddress = Auction.address;
+
+        await AdminContract.setMarketContract(MarketPlaceAddress, { from: deployer });
         await MarketPlace.setAuctionContract(AuctionAddress, { from: deployer });
 
         let canTransfer = true;
