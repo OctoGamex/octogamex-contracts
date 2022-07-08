@@ -13,7 +13,6 @@ contract Rewards is Ownable {
     address public stakingContract;
     address public vestingContract;
 
-    uint256 public liquidityFees;
 
     struct Pool {
         uint256 rewardRate;
@@ -50,6 +49,10 @@ contract Rewards is Ownable {
     modifier onlyWhitelistAdmin() {
         require(whitelistAdmins[msg.sender] || msg.sender == owner(), "Caller is not the owner or admin");
         _;
+    }
+
+    function getTotalStakes() public view returns(uint256) {
+        return pool.totalStaked + 60000000000000000000; // 6000... from vestingContract
     }
 
     function doStake(uint256 _amount) external {
@@ -111,41 +114,41 @@ contract Rewards is Ownable {
     ) private {
         pool.rewardAccPerShare = getRewardAccumulatedPerShare();
 
-        uint256 reward = _stake.amount // + vesting if passive stake
+        uint256 reward = _stake.amount //todo + vesting if passive stake
         * (pool.rewardAccPerShare - _stake.stakeAcc)
         * pool.rewardRate
         / ACC_PRECISION;
 
         _stake.stakeAcc = pool.rewardAccPerShare;
-        IERC20(OTGToken).safeTransfer(_userAddress, reward);
+        IERC20(rewardToken).safeTransfer(_userAddress, reward);
 
         //==todo emit
     }
 
-    function setPoolState(uint256 _liquidityFees) external onlyOwner { //fixatePoolsState + registerLiquidityFee
-        if (_liquidityFees == 0) {
-            return;
-        }
-        liquidityFees = _liquidityFees;
 
-        pool.rewardRate = _liquidityFees / 1 days; //86400
+    function setPoolState(uint256 _amount) external onlyOwner { //fixatePoolsState + registerLiquidityFee
+        require(_amount > 0, "Invalid stake amount value");
+
+        IERC20(rewardToken).safeTransferFrom(msg.sender, address(this), _amount);
+
+        pool.rewardRate = _amount / 1 days; //86400
         pool.lastOperationTime = block.timestamp;
     }
 
     function getRewardAccumulatedPerShare() internal view returns (uint256) {
         uint256 actualTime = block.timestamp;
-        if (actualTime <= pool.lastOperationTime || pool.totalStaked == 0) {
+        if (actualTime <= pool.lastOperationTime || getTotalStakes() == 0) {
             return pool.rewardAccPerShare;
         }
 
         return pool.rewardAccPerShare
-        + ACC_PRECISION * (actualTime - pool.lastOperationTime) / pool.totalStaked;
+        + ACC_PRECISION * (actualTime - pool.lastOperationTime) / (getTotalStakes());
     }
 
     function getStakeRewards(address userAddress) external view returns (uint256 reward) {
         StakeData memory _stake = stakes[userAddress];
 
-        if (pool.totalStaked == 0) {
+        if ( getTotalStakes() == 0) {
             return reward;
         }
 
