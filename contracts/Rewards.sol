@@ -3,6 +3,7 @@ pragma solidity >=0.8.9;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "./Vesting.sol";
 
 contract Rewards is Ownable {
     using SafeERC20 for IERC20;
@@ -11,7 +12,7 @@ contract Rewards is Ownable {
     IERC20 public rewardToken;
     IERC20 public OTGToken;
     address public stakingContract;
-    address public vestingContract;
+    Vesting public vestingContract;
 
 
     struct Pool {
@@ -35,7 +36,7 @@ contract Rewards is Ownable {
 
     constructor(address _OTGToken, address _vestingContract){
         OTGToken = IERC20(_OTGToken);
-        vestingContract = _vestingContract;
+        setVestingContract(_vestingContract);
     }
 
     modifier isZeroAddress(address _address){
@@ -52,7 +53,7 @@ contract Rewards is Ownable {
     }
 
     function getTotalStakes() public view returns(uint256) {
-        return pool.totalStaked + 60000000000000000000; // 6000... from vestingContract
+        return pool.totalStaked + vestingContract.totalPassiveStake(); // 6000... from vestingContract
     }
 
     function doStake(uint256 _amount) external {
@@ -113,11 +114,20 @@ contract Rewards is Ownable {
         StakeData storage _stake
     ) private {
         pool.rewardAccPerShare = getRewardAccumulatedPerShare();
+        uint256 reward;
+        if(whitelistAdmins[_userAddress]){
 
-        uint256 reward = _stake.amount //todo + vesting if passive stake
-        * (pool.rewardAccPerShare - _stake.stakeAcc)
-        * pool.rewardRate
-        / ACC_PRECISION;
+            reward = (_stake.amount + vestingContract.stakerBalance(_userAddress))
+            * (pool.rewardAccPerShare - _stake.stakeAcc)
+            * pool.rewardRate
+            / ACC_PRECISION;
+
+        } else {
+            reward = _stake.amount
+            * (pool.rewardAccPerShare - _stake.stakeAcc)
+            * pool.rewardRate
+            / ACC_PRECISION;
+        }
 
         _stake.stakeAcc = pool.rewardAccPerShare;
         IERC20(rewardToken).safeTransfer(_userAddress, reward);
@@ -158,9 +168,9 @@ contract Rewards is Ownable {
         / ACC_PRECISION;
     }
 
-    function setVestingContract(address _vestingContract) external onlyOwner isZeroAddress(_vestingContract) {
+    function setVestingContract(address _vestingContract) public onlyOwner isZeroAddress(_vestingContract) {
         require(address(_vestingContract) != address(vestingContract), "the address is already set");
-        vestingContract = _vestingContract;
+        vestingContract = Vesting(_vestingContract);
     }
 
     function setStakingContract(address _stakingContract) external onlyRewardAdmin isZeroAddress(_stakingContract) {
