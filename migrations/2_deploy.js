@@ -8,6 +8,9 @@ const ERC1155_prod = artifacts.require("ERC1155_prod");
 const Auction = artifacts.require("Auction");
 const my_ether = web3.utils.toWei('1', "ether");
 
+const Vesting = artifacts.require("Vesting");
+const Rewards = artifacts.require("Rewards");
+
 module.exports = async function (deployer) {
   await deployer.deploy(Market, 100, (my_ether/20).toString(), "0x09B61CA66838a02e3555a837EefA816598ebAc93");
   await deployer.deploy(Auction, Market.address)
@@ -17,4 +20,7 @@ module.exports = async function (deployer) {
   await deployer.deploy(ERC721);
   await deployer.deploy(ERC721_prod, '');
   await deployer.deploy(ERC1155_prod, '');
+
+  await deployer.deploy(Vesting)
+  await deployer.deploy(Rewards, '0x09B61CA66838a02e3555a837EefA816598ebAc93', Vesting.address )
 };
