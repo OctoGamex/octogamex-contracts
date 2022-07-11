@@ -19,7 +19,7 @@
     "build": "sol-merger -c \"./contracts/**/*.sol\" ./build/dist",
     "test": "truffle compile --all && truffle test"
   },
-  "repository": {
+  "rtruffle run coverageepository": {
     "type": "git",
     "url": "git+https://github.com/ElephantsLab/nft-marketplace-contracts.git"
   },

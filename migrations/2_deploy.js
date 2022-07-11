@@ -24,5 +24,6 @@ module.exports = async function (deployer) {
   await deployer.deploy(ERC1155_prod, '');
 
   await deployer.deploy(Vesting)
-  await deployer.deploy(Rewards, '0x09B61CA66838a02e3555a837EefA816598ebAc93', Vesting.address )
+  await deployer.deploy(Rewards, ERC20.address, Vesting.address )
+
 };
