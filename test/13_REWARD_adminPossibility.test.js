@@ -12,7 +12,7 @@ const {
 } = require('@openzeppelin/test-helpers');
 
 contract('staking functionality', async accounts => {
-    const [deployer, accountOne, accountTwo, accountThree, accountFour, mockStakingAddress] = accounts;
+    const [deployer, accountOne, accountTwo, mockVestingAddress, mockOTGToken, mockStakingAddress] = accounts;
 
     let OTGToken, rewardToken, VestingContract, RewardsContract;
     let OTGTokenAddress, rewardTokenAddress, VestingContractAddress, RewardsContractAddress;
@@ -51,12 +51,28 @@ contract('staking functionality', async accounts => {
         );
     });
 
+    it("check possibility of adding setWhitelistAddress", async () => {
+        let isAdmin = true;
+        await RewardsContract.setWhitelistAddress(accountOne, isAdmin, { from: deployer });
+
+        let isRewardAdmin = await RewardsContract.whitelist(accountOne, { from: deployer });
+        assert.equal(isRewardAdmin, isAdmin, "address is not added as whitelist admin");
+    });
+
+    it("expect revert if owner try to re-adding setWhitelistAddress", async () => {
+        let isAdmin = true;
+        await expectRevert(
+            RewardsContract.setWhitelistAddress(accountOne, isAdmin, { from: deployer }),
+            "0"
+        );
+    });
+
     it("check possibility of set  setRewardToken", async () =>{
         await RewardsContract.setRewardToken(rewardTokenAddress, {from: accountOne});
 
        await expectRevert(RewardsContract.setRewardToken(rewardTokenAddress, {from: accountTwo}), "Caller is not the owner or admin");
        await expectRevert(RewardsContract.setRewardToken(zeroAddress, {from: accountOne}), "is the zero address");
-       assert.equal(await RewardsContract.rewardToken(), rewardTokenAddress, "rewardTokenAddress is not updated" )
+       assert.equal(await RewardsContract.rewardToken(), rewardTokenAddress, "rewardTokenAddress is not updated or updated is not correctly" )
     })
 
     it("check possibility of set  setStakingContract", async () =>{
@@ -64,7 +80,22 @@ contract('staking functionality', async accounts => {
 
         await expectRevert(RewardsContract.setStakingContract(mockStakingAddress, {from: accountTwo}), "Caller is not the owner or admin");
         await expectRevert(RewardsContract.setStakingContract(zeroAddress, {from: accountOne}), "is the zero address");
-        assert.equal(await RewardsContract.stakingContract(), mockStakingAddress, "stakingContract is not updated" )
+        assert.equal(await RewardsContract.stakingContract(), mockStakingAddress, "stakingContract is not updated or updated is not correctly" )
     })
 
+    it("check possibility of update  OTGToken", async () =>{
+        await RewardsContract.updateOTGToken(mockOTGToken);
+
+        await expectRevert(RewardsContract.updateOTGToken(mockOTGToken, {from: accountOne}), "Ownable: caller is not the owner");
+        await expectRevert(RewardsContract.updateOTGToken(zeroAddress), "is the zero address");
+        assert.equal(await RewardsContract.OTGToken(), mockOTGToken, "OTGToken is not updated" )
+    })
+
+    it("check possibility of set  setVestingContract", async () => {
+        await expectRevert(RewardsContract.setVestingContract(VestingContractAddress),"the address is already set");
+        await expectRevert(RewardsContract.setVestingContract(mockVestingAddress, {from: accountOne}), "Ownable: caller is not the owner");
+
+        await RewardsContract.setVestingContract(mockVestingAddress);
+        assert.equal(await RewardsContract.vestingContract(), mockVestingAddress, "setVestingContract is not updated or updated is not correctly" )
+    })
 })

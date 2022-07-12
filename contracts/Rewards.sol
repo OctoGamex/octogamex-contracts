@@ -32,7 +32,7 @@ contract Rewards is Ownable {
     mapping(address => StakeData) public stakes;
 
     mapping(address => bool) public rewardAdmins;
-    mapping(address => bool) public whitelistAdmins;
+    mapping(address => bool) public whitelist;
 
     constructor(address _OTGToken, address _vestingContract){
         OTGToken = IERC20(_OTGToken);
@@ -48,7 +48,7 @@ contract Rewards is Ownable {
         _;
     }
     modifier onlyWhitelistAdmin() {
-        require(whitelistAdmins[msg.sender] || msg.sender == owner(), "Caller is not the owner or admin");
+        require(whitelist[msg.sender] || msg.sender == owner(), "Caller is not the owner or admin");
         _;
     }
 
@@ -101,7 +101,9 @@ contract Rewards is Ownable {
     }
 
     function claimReward() external {
-        require( stakes[msg.sender].amount > 0);
+        if(!whitelist[msg.sender]){
+            require( stakes[msg.sender].amount > 0, "Your stake is zero");
+        }
         StakeData storage _stake = stakes[msg.sender];
 
         distributeReward(msg.sender, _stake);
@@ -115,7 +117,7 @@ contract Rewards is Ownable {
     ) private {
         pool.rewardAccPerShare = getRewardAccumulatedPerShare();
         uint256 reward;
-        if(whitelistAdmins[_userAddress]){
+        if(whitelist[_userAddress]){
 
             reward = (_stake.amount + vestingContract.stakerBalance(_userAddress))
             * (pool.rewardAccPerShare - _stake.stakeAcc)
@@ -132,6 +134,8 @@ contract Rewards is Ownable {
         _stake.stakeAcc = pool.rewardAccPerShare;
         IERC20(rewardToken).safeTransfer(_userAddress, reward);
 
+
+
         //==todo emit
     }
 
@@ -147,7 +151,7 @@ contract Rewards is Ownable {
 
     function getRewardAccumulatedPerShare() internal view returns (uint256) {
         uint256 actualTime = block.timestamp;
-        if (actualTime <= pool.lastOperationTime || getTotalStakes() == 0) {
+        if (actualTime <= pool.lastOperationTime || pool.totalStaked == 0) { //!=====
             return pool.rewardAccPerShare;
         }
 
@@ -155,8 +159,8 @@ contract Rewards is Ownable {
         + ACC_PRECISION * (actualTime - pool.lastOperationTime) / (getTotalStakes());
     }
 
-    function getStakeRewards(address userAddress) external view returns (uint256 reward) {
-        StakeData memory _stake = stakes[userAddress];
+    function getStakeRewards(address _userAddress) external view returns (uint256 reward) {
+        StakeData memory _stake = stakes[_userAddress];
 
         if ( getTotalStakes() == 0) {
             return reward;
@@ -192,9 +196,9 @@ contract Rewards is Ownable {
         rewardAdmins[_address] = _isAdmin;
     }
 
-    function setWhitelistAdmins(address _address, bool _isAdmin) external onlyOwner isZeroAddress(_address) {
-        require(_isAdmin != whitelistAdmins[_address], "0");
-        whitelistAdmins[_address] = _isAdmin;
+    function setWhitelistAddress(address _address, bool _isAdmin) external onlyOwner isZeroAddress(_address) {
+        require(_isAdmin != whitelist[_address], "0");
+        whitelist[_address] = _isAdmin;
     }
 
 }

@@ -12,11 +12,11 @@ const {
 } = require('@openzeppelin/test-helpers');
 
 contract('staking functionality', async accounts => {
-    const [deployer, accountOne, accountTwo, accountThree, accountFour] = accounts;
+    const [deployer, accountOne, accountTwo, accountThree, accountFour, accountFive] = accounts;
 
     let OTGToken, rewardToken, VestingContract, RewardsContract;
     let OTGTokenAddress, rewardTokenAddress, VestingContractAddress, RewardsContractAddress;
-    let eth5, eth10, eth100;
+    let eth5, eth10, eth100, eth100000;
 
     before(async () => {
         OTGToken = await Tokens.new({from: deployer});
@@ -37,11 +37,12 @@ contract('staking functionality', async accounts => {
         eth5 = new BN(5).mul(tokenbits);
         eth10 = new BN(10).mul(tokenbits);
         eth100 = new BN(100).mul(tokenbits);
+        eth100000 = new BN(100000).mul(tokenbits);
 
     })
 
     it("mint & approve tokens for users", async () => {
-        await rewardToken.mint(deployer, eth100);
+        await rewardToken.mint(deployer, eth100000);
 
         await OTGToken.mint(accountOne, eth10, { from: deployer });
         await OTGToken.approve(RewardsContractAddress, eth10, { from: accountOne });
@@ -65,8 +66,8 @@ contract('staking functionality', async accounts => {
         await VestingContract.setNewStakers(accountFour, accTwoNFTBalance2);
 
         //? temporarily to synchronize data with the Vesting contract
-        await RewardsContract.setWhitelistAdmins(accountThree, true);
-        await RewardsContract.setWhitelistAdmins(accountFour, true);
+        await RewardsContract.setWhitelistAddress(accountThree, true);
+        await RewardsContract.setWhitelistAddress(accountFour, true);
     });
 
     it('testing function doStake', async () => {
@@ -80,11 +81,49 @@ contract('staking functionality', async accounts => {
         const afterBalance= await RewardsContract.getTotalStakes();
         const amountStakeOfAccountOneA = await RewardsContract.stakes(accountOne);
 
-
         assert.equal(Number(balanceAccOneAfter), Number(balanceAccOneBefore) - eth10, "balance is wrong");
         assert.equal(Number(afterBalance), Number(beforeBalance) + Number(eth10), "total stake amount of contract is wrong");
         assert.equal(Number(amountStakeOfAccountOneA.amount), Number(amountStakeOfAccountOneB.amount) + Number(eth10), "stake's amount is wrong");
     })
+
+
+    it('expect revert if caller is not the owner or amount value is Invalid', async () => {
+        await expectRevert(RewardsContract.setPoolState(eth5, {from: accountOne}), "Ownable: caller is not the owner");
+        await expectRevert(RewardsContract.setPoolState(0), "Invalid stake amount value");
+    })
+
+    it('checking owner and contract balances after calling setPoolState', async () => {
+        const balanceOwnerB = await rewardToken.balanceOf(deployer);
+        const contractBalanceB = await rewardToken.balanceOf(RewardsContractAddress);
+
+        await rewardToken.approve(RewardsContractAddress, eth100000);
+
+        await RewardsContract.setPoolState(eth100000);
+
+        const balanceOwnerA = await rewardToken.balanceOf(deployer);
+        const contractBalanceA = await rewardToken.balanceOf(RewardsContractAddress);
+
+        assert.equal(Number(balanceOwnerA), Number(balanceOwnerB) - Number(eth100000), "ownerBalance after setPoolState  is wrong");
+        assert.equal(Number(contractBalanceA), Number(contractBalanceB) + Number(eth100000), "contractBalance after setPoolState  is wrong");
+        const pool = await RewardsContract.pool();
+        assert.equal(Number(pool.rewardRate), Math.trunc(Number(eth100000) / 86400), "pool.rewardRate is wrong" );
+    })
+
+    it('expect revert if stakes[msg.sender].amount < 0, function claimReward', async () => {
+        await expectRevert( RewardsContract.claimReward({from: accountFive}), "Your stake is zero");
+
+        await time.increase(3600);
+        let xxx  = await rewardToken.balanceOf(accountOne)
+        console.log(xxx.toLocaleString())
+
+        await RewardsContract.claimReward({from: accountOne})
+
+        let x  = await rewardToken.balanceOf(accountOne)
+        console.log(x.toLocaleString())
+
+
+    })
+
 
     it('testing function unStake', async () => {
         const balanceAccOneBefore = await OTGToken.balanceOf(accountOne);
