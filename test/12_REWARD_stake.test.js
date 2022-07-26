@@ -59,16 +59,22 @@ contract('staking functionality', async accounts => {
     });
 
     it("vestingContract", async () =>  {
-        let accTwoNFTBalance = await OTGToken.balanceOf(accountThree, { from: accountThree } );
-        let accTwoNFTBalance2 = await OTGToken.balanceOf(accountFour, { from: accountFour } );
-
-        await VestingContract.setNewStakers(accountThree, accTwoNFTBalance);
-        await VestingContract.setNewStakers(accountFour, accTwoNFTBalance2);
-
-        //? temporarily to synchronize data with the Vesting contract
-        await RewardsContract.setWhitelistAddress(accountThree, true);
-        await RewardsContract.setWhitelistAddress(accountFour, true);
+        // let accTwoNFTBalance = await OTGToken.balanceOf(accountThree, { from: accountThree } );
+        // let accTwoNFTBalance2 = await OTGToken.balanceOf(accountFour, { from: accountFour } );
+        //
+        // await VestingContract.setNewStakers(accountThree, accTwoNFTBalance);
+        // await VestingContract.setNewStakers(accountFour, accTwoNFTBalance2);
+        //
+        // //? temporarily to synchronize data with the Vesting contract
+        // await RewardsContract.setWhitelistAddress(accountThree, true);
+        // await RewardsContract.setWhitelistAddress(accountFour, true);
     });
+
+    // it('expect revert if caller is not the owner or amount value is Invalid', async () => {
+    //     await expectRevert(RewardsContract.setPoolState(eth5, {from: accountOne}), "Ownable: caller is not the owner");
+    //     await expectRevert(RewardsContract.setPoolState(0), "Invalid stake amount value");
+    // })
+    //
 
     it('testing function doStake', async () => {
         const balanceAccOneBefore = await OTGToken.balanceOf(accountOne);
@@ -86,27 +92,21 @@ contract('staking functionality', async accounts => {
         assert.equal(Number(amountStakeOfAccountOneA.amount), Number(amountStakeOfAccountOneB.amount) + Number(eth10), "stake's amount is wrong");
     })
 
-
-    it('expect revert if caller is not the owner or amount value is Invalid', async () => {
-        await expectRevert(RewardsContract.setPoolState(eth5, {from: accountOne}), "Ownable: caller is not the owner");
-        await expectRevert(RewardsContract.setPoolState(0), "Invalid stake amount value");
-    })
-
     it('checking owner and contract balances after calling setPoolState', async () => {
         const balanceOwnerB = await rewardToken.balanceOf(deployer);
         const contractBalanceB = await rewardToken.balanceOf(RewardsContractAddress);
 
-        await rewardToken.approve(RewardsContractAddress, eth100000);
+        await rewardToken.approve(RewardsContractAddress, eth100);
 
-        await RewardsContract.setPoolState(eth100000);
+        await RewardsContract.setPoolState(eth100);
 
         const balanceOwnerA = await rewardToken.balanceOf(deployer);
         const contractBalanceA = await rewardToken.balanceOf(RewardsContractAddress);
 
-        assert.equal(Number(balanceOwnerA), Number(balanceOwnerB) - Number(eth100000), "ownerBalance after setPoolState  is wrong");
-        assert.equal(Number(contractBalanceA), Number(contractBalanceB) + Number(eth100000), "contractBalance after setPoolState  is wrong");
+        assert.equal(Number(balanceOwnerA), Number(balanceOwnerB) - Number(eth100), "ownerBalance after setPoolState  is wrong");
+        assert.equal(Number(contractBalanceA), Number(contractBalanceB) + Number(eth100), "contractBalance after setPoolState  is wrong");
         const pool = await RewardsContract.pool();
-        assert.equal(Number(pool.rewardRate), Math.trunc(Number(eth100000) / 86400), "pool.rewardRate is wrong" );
+        assert.equal(Number(pool.rewardRate), Math.trunc(Number(eth100) / 86400), "pool.rewardRate is wrong" );
     })
 
     it('expect revert if stakes[msg.sender].amount < 0, function claimReward', async () => {
@@ -120,25 +120,23 @@ contract('staking functionality', async accounts => {
 
         let x  = await rewardToken.balanceOf(accountOne)
         console.log(x.toLocaleString())
-
-
     })
-
-
-    it('testing function unStake', async () => {
-        const balanceAccOneBefore = await OTGToken.balanceOf(accountOne);
-        const stakeAmountBefore  = await RewardsContract.stakes(accountOne);
-        const beforeBalance = await RewardsContract.getTotalStakes();
-
-        await RewardsContract.unStake(eth5, {from: accountOne});
-
-        const balanceAccOneAfter = await OTGToken.balanceOf(accountOne);
-        const stakeAmountAfter  = await RewardsContract.stakes(accountOne);
-        const afterBalance= await RewardsContract.getTotalStakes();
-
-
-        assert.equal(Number(balanceAccOneAfter),Number(balanceAccOneBefore) + Number(eth5) ,'balanceOf  accountOne is wrong, after unStake');
-        assert.equal(Number(stakeAmountAfter.amount), Number(stakeAmountBefore.amount) - Number(eth5),"stake's amount is wrong, after unStake");
-        assert.equal(Number(afterBalance), Number(beforeBalance) - Number(eth5), "total stake amount of contract is wrong");
-    })
+    //
+    //
+    // it('testing function unStake', async () => {
+    //     const balanceAccOneBefore = await OTGToken.balanceOf(accountOne);
+    //     const stakeAmountBefore  = await RewardsContract.stakes(accountOne);
+    //     const beforeBalance = await RewardsContract.getTotalStakes();
+    //
+    //     await RewardsContract.unStake(eth5, {from: accountOne});
+    //
+    //     const balanceAccOneAfter = await OTGToken.balanceOf(accountOne);
+    //     const stakeAmountAfter  = await RewardsContract.stakes(accountOne);
+    //     const afterBalance= await RewardsContract.getTotalStakes();
+    //
+    //
+    //     assert.equal(Number(balanceAccOneAfter),Number(balanceAccOneBefore) + Number(eth5) ,'balanceOf  accountOne is wrong, after unStake');
+    //     assert.equal(Number(stakeAmountAfter.amount), Number(stakeAmountBefore.amount) - Number(eth5),"stake's amount is wrong, after unStake");
+    //     assert.equal(Number(afterBalance), Number(beforeBalance) - Number(eth5), "total stake amount of contract is wrong");
+    // })
 })

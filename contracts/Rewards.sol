@@ -20,6 +20,8 @@ contract Rewards is Ownable {
         uint256 rewardAccPerShare;
         uint256 lastOperationTime;
         uint256 totalStaked;
+        uint256 rewardEnd;
+        uint256 rewardStart;
     }
 
     struct StakeData {
@@ -145,12 +147,16 @@ contract Rewards is Ownable {
 
         IERC20(rewardToken).safeTransferFrom(msg.sender, address(this), _amount);
 
+        pool.rewardStart = block.timestamp - (block.timestamp % 86400);
+        pool.rewardEnd =  pool.rewardStart + 86400;
+
         pool.rewardRate = _amount / 1 days; //86400
-        pool.lastOperationTime = block.timestamp;
+        pool.lastOperationTime = block.timestamp - (block.timestamp - pool.rewardStart);
     }
 
     function getRewardAccumulatedPerShare() internal view returns (uint256) {
-        uint256 actualTime = block.timestamp;
+        uint256 actualTime = block.timestamp < pool.rewardEnd ? block.timestamp : pool.rewardEnd;
+
         if (actualTime <= pool.lastOperationTime || pool.totalStaked == 0) { //!=====
             return pool.rewardAccPerShare;
         }
