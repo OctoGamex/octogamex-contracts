@@ -14,7 +14,7 @@ const Rewards = artifacts.require("Rewards");
 
 module.exports = async function (deployer) {
   await deployer.deploy(Admin, 100, (my_ether/20).toString());
-  await deployer.deploy(Market, "0x09B61CA66838a02e3555a837EefA816598ebAc93", Admin.address);
+  await deployer.deploy(Market, "0x598511d4087b3F48B270De0FEC4bb930faB0A98c", Admin.address);
   await deployer.deploy(Auction, Market.address, Admin.address);
   await deployer.deploy(ERC1155);
   await deployer.deploy(ERC20);
@@ -24,6 +24,6 @@ module.exports = async function (deployer) {
   await deployer.deploy(ERC1155_prod, '');
 
   await deployer.deploy(Vesting)
-  await deployer.deploy(Rewards, ERC20.address, Vesting.address )
+  await deployer.deploy(Rewards, ERC20.address, Vesting.address, '0x598511d4087b3F48B270De0FEC4bb930faB0A98c' )
 
 };
