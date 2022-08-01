@@ -7,18 +7,20 @@
     "test": "test"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^4.3.2"
+    "@openzeppelin/contracts": "^4.3.2",
+    "ethers": "^5.6.9"
   },
   "devDependencies": {
     "@openzeppelin/test-helpers": "^0.5.15",
-    "sol-merger": "^3.1.0"
+    "sol-merger": "^3.1.0",
+    "solidity-coverage": "^0.7.21"
   },
   "scripts": {
     "compile": "truffle compile --all",
     "build": "sol-merger -c \"./contracts/**/*.sol\" ./build/dist",
     "test": "truffle compile --all && truffle test"
   },
-  "repository": {
+  "rtruffle run coverageepository": {
     "type": "git",
     "url": "git+https://github.com/ElephantsLab/nft-marketplace-contracts.git"
   },

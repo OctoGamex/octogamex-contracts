@@ -48,11 +48,11 @@ contract NFTMarketplace is Ownable, Pausable, VariablesTypes {
         uint256 indexed datetime,
         uint256 amount
     );
-    event GetBack(
-        uint256 indexed lotID,
-        uint256 indexed datetime,
-        uint256 amount
-    );
+    // event GetBack(
+    //     uint256 indexed lotID,
+    //     uint256 indexed datetime,
+    //     uint256 amount
+    // );
     event MakeOffer(
         address indexed user,
         uint256 indexed lotID,
@@ -62,22 +62,22 @@ contract NFTMarketplace is Ownable, Pausable, VariablesTypes {
         uint256[] itemLotIds,
         uint256 tokenValue
     );
-    event ChoosedOffer(
-        uint256 indexed lotID,
-        uint256 indexed offerID,
-        uint256 indexed datetime
-    );
-    event RevertedOffer(
-        uint256 indexed lotID,
-        uint256 indexed offerID,
-        uint256 indexed datetime
-    );
-    event ExchangeNFT(
-        uint256 indexed startDate,
-        uint256 indexed lotID,
-        address indexed owner,
-        uint256 amount
-    );
+    // event ChoosedOffer(
+    //     uint256 indexed lotID,
+    //     uint256 indexed offerID,
+    //     uint256 indexed datetime
+    // );
+    // event RevertedOffer(
+    //     uint256 indexed lotID,
+    //     uint256 indexed offerID,
+    //     uint256 indexed datetime
+    // );
+    // event ExchangeNFT(
+    //     uint256 indexed startDate,
+    //     uint256 indexed lotID,
+    //     address indexed owner,
+    //     uint256 amount
+    // );
 
     constructor(
         address wallet,
@@ -436,12 +436,12 @@ contract NFTMarketplace is Ownable, Pausable, VariablesTypes {
 
         if (price == 0) {
             exchangeSell(index, date, lotType.Exchange, true);
-            emit ExchangeNFT(
-                date,
-                index,
-                msg.sender,
-                lots[index].creationInfo.amount
-            );
+            // emit ExchangeNFT(
+            //     date,
+            //     index,
+            //     msg.sender,
+            //     lots[index].creationInfo.amount
+            // );
         } else {
             lots[index].price.sellerPrice = calculateCommission(
                 price,
@@ -484,11 +484,11 @@ contract NFTMarketplace is Ownable, Pausable, VariablesTypes {
             data,
             lot.isERC1155
         );
-        emit GetBack(
-            index,
-            block.timestamp,
-            lots[index].creationInfo.amount
-        );
+        // emit GetBack(
+        //     index,
+        //     block.timestamp,
+        //     lots[index].creationInfo.amount
+        // );
     }
 
     /**
@@ -760,7 +760,7 @@ contract NFTMarketplace is Ownable, Pausable, VariablesTypes {
                 returnNFT(localOffer.lotsOffer[i], "");
             }
         }
-        emit RevertedOffer(localOffer.lotID, index, block.timestamp);
+        // emit RevertedOffer(localOffer.lotID, index, block.timestamp);
     }
 
     /**
@@ -850,15 +850,7 @@ contract NFTMarketplace is Ownable, Pausable, VariablesTypes {
                 );
             }
         }
-        emit ChoosedOffer(lotID, offerID, block.timestamp);
-    }
-
-    function getLotsOffers(uint256 indexes)
-    external
-    view
-    returns (uint256[] memory getLot)
-    {
-        getLot = lotOffers[indexes];
+        // emit ChoosedOffer(lotID, offerID, block.timestamp);
     }
 
 
@@ -978,6 +970,14 @@ contract NFTMarketplace is Ownable, Pausable, VariablesTypes {
         return 0x150b7a02; // bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"))
     }
 
+    function getLotsOffers(uint256 indexes)
+        external
+        view
+        returns (uint256[] memory getLot)
+    {
+        getLot = lotOffers[indexes];
+    }
+
     /**
      * @param operator, user address who transfer NFT to contract.
      * @param from, user address from which NFT was sended.
@@ -986,18 +986,18 @@ contract NFTMarketplace is Ownable, Pausable, VariablesTypes {
      * @param data, data what can be added to transaction.
      * @notice Need for receive many NFT1155 with difference id.
      */
-//     function onERC1155BatchReceived(
-//         address operator,
-//         address from,
-//         uint256[] calldata ids,
-//         uint256[] calldata values,
-//         bytes calldata data
-//     ) external pure returns (bytes4) {
-//         return
-//             bytes4(
-//                 keccak256(
-//                     "onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"
-//                 )
-//             );
-//     }
+    //  function onERC1155BatchReceived(
+    //      address operator,
+    //      address from,
+    //      uint256[] calldata ids,
+    //      uint256[] calldata values,
+    //      bytes calldata data
+    //  ) external pure returns (bytes4) {
+    //      return
+    //          bytes4(
+    //              keccak256(
+    //                  "onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"
+    //              )
+    //          );
+    //  }
 }

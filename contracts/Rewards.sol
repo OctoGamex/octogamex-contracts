@@ -9,46 +9,45 @@ contract Rewards is Ownable {
     using SafeERC20 for IERC20;
     uint256 private constant ACC_PRECISION = 1e24;
 
+    address private oracle;
+    uint256 public period;
+
     IERC20 public rewardToken;
     IERC20 public OTGToken;
     address public stakingContract;
     Vesting public vestingContract;
-
 
     struct Pool {
         uint256 rewardRate;
         uint256 rewardAccPerShare;
         uint256 lastOperationTime;
         uint256 totalStaked;
+        uint256 rewardEnd;
+        uint256 rewardStart;
     }
-
     struct StakeData {
+        bool active;
         uint256 amount;
         uint256 stakeAcc;
+        uint256 rewardPeriod;
+//        uint256 lastActionPeriod;
     }
 
     Pool public pool;
 
     mapping(address => StakeData) public stakes;
+    mapping(address => bool) public activeStaker;
 
-    mapping(address => bool) public rewardAdmins;
-    mapping(address => bool) public whitelist;
+    constructor(address _OTGToken, address _vestingContract, address _oracle){
+        require(_oracle != address(0x0), "Invalid oracle address");
 
-    constructor(address _OTGToken, address _vestingContract){
         OTGToken = IERC20(_OTGToken);
         setVestingContract(_vestingContract);
+        oracle = _oracle;
     }
 
     modifier isZeroAddress(address _address){
         require(_address != address(0), "is the zero address");
-        _;
-    }
-    modifier onlyRewardAdmin() {
-        require(rewardAdmins[msg.sender] || msg.sender == owner(), "Caller is not the owner or admin");
-        _;
-    }
-    modifier onlyWhitelistAdmin() {
-        require(whitelist[msg.sender] || msg.sender == owner(), "Caller is not the owner or admin");
         _;
     }
 
@@ -70,7 +69,6 @@ contract Rewards is Ownable {
             _stake.stakeAcc = pool.rewardAccPerShare;
 
             stakes[msg.sender] = _stake;
-
         } else {
             pool.rewardAccPerShare = getRewardAccumulatedPerShare();
             stakes[msg.sender].stakeAcc = pool.rewardAccPerShare;
@@ -79,6 +77,8 @@ contract Rewards is Ownable {
         pool.totalStaked+= _amount;
         pool.lastOperationTime = block.timestamp;
 
+        stakes[msg.sender].active = true;
+//        stakes[msg.sender].lastActionPeriod = period; //! test
         //==todo emit
     }
 
@@ -88,56 +88,46 @@ contract Rewards is Ownable {
 
         StakeData storage _stake = stakes[msg.sender];
 
-        distributeReward(msg.sender, _stake);
+//        distributeReward(msg.sender, _stake);
         _stake.amount-= _amount;
 
-        // Return stake
         IERC20(OTGToken).safeTransfer(msg.sender, _amount);
+        pool.rewardAccPerShare = getRewardAccumulatedPerShare(); //!test delete (distributeReward)
 
         pool.totalStaked-= _amount;
         pool.lastOperationTime = block.timestamp;
-
+        stakes[msg.sender].stakeAcc = pool.rewardAccPerShare;//!test delete (distributeReward)
+//        stakes[msg.sender].lastActionPeriod = period; //! test
         //==todo emit
     }
 
-    function claimReward() external {
-        if(!whitelist[msg.sender]){
-            require( stakes[msg.sender].amount > 0, "Your stake is zero");
-        }
-        StakeData storage _stake = stakes[msg.sender];
-
-        distributeReward(msg.sender, _stake);
-        pool.lastOperationTime = block.timestamp;
-        //==todo emit
-    }
-
-    function distributeReward(
-        address _userAddress,
-        StakeData storage _stake
-    ) private {
-        pool.rewardAccPerShare = getRewardAccumulatedPerShare();
-        uint256 reward;
-        if(whitelist[_userAddress]){
-
-            reward = (_stake.amount + vestingContract.stakerBalance(_userAddress))
-            * (pool.rewardAccPerShare - _stake.stakeAcc)
-            * pool.rewardRate
-            / ACC_PRECISION;
-
-        } else {
-            reward = _stake.amount
-            * (pool.rewardAccPerShare - _stake.stakeAcc)
-            * pool.rewardRate
-            / ACC_PRECISION;
-        }
-
-        _stake.stakeAcc = pool.rewardAccPerShare;
-        IERC20(rewardToken).safeTransfer(_userAddress, reward);
-
-
-
-        //==todo emit
-    }
+//    function distributeReward(
+//        address _userAddress,
+//        StakeData storage _stake
+//    ) private {
+//        pool.rewardAccPerShare = getRewardAccumulatedPerShare();
+//        uint256 reward;
+//        if(vestingContract.stakers(_userAddress)){
+//
+//            reward = (_stake.amount + vestingContract.stakerBalance(_userAddress))
+//            * (pool.rewardAccPerShare - _stake.stakeAcc)
+//            * pool.rewardRate
+//            / ACC_PRECISION;
+//
+//        } else {
+//            reward = _stake.amount
+//            * (pool.rewardAccPerShare - _stake.stakeAcc)
+//            * pool.rewardRate
+//            / ACC_PRECISION;
+//        }
+//
+//        _stake.stakeAcc = pool.rewardAccPerShare;
+//        IERC20(rewardToken).safeTransfer(_userAddress, reward);
+//
+//
+//
+//        //==todo emit
+//    }
 
 
     function setPoolState(uint256 _amount) external onlyOwner { //fixatePoolsState + registerLiquidityFee
@@ -145,13 +135,20 @@ contract Rewards is Ownable {
 
         IERC20(rewardToken).safeTransferFrom(msg.sender, address(this), _amount);
 
+        pool.rewardStart = block.timestamp - (block.timestamp % 86400);
+        pool.rewardEnd =  pool.rewardStart + 86400;
+
         pool.rewardRate = _amount / 1 days; //86400
-        pool.lastOperationTime = block.timestamp;
+        pool.lastOperationTime = block.timestamp - (block.timestamp - pool.rewardStart);
+
+        period = ++period;
+        pool.rewardAccPerShare = 0; //! test
     }
 
     function getRewardAccumulatedPerShare() internal view returns (uint256) {
-        uint256 actualTime = block.timestamp;
-        if (actualTime <= pool.lastOperationTime || pool.totalStaked == 0) { //!=====
+        uint256 actualTime = block.timestamp < pool.rewardEnd ? block.timestamp : pool.rewardEnd;
+
+        if (actualTime <= pool.lastOperationTime || pool.totalStaked == 0) { //!===== можлива помилка (якщо тотал автиного стейку == 0 але пасивний стей не 0
             return pool.rewardAccPerShare;
         }
 
@@ -166,18 +163,23 @@ contract Rewards is Ownable {
             return reward;
         }
 
+//        if(_stake.lastActionPeriod < period){
+//            _stake.stakeAcc = 0;
+//        }
+
         reward = (getRewardAccumulatedPerShare() - _stake.stakeAcc)
         * _stake.amount
         * pool.rewardRate
         / ACC_PRECISION;
     }
+//    !======== Admin setting START ==========
 
     function setVestingContract(address _vestingContract) public onlyOwner isZeroAddress(_vestingContract) {
         require(address(_vestingContract) != address(vestingContract), "the address is already set");
         vestingContract = Vesting(_vestingContract);
     }
 
-    function setStakingContract(address _stakingContract) external onlyRewardAdmin isZeroAddress(_stakingContract) {
+    function setStakingContract(address _stakingContract) external onlyOwner isZeroAddress(_stakingContract) {
         require(address(_stakingContract) != address(stakingContract), "the address is already set");
         stakingContract = _stakingContract;
     }
@@ -187,18 +189,76 @@ contract Rewards is Ownable {
         OTGToken = IERC20(_newOTGToken);
     }
 
-    function setRewardToken(address _rewardToken) external onlyRewardAdmin isZeroAddress(_rewardToken) {
+    function setRewardToken(address _rewardToken) external onlyOwner isZeroAddress(_rewardToken) {
         rewardToken = IERC20(_rewardToken);
     }
 
-    function setRewardAdmin(address _address, bool _isAdmin) external onlyOwner isZeroAddress(_address) {
-        require(_isAdmin != rewardAdmins[_address], "0");
-        rewardAdmins[_address] = _isAdmin;
+//    !======== Admin setting END ============
+
+//    !======= oracle changes START =========
+
+    function claimReward(address _recipient, uint256 _date, uint256 _amount, bytes calldata signature) external {
+        require(_amount > 0, "Invalid amount value");
+        bytes32 hash = keccak256(abi.encodePacked(_recipient, _date, _amount));
+        require(signerAddress(prefixed(hash), signature) == oracle, "Invalid signature");
+
+        require(vestingContract.stakers(_recipient) || stakes[_recipient].active, 'recipient is not a staker'); // добавити інший require
+
+        require(stakes[_recipient].rewardPeriod < period, 'reward already been received today');
+
+        IERC20(rewardToken).safeTransfer(_recipient, _amount);
+
+        stakes[_recipient].rewardPeriod = period;
+        if(stakes[_recipient].amount == 0){
+            stakes[msg.sender].active = false;
+        }
+
+        //==todo emit
     }
 
-    function setWhitelistAddress(address _address, bool _isAdmin) external onlyOwner isZeroAddress(_address) {
-        require(_isAdmin != whitelist[_address], "0");
-        whitelist[_address] = _isAdmin;
+    function splitSign(bytes memory sig) internal pure returns (uint8 v, bytes32 r, bytes32 s) {
+        require(sig.length == 65);
+
+        assembly {
+            r := mload(add(sig, 32)) // first 32 bytes, after the length prefix
+            s := mload(add(sig, 64)) // second 32 bytes
+            v := mload(add(sig, 65)) // final byte (first byte of the next 32 bytes)
+        }
     }
 
+    function signerAddress(bytes32 message, bytes memory sig) internal pure returns (address) {
+        (uint8 v, bytes32 r, bytes32 s) = splitSign(sig);
+
+        return ecrecover(message, v, r, s);
+    }
+
+    /**
+     * Builds a prefixed hash to mimic the behavior of eth_sign function.
+     */
+    function prefixed(bytes32 hash) internal pure returns (bytes32) {
+        return keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
+    }
+
+    /**
+     * Changes oracle address.
+     *
+     * @param _oracle Address of the oracle (may be a contract or a regular address).
+   */
+    function changeOracle(address _oracle) external onlyOwner {
+        require(_oracle != address(0x0), "Invalid oracle address");
+        require(oracle != _oracle, "Address already registered");
+
+        //todo emit
+
+        oracle = _oracle;
+    }
+    //    !======= oracle changes END =========
+//        function claimReward(address _recipient, uint256 _date, uint256 _amount, bytes calldata signature) external view returns(address) {
+//        require(_amount > 0, "Invalid amount value");
+//        bytes32 hash = keccak256(abi.encodePacked(_recipient, _date, _amount));
+//
+//        //==todo emit
+//            return signerAddress(prefixed(hash), signature);
+//
+//    }
 }

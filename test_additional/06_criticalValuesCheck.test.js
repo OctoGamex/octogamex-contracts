@@ -11,7 +11,7 @@ const {
     constants
 } = require('@openzeppelin/test-helpers');
 
-contract("sell NFT functionality", async accounts => {
+contract("critical values check", async accounts => {
     const [deployer, accountOne, accountTwo, accountThree] = accounts;
 
     let ERC1155, ERC721, ERC20, MarketPlace;
@@ -20,7 +20,7 @@ contract("sell NFT functionality", async accounts => {
     
     const NFT1155id = new BN(1);
     
-    let addNFT721Num = 101;
+    let addNFT721Num = 11;
     let NFT721ids = []; 
 
     const NFTdata = 0; 
@@ -35,14 +35,36 @@ contract("sell NFT functionality", async accounts => {
         ERC20Address = ERC20.address;
 
         MarketPlace = await Marketplace.deployed({from: deployer});
-
         MarketPlaceAddress = MarketPlace.address;
+
+        let canTransfer = true;
+        let collection1155Receipt = await MarketPlace.setNFT_Collection(ERC1155Address, canTransfer, { from: deployer });
+
+        expectEvent(collection1155Receipt, 'collectionAdd', {
+            auctionContract: ERC1155Address,
+            canTransfer: canTransfer
+        });
+
+        let collection721Receipt = await MarketPlace.setNFT_Collection(ERC721Address, canTransfer, { from: deployer });
+
+        expectEvent(collection721Receipt, 'collectionAdd', {
+            auctionContract: ERC721Address,
+            canTransfer: canTransfer
+        });
+
+        let isERC20Supported = true;
+        await MarketPlace.setERC20_Support(ERC1155Address, [ERC20Address], [isERC20Supported], { from: deployer });
+        await MarketPlace.setERC20_Support(ERC721Address, [ERC20Address], [isERC20Supported], { from: deployer });
     });
 
     it("reset market commission", async () => {
         let marketCommission = new BN(150);
 
-        await MarketPlace.setMarketCommission(marketCommission, {from: deployer});
+        let receipt = await MarketPlace.setMarketCommission(marketCommission, {from: deployer});
+
+        expectEvent(receipt, "commissionMarket", {
+            commisssion: marketCommission
+        });
 
         let receivedMarketCommission = await MarketPlace.marketCommission({from: deployer});
         assert.equal(Number(receivedMarketCommission), marketCommission, "market comission is wrong");
@@ -52,7 +74,11 @@ contract("sell NFT functionality", async accounts => {
         const tokenbits = (new BN(10)).pow(new BN(18));
         commissionOffer = new BN(1).mul(tokenbits);
 
-        await MarketPlace.setOfferCommission(commissionOffer, {from: deployer});
+        let receipt = await MarketPlace.setOfferCommission(commissionOffer, {from: deployer});
+
+        expectEvent(receipt, "commissionOffer", {
+            commisssion: commissionOffer
+        });
 
         let receivedOfferCommission = await MarketPlace.offerCommission({from: deployer});
         assert.equal(Number(receivedOfferCommission), commissionOffer, "offer comission is wrong");
@@ -65,7 +91,7 @@ contract("sell NFT functionality", async accounts => {
         assert.equal(String(receivedMarketWallet), deployer, "market wallet is wrong");
     });
 
-    it("mint, approve & set NFT collection & set auction contract", async () => {
+    it("mint & approve NFT and tokens for users", async () => {
         const tokenbits = (new BN(10)).pow(new BN(18));
         let tokensAmount = new BN(1000).mul(tokenbits);
         const NFTapproved = true;
@@ -86,18 +112,7 @@ contract("sell NFT functionality", async accounts => {
         await ERC20.approve(MarketPlaceAddress, tokensAmount, { from: accountTwo });
 
         await ERC20.mint(accountThree, tokensAmount, { from: accountThree });
-        await ERC20.approve(MarketPlaceAddress, tokensAmount, { from: accountThree });
-
-        let canTransfer = true;
-
-        await MarketPlace.setNFT_Collection(ERC1155Address, canTransfer, { from: deployer });
-        await MarketPlace.setNFT_Collection(ERC721Address, canTransfer, { from: deployer });       
-    });
-
-    it("set ERC-20 support", async () => {
-        let isERC20Supported = true;
-        await MarketPlace.setERC20_Support(ERC1155Address, [ERC20Address], [isERC20Supported], { from: deployer });
-        await MarketPlace.setERC20_Support(ERC721Address, [ERC20Address], [isERC20Supported], { from: deployer });
+        await ERC20.approve(MarketPlaceAddress, tokensAmount, { from: accountThree });      
     });
 
     it("user should be able to add NFT ERC-721", async () => {
@@ -127,7 +142,7 @@ contract("sell NFT functionality", async accounts => {
         const tokenbits = (new BN(10)).pow(new BN(18));
         let lotPrice = (new BN(1)).mul(tokenbits);
         let date = await web3.eth.getBlock("latest");
-        let lotStartDate = (new BN(date.timestamp)).add(new BN(5));
+        let lotStartDate = (new BN(date.timestamp)).add(new BN(60));
 
         let openForOffers = true;
 
@@ -155,11 +170,11 @@ contract("sell NFT functionality", async accounts => {
         let tokensAmount = new BN(0);
         let cryptoProposalAmount = new BN(1).mul(tokenbits);
 
-        let proposalsAmount = 100;
+        let proposalsAmount = 10;
 
         for(let i = 0; i < proposalsAmount; i++){
             await MarketPlace.makeOffer(lotId, exchangeNFTindexes, constants.ZERO_ADDRESS, 
-                tokensAmount, { from: accountTwo, value: (Number(commissionOffer) + Number(cryptoProposalAmount)) });
+                tokensAmount, { from: accountTwo, value: cryptoProposalAmount });
         }
 
         let offersAmount = new BN(proposalsAmount);
@@ -179,7 +194,6 @@ contract("sell NFT functionality", async accounts => {
         const tokenbits = (new BN(10)).pow(new BN(18));
 
         let cryptoProposalAmount = new BN(1);
-        let commision = commissionOffer / tokenbits;
         
         let cryptoBalanceBefore = (await web3.eth.getBalance(accountTwo) / tokenbits).toFixed(0);
 
@@ -188,7 +202,7 @@ contract("sell NFT functionality", async accounts => {
 
         let cryptoBalanceAfter = (await web3.eth.getBalance(accountTwo) / tokenbits).toFixed(0);
 
-        assert.equal((Number(cryptoBalanceBefore) + Number(cryptoProposalAmount) + Number(commision)), cryptoBalanceAfter, 
+        assert.equal((Number(cryptoBalanceBefore) + Number(cryptoProposalAmount)), cryptoBalanceAfter, 
             "balance of crypto after canceled is wrong");
     });
 
