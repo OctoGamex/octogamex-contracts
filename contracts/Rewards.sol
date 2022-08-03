@@ -219,7 +219,6 @@ contract Rewards is Ownable {
 //    !======= oracle changes START =========
 
     function claimReward(address _recipient, uint256 _date, uint256 _amount, bytes calldata signature) external {
-        require(_amount > 0, "Invalid amount value");
         bytes32 hash = keccak256(abi.encodePacked(_recipient, _date, _amount)); //??? something more
         require(signerAddress(prefixed(hash), signature) == oracle, "Invalid signature");
 
