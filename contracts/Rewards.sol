@@ -30,13 +30,40 @@ contract Rewards is Ownable {
         uint256 amount;
         uint256 stakeAcc;
         uint256 rewardPeriod;
-//        uint256 lastActionPeriod;
     }
 
     Pool public pool;
 
     mapping(address => StakeData) public stakes;
     mapping(address => bool) public activeStaker;
+
+    event stakeEvent(
+        address user,
+        uint256 amount,
+        uint256 time
+    );
+
+    event unStakeEvent(
+        address user,
+        uint256 amount,
+        uint256 time,
+        uint256 currentReward
+    );
+
+    event setPoolEvent(
+        uint256 period,
+        uint256 time,
+        uint256 activeStake,
+        uint256 passiveStake,
+        uint256 PoolPerDay
+
+    );
+
+    event claimEvent(
+        address user,
+        uint256 currentAmount,
+        uint256 time
+    );
 
     constructor(address _OTGToken, address _vestingContract, address _oracle){
         require(_oracle != address(0x0), "Invalid oracle address");
@@ -52,7 +79,7 @@ contract Rewards is Ownable {
     }
 
     function getTotalStakes() public view returns(uint256) {
-        return pool.totalStaked + vestingContract.totalPassiveStake(); // 6000... from vestingContract
+        return pool.totalStaked + vestingContract.totalPassiveStake();
     }
 
     function doStake(uint256 _amount) external {
@@ -78,8 +105,8 @@ contract Rewards is Ownable {
         pool.lastOperationTime = block.timestamp;
 
         stakes[msg.sender].active = true;
-//        stakes[msg.sender].lastActionPeriod = period; //! test
-        //==todo emit
+
+        emit stakeEvent(msg.sender, _amount, block.timestamp);
     }
 
 
@@ -88,49 +115,21 @@ contract Rewards is Ownable {
 
         StakeData storage _stake = stakes[msg.sender];
 
-//        distributeReward(msg.sender, _stake);
+        uint256 currentReward = getStakeRewards(msg.sender);
+
         _stake.amount-= _amount;
 
         IERC20(OTGToken).safeTransfer(msg.sender, _amount);
-        pool.rewardAccPerShare = getRewardAccumulatedPerShare(); //!test delete (distributeReward)
+        pool.rewardAccPerShare = getRewardAccumulatedPerShare(); //!(distributeReward)
 
         pool.totalStaked-= _amount;
         pool.lastOperationTime = block.timestamp;
-        stakes[msg.sender].stakeAcc = pool.rewardAccPerShare;//!test delete (distributeReward)
-//        stakes[msg.sender].lastActionPeriod = period; //! test
-        //==todo emit
+        stakes[msg.sender].stakeAcc = pool.rewardAccPerShare;//!(distributeReward)
+
+        emit unStakeEvent(msg.sender, _amount, block.timestamp, currentReward); //! потрібно додати прибуток на теперішній момент
     }
 
-//    function distributeReward(
-//        address _userAddress,
-//        StakeData storage _stake
-//    ) private {
-//        pool.rewardAccPerShare = getRewardAccumulatedPerShare();
-//        uint256 reward;
-//        if(vestingContract.stakers(_userAddress)){
-//
-//            reward = (_stake.amount + vestingContract.stakerBalance(_userAddress))
-//            * (pool.rewardAccPerShare - _stake.stakeAcc)
-//            * pool.rewardRate
-//            / ACC_PRECISION;
-//
-//        } else {
-//            reward = _stake.amount
-//            * (pool.rewardAccPerShare - _stake.stakeAcc)
-//            * pool.rewardRate
-//            / ACC_PRECISION;
-//        }
-//
-//        _stake.stakeAcc = pool.rewardAccPerShare;
-//        IERC20(rewardToken).safeTransfer(_userAddress, reward);
-//
-//
-//
-//        //==todo emit
-//    }
-
-
-    function setPoolState(uint256 _amount) external onlyOwner { //fixatePoolsState + registerLiquidityFee
+    function setPoolState(uint256 _amount) external onlyOwner {
         require(_amount > 0, "Invalid stake amount value");
 
         IERC20(rewardToken).safeTransferFrom(msg.sender, address(this), _amount);
@@ -142,13 +141,14 @@ contract Rewards is Ownable {
         pool.lastOperationTime = block.timestamp - (block.timestamp - pool.rewardStart);
 
         period = ++period;
-        pool.rewardAccPerShare = 0; //! test
+
+        emit setPoolEvent(period, block.timestamp, pool.totalStaked, vestingContract.totalPassiveStake(), _amount);
     }
 
     function getRewardAccumulatedPerShare() internal view returns (uint256) {
         uint256 actualTime = block.timestamp < pool.rewardEnd ? block.timestamp : pool.rewardEnd;
 
-        if (actualTime <= pool.lastOperationTime || pool.totalStaked == 0) { //!===== можлива помилка (якщо тотал автиного стейку == 0 але пасивний стей не 0
+        if (actualTime <= pool.lastOperationTime || pool.totalStaked == 0) {
             return pool.rewardAccPerShare;
         }
 
@@ -156,23 +156,29 @@ contract Rewards is Ownable {
         + ACC_PRECISION * (actualTime - pool.lastOperationTime) / (getTotalStakes());
     }
 
-    function getStakeRewards(address _userAddress) external view returns (uint256 reward) {
+    function getStakeRewards(address _userAddress) public view returns (uint256 reward) {
         StakeData memory _stake = stakes[_userAddress];
 
-        if ( getTotalStakes() == 0) {
-            return reward;
+        if(vestingContract.stakers(_userAddress)){
+            reward = (_stake.amount + vestingContract.stakerBalance(_userAddress))
+            * (pool.rewardAccPerShare - _stake.stakeAcc)
+            * pool.rewardRate
+            / ACC_PRECISION;
+
+        } else {
+            reward = _stake.amount
+            * (pool.rewardAccPerShare - _stake.stakeAcc)
+            * pool.rewardRate
+            / ACC_PRECISION;
         }
 
-//        if(_stake.lastActionPeriod < period){
-//            _stake.stakeAcc = 0;
-//        }
-
-        reward = (getRewardAccumulatedPerShare() - _stake.stakeAcc)
-        * _stake.amount
-        * pool.rewardRate
-        / ACC_PRECISION;
     }
 //    !======== Admin setting START ==========
+    function withdrawalForOwner(address _recipient, uint256 _amount) public onlyOwner {
+        require(_amount > 0, "Invalid amount value");
+
+        IERC20(rewardToken).safeTransfer(_recipient, _amount);
+    }
 
     function setVestingContract(address _vestingContract) public onlyOwner isZeroAddress(_vestingContract) {
         require(address(_vestingContract) != address(vestingContract), "the address is already set");
@@ -199,21 +205,25 @@ contract Rewards is Ownable {
 
     function claimReward(address _recipient, uint256 _date, uint256 _amount, bytes calldata signature) external {
         require(_amount > 0, "Invalid amount value");
-        bytes32 hash = keccak256(abi.encodePacked(_recipient, _date, _amount));
+        bytes32 hash = keccak256(abi.encodePacked(_recipient, _date, _amount)); //??? something more
         require(signerAddress(prefixed(hash), signature) == oracle, "Invalid signature");
 
-        require(vestingContract.stakers(_recipient) || stakes[_recipient].active, 'recipient is not a staker'); // добавити інший require
+        require(vestingContract.stakers(_recipient) || stakes[_recipient].active, 'recipient is not a staker');
 
         require(stakes[_recipient].rewardPeriod < period, 'reward already been received today');
-
-        IERC20(rewardToken).safeTransfer(_recipient, _amount);
-
         stakes[_recipient].rewardPeriod = period;
+
+//        IERC20(rewardToken).safeTransfer(_recipient, _amount);
+
+        uint256 currentAmount = getStakeRewards(_recipient);
+
+        IERC20(rewardToken).safeTransfer(_recipient, currentAmount + _amount);
+
         if(stakes[_recipient].amount == 0){
-            stakes[msg.sender].active = false;
+            stakes[_recipient].active = false;
         }
 
-        //==todo emit
+        emit claimEvent(_recipient, currentAmount, block.timestamp);
     }
 
     function splitSign(bytes memory sig) internal pure returns (uint8 v, bytes32 r, bytes32 s) {
