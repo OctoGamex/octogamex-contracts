@@ -120,13 +120,13 @@ contract Rewards is Ownable {
         _stake.amount-= _amount;
 
         IERC20(OTGToken).safeTransfer(msg.sender, _amount);
-        pool.rewardAccPerShare = getRewardAccumulatedPerShare(); //!(distributeReward)
+        pool.rewardAccPerShare = getRewardAccumulatedPerShare(); //!=
 
         pool.totalStaked-= _amount;
         pool.lastOperationTime = block.timestamp;
-        stakes[msg.sender].stakeAcc = pool.rewardAccPerShare;//!(distributeReward)
+        stakes[msg.sender].stakeAcc = pool.rewardAccPerShare;//!=
 
-        emit unStakeEvent(msg.sender, _amount, block.timestamp, currentReward); //! потрібно додати прибуток на теперішній момент
+        emit unStakeEvent(msg.sender, _amount, block.timestamp, currentReward);
     }
 
     function setPoolState(uint256 _amount) external onlyOwner {
@@ -159,20 +159,25 @@ contract Rewards is Ownable {
     function getStakeRewards(address _userAddress) public view returns (uint256 reward) {
         StakeData memory _stake = stakes[_userAddress];
 
+        if ( getTotalStakes() == 0) {
+            return reward;
+        }
+
         if(vestingContract.stakers(_userAddress)){
             reward = (_stake.amount + vestingContract.stakerBalance(_userAddress))
-            * (pool.rewardAccPerShare - _stake.stakeAcc)
+            * (getRewardAccumulatedPerShare() - _stake.stakeAcc)
             * pool.rewardRate
             / ACC_PRECISION;
 
         } else {
             reward = _stake.amount
-            * (pool.rewardAccPerShare - _stake.stakeAcc)
+            * (getRewardAccumulatedPerShare() - _stake.stakeAcc)
             * pool.rewardRate
             / ACC_PRECISION;
         }
 
     }
+
 //    !======== Admin setting START ==========
     function withdrawalForOwner(address _recipient, uint256 _amount) public onlyOwner {
         require(_amount > 0, "Invalid amount value");
@@ -225,6 +230,8 @@ contract Rewards is Ownable {
 
         emit claimEvent(_recipient, currentAmount, block.timestamp);
     }
+
+
 
     function splitSign(bytes memory sig) internal pure returns (uint8 v, bytes32 r, bytes32 s) {
         require(sig.length == 65);
