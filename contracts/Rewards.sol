@@ -35,7 +35,7 @@ contract Rewards is Ownable {
     Pool public pool;
 
     mapping(address => StakeData) public stakes;
-    mapping(address => bool) public activeStaker;
+    mapping(address => bool) public rewardAdmins;
 
     event stakeEvent(
         address user,
@@ -75,6 +75,11 @@ contract Rewards is Ownable {
 
     modifier isZeroAddress(address _address){
         require(_address != address(0), "is the zero address");
+        _;
+    }
+
+    modifier onlyRewardAdmin() {
+        require(rewardAdmins[msg.sender] || msg.sender == owner(), "Caller is not the owner or admin");
         _;
     }
 
@@ -129,7 +134,7 @@ contract Rewards is Ownable {
         emit unStakeEvent(msg.sender, _amount, block.timestamp, currentReward);
     }
 
-    function setPoolState(uint256 _amount) external onlyOwner {
+    function setPoolState(uint256 _amount) external onlyRewardAdmin {
         require(_amount > 0, "Invalid stake amount value");
 
         IERC20(rewardToken).safeTransferFrom(msg.sender, address(this), _amount);
@@ -202,6 +207,11 @@ contract Rewards is Ownable {
 
     function setRewardToken(address _rewardToken) external onlyOwner isZeroAddress(_rewardToken) {
         rewardToken = IERC20(_rewardToken);
+    }
+
+    function setRewardAdmin(address _address, bool _isAdmin) external onlyOwner isZeroAddress(_address) {
+        require(_isAdmin != rewardAdmins[_address], "0");
+        rewardAdmins[_address] = _isAdmin;
     }
 
 //    !======== Admin setting END ============
