@@ -92,17 +92,16 @@ contract('staking functionality', async accounts => {
     //     await VestingContract.setNewStakers(accountNine, accountNineBalance);
     // });
 
-    it('checking owner and contract balances after calling setPoolState', async () => {
+    it('setPoolState', async () => {
         const balanceOwnerB = await rewardToken.balanceOf(deployer);
         const contractBalanceB = await rewardToken.balanceOf(RewardsContractAddress);
 
         await rewardToken.approve(RewardsContractAddress, eth100);
-
         await RewardsContract.setPoolState(eth100);
 
         const balanceOwnerA = await rewardToken.balanceOf(deployer);
         const contractBalanceA = await rewardToken.balanceOf(RewardsContractAddress);
-
+        console.log("перший setPoolState(eth100)")
         //? check balance owner after setPool
         assert.equal(Number(balanceOwnerA), Number(balanceOwnerB) - Number(eth100), "ownerBalance after setPoolState  is wrong");
 
@@ -110,44 +109,55 @@ contract('staking functionality', async accounts => {
         assert.equal(Number(contractBalanceA), Number(contractBalanceB) + Number(eth100), "contractBalance after setPoolState  is wrong");
     })
 
-    it('doStake for all stakers', async () => {
-        let allStakers = [
-            accountOne,
-            accountTwo,
-            accountThree,
-            accountFour,
-            accountFive,
-            accountSix,
-            accountSeven
-        ];
-
-        for (let i = 0; i < allStakers.length; i++) {
-            const acc = allStakers[i];
-
-            await RewardsContract.doStake(eth10, {from: acc})
-
-            let res = await RewardsContract.stakes(acc)
-            await time.increase(3600);
-            console.log('===============')
-            console.log(res.stakeAcc.toLocaleString())
-            console.log(res.amount.toLocaleString())
-            console.log(res.rewardPeriod.toLocaleString())
-            console.log(res.active)
-            console.log('===============')
-
-        }
+    it('doStake', async () => {
+        console.log('робимо стейк accountOne на 10 eth')
+        // await RewardsContract.doStake(eth10, {from: accountTwo})
+        await RewardsContract.doStake(eth10, {from: accountOne})
+        let d = await RewardsContract.pool()
+        console.log("загальний тотал стеків", d.totalStaked.toLocaleString())
     })
 
-    it('test reward after 86400', async () =>{
-        await time.increase(63000);
-        await rewardToken.approve(RewardsContractAddress, eth100);
+    it('test after 86400 #1', async () =>{
+        await time.increase(3600);
+        console.log('пропустили годину')
 
+        let x = await RewardsContract.getStakeRewards(accountOne)
+        console.log('винагорода через годину', Number(x.toLocaleString()) / 10**18)
+
+        // console.log('робимо unStake на eth5')
+        // await RewardsContract.unStake(eth5, {from: accountOne}) //цей момент потрібно десь збергігати прибуток (на бек)
+
+    })
+
+    it('test after 86400 #2', async () =>{
+        await time.increase(86400);
+
+        let x = await RewardsContract.getStakeRewards(accountOne)
+        console.log('винагорода кінець першого дня', Number(x.toLocaleString()) / 10**18)
+    })
+
+    it('new setPOOl №1', async () =>{
+
+
+        await rewardToken.approve(RewardsContractAddress, eth100);
         await RewardsContract.setPoolState(eth100);
         await time.increase(86400);
 
         let x = await RewardsContract.getStakeRewards(accountOne)
-        console.log(x.toLocaleString())
-        let a = await RewardsContract.getStakeRewards(accountSeven)
-        console.log(a.toLocaleString())
+        console.log('винагорода кінец 2', Number(x.toLocaleString()) / 10**18)
+
     })
+
+    it('new setPOOl №2', async () =>{
+
+
+        await rewardToken.approve(RewardsContractAddress, eth100);
+        await RewardsContract.setPoolState(eth100);
+        await time.increase(86400);
+
+        let x = await RewardsContract.getStakeRewards(accountOne)
+        console.log('винагорода кінец 3', Number(x.toLocaleString()) / 10**18)
+
+    })
+
 })
