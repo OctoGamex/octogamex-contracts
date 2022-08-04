@@ -111,29 +111,31 @@ contract('staking functionality', async accounts => {
 
     it('doStake', async () => {
         console.log('робимо стейк accountOne на 10 eth')
-        // await RewardsContract.doStake(eth10, {from: accountTwo})
+        await RewardsContract.doStake(eth10, {from: accountTwo})
         await RewardsContract.doStake(eth10, {from: accountOne})
         let d = await RewardsContract.pool()
         console.log("загальний тотал стеків", d.totalStaked.toLocaleString())
     })
 
     it('test after 86400 #1', async () =>{
-        await time.increase(3600);
+        await time.increase(150);
         console.log('пропустили годину')
 
         let x = await RewardsContract.getStakeRewards(accountOne)
-        console.log('винагорода через годину', Number(x.toLocaleString()) / 10**18)
+        console.log('винагорода за пів дня', Number(x.toLocaleString()) / 10**18)
 
-        // console.log('робимо unStake на eth5')
-        // await RewardsContract.unStake(eth5, {from: accountOne}) //цей момент потрібно десь збергігати прибуток (на бек)
+        console.log('робимо unStake на eth5')
+        await RewardsContract.unStake(eth5, {from: accountOne}) //цей момент потрібно десь збергігати прибуток (на бек)
 
     })
 
     it('test after 86400 #2', async () =>{
-        await time.increase(86400);
+        await time.increase(150);
 
         let x = await RewardsContract.getStakeRewards(accountOne)
         console.log('винагорода кінець першого дня', Number(x.toLocaleString()) / 10**18)
+        let y = await RewardsContract.getStakeRewards(accountTwo)
+        console.log('винагорода кінець першого дня', Number(y.toLocaleString()) / 10**18)
     })
 
     it('new setPOOl №1', async () =>{
@@ -141,10 +143,12 @@ contract('staking functionality', async accounts => {
 
         await rewardToken.approve(RewardsContractAddress, eth100);
         await RewardsContract.setPoolState(eth100);
-        await time.increase(86400);
+        await time.increase(300);
 
         let x = await RewardsContract.getStakeRewards(accountOne)
-        console.log('винагорода кінец 2', Number(x.toLocaleString()) / 10**18)
+        let y = await RewardsContract.getStakeRewards(accountTwo)
+        console.log('винагорода кінец 2', Number(x.toLocaleString()))
+        console.log('винагорода кінец 2 акк2', Number(y.toLocaleString()))
 
     })
 
@@ -153,10 +157,12 @@ contract('staking functionality', async accounts => {
 
         await rewardToken.approve(RewardsContractAddress, eth100);
         await RewardsContract.setPoolState(eth100);
-        await time.increase(86400);
+        await time.increase(300);
 
         let x = await RewardsContract.getStakeRewards(accountOne)
+        let y = await RewardsContract.getStakeRewards(accountTwo)
         console.log('винагорода кінец 3', Number(x.toLocaleString()) / 10**18)
+        console.log('винагорода кінец 2 акк2', Number(y.toLocaleString()) / 10**18)
 
     })
 

@@ -137,11 +137,11 @@ contract Rewards is Ownable {
         _stake.amount-= _amount;
 
         IERC20(OTGToken).safeTransfer(msg.sender, _amount);
-        pool.rewardAccPerShare = getRewardAccumulatedPerShare(); //!=
-
         pool.totalStaked-= _amount;
         pool.lastOperationTime = block.timestamp;
         stakes[msg.sender].stakeAcc = pool.rewardAccPerShare;//!=
+
+        pool.rewardAccPerShare = getRewardAccumulatedPerShare(); //!=
 
         emit unStakeEvent(msg.sender, _amount, block.timestamp, currentReward);
     }
@@ -161,6 +161,23 @@ contract Rewards is Ownable {
 
         emit setPoolEvent(period, block.timestamp, pool.totalStaked, vestingContract.totalPassiveStake(), _amount);
     }
+//            //! for testing
+//    function setPoolState(uint256 _amount) external onlyRewardAdmin {
+//        require(_amount > 0, "Invalid stake amount value");
+//
+//        IERC20(rewardToken).safeTransferFrom(msg.sender, address(this), _amount);
+//
+//        pool.rewardEnd =  block.timestamp + 300;
+//
+//        pool.rewardEnd = block.timestamp + 300;
+//
+//        pool.rewardRate = _amount / 300; //300
+//        pool.lastOperationTime = block.timestamp;
+//        period = ++period;
+//
+//        emit setPoolEvent(period, block.timestamp, pool.totalStaked, vestingContract.totalPassiveStake(), _amount);
+//    }
+//            //! for testing end
 
     function getRewardAccumulatedPerShare() internal view returns (uint256) {
         uint256 actualTime = block.timestamp < pool.rewardEnd ? block.timestamp : pool.rewardEnd;
