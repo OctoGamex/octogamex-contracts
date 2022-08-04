@@ -65,6 +65,18 @@ contract Rewards is Ownable {
         uint256 time
     );
 
+    event setVestingEvent(
+        address newVestingContract
+    );
+
+    event setStakingEvent(
+        address newStakingContract
+    );
+
+    event setRewardTokenEvent(
+        address newRewardToken
+    );
+
     constructor(address _OTGToken, address _vestingContract, address _oracle){
         require(_oracle != address(0x0), "Invalid oracle address");
 
@@ -193,11 +205,15 @@ contract Rewards is Ownable {
     function setVestingContract(address _vestingContract) public onlyOwner isZeroAddress(_vestingContract) {
         require(address(_vestingContract) != address(vestingContract), "the address is already set");
         vestingContract = Vesting(_vestingContract);
+
+        emit setVestingEvent(_vestingContract);
     }
 
     function setStakingContract(address _stakingContract) external onlyOwner isZeroAddress(_stakingContract) {
         require(address(_stakingContract) != address(stakingContract), "the address is already set");
         stakingContract = _stakingContract;
+
+        emit setStakingEvent(_stakingContract);
     }
 
     function updateOTGToken(address _newOTGToken) external onlyOwner isZeroAddress(_newOTGToken) {
@@ -207,6 +223,8 @@ contract Rewards is Ownable {
 
     function setRewardToken(address _rewardToken) external onlyOwner isZeroAddress(_rewardToken) {
         rewardToken = IERC20(_rewardToken);
+
+        emit setRewardTokenEvent(_rewardToken);
     }
 
     function setRewardAdmin(address _address, bool _isAdmin) external onlyOwner isZeroAddress(_address) {
