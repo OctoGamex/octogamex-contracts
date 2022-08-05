@@ -40,14 +40,17 @@ contract Rewards is Ownable {
     event stakeEvent(
         address user,
         uint256 amount,
-        uint256 time
+        uint256 time,
+        uint256 currentReward,
+        uint256 period
     );
 
     event unStakeEvent(
         address user,
         uint256 amount,
         uint256 time,
-        uint256 currentReward
+        uint256 currentReward,
+        uint256 period
     );
 
     event setPoolEvent(
@@ -62,7 +65,8 @@ contract Rewards is Ownable {
     event claimEvent(
         address user,
         uint256 currentAmount,
-        uint256 time
+        uint256 time,
+        uint256 period
     );
 
     event setVestingEvent(
@@ -104,6 +108,8 @@ contract Rewards is Ownable {
 
         IERC20(OTGToken).safeTransferFrom(msg.sender, address(this), _amount);
 
+        uint256 currentReward = getStakeRewards(msg.sender);
+
         if (stakes[msg.sender].amount == 0) {
             StakeData memory _stake;
             _stake.amount = _amount;
@@ -123,7 +129,7 @@ contract Rewards is Ownable {
 
         stakes[msg.sender].active = true;
 
-        emit stakeEvent(msg.sender, _amount, block.timestamp);
+        emit stakeEvent(msg.sender, _amount, block.timestamp, currentReward, period);
     }
 
 
@@ -143,7 +149,7 @@ contract Rewards is Ownable {
 
         pool.rewardAccPerShare = getRewardAccumulatedPerShare(); //!=
 
-        emit unStakeEvent(msg.sender, _amount, block.timestamp, currentReward);
+        emit unStakeEvent(msg.sender, _amount, block.timestamp, currentReward, period);
     }
 
     function setPoolState(uint256 _amount) external onlyRewardAdmin {
@@ -272,7 +278,7 @@ contract Rewards is Ownable {
             stakes[_recipient].active = false;
         }
 
-        emit claimEvent(_recipient, currentAmount, block.timestamp);
+        emit claimEvent(_recipient, currentAmount, block.timestamp, period);
     }
 
 
