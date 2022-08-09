@@ -251,11 +251,6 @@ contract Rewards is Ownable {
         emit setStakingEvent(_stakingContract);
     }
 
-    function updateOTGToken(address _newOTGToken) external onlyOwner isZeroAddress(_newOTGToken) {
-        require(address(_newOTGToken) != address(OTGToken), "the address is already set");
-        OTGToken = IERC20(_newOTGToken);
-    }
-
     function setRewardAdmin(address _address, bool _isAdmin) external onlyOwner isZeroAddress(_address) {
         require(_isAdmin != rewardAdmins[_address], "0");
         rewardAdmins[_address] = _isAdmin;
