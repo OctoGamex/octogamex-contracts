@@ -83,8 +83,6 @@ contract('staking functionality', async accounts => {
         await rewardToken.approve(RewardsContractAddress, eth100);
 
         await RewardsContract.setPoolState(eth100);
-        let xx = await RewardsContract.period()
-        console.log(xx.toLocaleString(), '0000')
 
         const balanceOwnerA = await rewardToken.balanceOf(deployer);
         const contractBalanceA = await rewardToken.balanceOf(RewardsContractAddress);
@@ -112,20 +110,16 @@ contract('staking functionality', async accounts => {
     })
 
     it('expect revert if stakes[msg.sender].amount < 0, function claimReward', async () => {
-        // await expectRevert( RewardsContract.claimReward({from: accountFive}), "Your stake is zero");
         await time.increase(86400);
-
-
         let x = await RewardsContract.getStakeRewards(accountOne)
-        console.log(x.toLocaleString() / 10**18, 'прибуток за перший день (accountOne)')
+        console.log(x.toLocaleString() / 10**18, 'reward first day (accountOne)')
     })
 
 
     it('2th setPool', async () => {
         await rewardToken.approve(RewardsContractAddress, eth100);
         await RewardsContract.setPoolState(eth100);
-        let a = await RewardsContract.period()
-        console.log(a.toLocaleString(), '000000')
+
         await RewardsContract.doStake(eth10, {from: accountTwo})
         await time.increase(86400);
 
@@ -133,8 +127,8 @@ contract('staking functionality', async accounts => {
         let x2 = await RewardsContract.getStakeRewards(accountTwo, {from: accountTwo})
 
 
-        console.log(x.toLocaleString() / 10**18, 'прибуток за другий день (accountOne)')
-        console.log(x2.toLocaleString() / 10**18,  'прибуток за другий день (accountTwo)')
+        console.log(x.toLocaleString() / 10**18, 'reward second day (accountOne)')
+        console.log(x2.toLocaleString() / 10**18,  'reward second day (accountTwo)')
 
     })
 
@@ -147,40 +141,20 @@ contract('staking functionality', async accounts => {
         console.log(a.toLocaleString(), '111')
     })
 
-    // it('test oracle function', async () => {
-    //     const dateNow = await time.latest(time.latest());
-    //     signMessage = await oracleSign.sign(accountOne, BigInt(dateNow), BigInt(eth5));
-    //
-    //
-    //     console.log('======================')
-    //     const balanceAccountOneBefore = await rewardToken.balanceOf(accountOne);
-    //     console.log(balanceAccountOneBefore.toLocaleString(), 'before balance')
-    //
-    //   let addressOracle = await RewardsContract.claimReward(accountOne, BigInt(dateNow), BigInt(eth5), signMessage, {from: accountOne})
-    //   // let addressOracle2 = await RewardsContract.claimReward(accountOne, BigInt(dateNow), BigInt(eth5), signMessage, {from: accountOne})
-    //
-    //     const balanceAccountOneAfter = await rewardToken.balanceOf(accountOne);
-    //     console.log(balanceAccountOneAfter.toLocaleString(),  'before After')
-    //
-    //     // console.log(addressOracle)
-    // })
+    it('test oracle function', async () => {
+        const dateNow = await time.latest(time.latest());
+        signMessage = await oracleSign.sign(accountOne, BigInt(dateNow), BigInt(eth5));
 
-    //
-    //
-    // it('testing function unStake', async () => {
-    //     const balanceAccOneBefore = await OTGToken.balanceOf(accountOne);
-    //     const stakeAmountBefore  = await RewardsContract.stakes(accountOne);
-    //     const beforeBalance = await RewardsContract.getTotalStakes();
-    //
-    //     await RewardsContract.unStake(eth5, {from: accountOne});
-    //
-    //     const balanceAccOneAfter = await OTGToken.balanceOf(accountOne);
-    //     const stakeAmountAfter  = await RewardsContract.stakes(accountOne);
-    //     const afterBalance= await RewardsContract.getTotalStakes();
-    //
-    //
-    //     assert.equal(Number(balanceAccOneAfter),Number(balanceAccOneBefore) + Number(eth5) ,'balanceOf  accountOne is wrong, after unStake');
-    //     assert.equal(Number(stakeAmountAfter.amount), Number(stakeAmountBefore.amount) - Number(eth5),"stake's amount is wrong, after unStake");
-    //     assert.equal(Number(afterBalance), Number(beforeBalance) - Number(eth5), "total stake amount of contract is wrong");
-    // })
+
+        console.log('======================')
+        const balanceAccountOneBefore = await rewardToken.balanceOf(accountOne);
+        console.log(balanceAccountOneBefore.toLocaleString(), 'before balance')
+
+      let addressOracle = await RewardsContract.claimReward(accountOne, BigInt(dateNow), BigInt(eth10), signMessage, {from: accountOne})
+
+        const balanceAccountOneAfter = await rewardToken.balanceOf(accountOne);
+        console.log(balanceAccountOneAfter.toLocaleString(),  'before After')
+
+        // console.log(addressOracle)
+    })
 })

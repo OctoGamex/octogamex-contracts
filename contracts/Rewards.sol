@@ -58,8 +58,8 @@ contract Rewards is Ownable {
         uint256 time,
         uint256 activeStake,
         uint256 passiveStake,
-        uint256 PoolPerDay
-
+        uint256 PoolPerDay,
+        uint256 rewardEnd
     );
 
     event claimEvent(
@@ -165,7 +165,7 @@ contract Rewards is Ownable {
 
         period = ++period;
 
-        emit setPoolEvent(period, block.timestamp, pool.totalStaked, vestingContract.totalPassiveStake(), _amount);
+        emit setPoolEvent(period, block.timestamp, pool.totalStaked, vestingContract.totalPassiveStake(), _amount, pool.rewardEnd);
     }
 //            //! for testing
 //    function setPoolState(uint256 _amount) external onlyRewardAdmin {
@@ -181,7 +181,9 @@ contract Rewards is Ownable {
 //        pool.lastOperationTime = block.timestamp;
 //        period = ++period;
 //
-//        emit setPoolEvent(period, block.timestamp, pool.totalStaked, vestingContract.totalPassiveStake(), _amount);
+//        pool.rewardAccPerShare = 0;
+//
+//        emit setPoolEvent(period, block.timestamp, pool.totalStaked, vestingContract.totalPassiveStake(), _amount, pool.rewardEnd);
 //    }
 //            //! for testing end
 

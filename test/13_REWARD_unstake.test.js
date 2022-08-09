@@ -29,7 +29,7 @@ contract('staking functionality', async accounts => {
 
     let OTGToken, rewardToken, VestingContract, RewardsContract;
     let OTGTokenAddress, rewardTokenAddress, VestingContractAddress, RewardsContractAddress;
-    let eth5, eth10, eth100, eth100000;
+    let eth5, eth10, eth100,eth500, eth100000;
 
     let signMessage;
 
@@ -52,6 +52,7 @@ contract('staking functionality', async accounts => {
         eth5 = new BN(5).mul(tokenbits);
         eth10 = new BN(10).mul(tokenbits);
         eth100 = new BN(100).mul(tokenbits);
+        eth500 = new BN(500).mul(tokenbits);
         eth100000 = new BN(100000).mul(tokenbits);
 
     })
@@ -70,8 +71,8 @@ contract('staking functionality', async accounts => {
 
         for (let i = 0; i < allStakers.length; i++) {
             const acc = allStakers[i];
-            await OTGToken.mint(acc, eth10, { from: deployer });
-            await OTGToken.approve(RewardsContractAddress, eth10, { from: acc });
+            await OTGToken.mint(acc, eth100, { from: deployer });
+            await OTGToken.approve(RewardsContractAddress, eth100, { from: acc });
 
         }
 
@@ -92,78 +93,95 @@ contract('staking functionality', async accounts => {
     //     await VestingContract.setNewStakers(accountNine, accountNineBalance);
     // });
 
-    it('setPoolState', async () => {
-        const balanceOwnerB = await rewardToken.balanceOf(deployer);
-        const contractBalanceB = await rewardToken.balanceOf(RewardsContractAddress);
-
+    it('setPoolState 1th (100eth)', async () => {
         await rewardToken.approve(RewardsContractAddress, eth100);
         await RewardsContract.setPoolState(eth100);
-
-        const balanceOwnerA = await rewardToken.balanceOf(deployer);
-        const contractBalanceA = await rewardToken.balanceOf(RewardsContractAddress);
-        console.log("перший setPoolState(eth100)")
-        //? check balance owner after setPool
-        assert.equal(Number(balanceOwnerA), Number(balanceOwnerB) - Number(eth100), "ownerBalance after setPoolState  is wrong");
-
-        //? check balance rewardConteract after setPool
-        assert.equal(Number(contractBalanceA), Number(contractBalanceB) + Number(eth100), "contractBalance after setPoolState  is wrong");
     })
 
     it('doStake', async () => {
-        console.log('робимо стейк accountOne на 10 eth')
-        await RewardsContract.doStake(eth10, {from: accountTwo})
+        console.log('=================================================')
+
+        console.log('make stake from accountOne (10 eth)')
         await RewardsContract.doStake(eth10, {from: accountOne})
+
+        console.log('make stake from accountTwo (10 eth)')
+        await time.increase(150);
+        await RewardsContract.doStake(eth10, {from: accountTwo})
+
         let d = await RewardsContract.pool()
-        console.log("загальний тотал стеків", d.totalStaked.toLocaleString())
+        console.log("totalStaked pool", d.totalStaked.toLocaleString())
+
+        console.log('=================================================')
     })
 
-    it('test after 86400 #1', async () =>{
+    it('reward check at the end of the day', async () =>{
+        console.log('=================================================')
         await time.increase(150);
-        console.log('пропустили годину')
+        console.log('missed time 230')
 
         let x = await RewardsContract.getStakeRewards(accountOne)
-        console.log('винагорода за пів дня', Number(x.toLocaleString()) / 10**18)
+        console.log('reward at the end day accountOne', Number(x.toLocaleString()) / 10**18)
 
-        console.log('робимо unStake на eth5')
-        await RewardsContract.unStake(eth5, {from: accountOne}) //цей момент потрібно десь збергігати прибуток (на бек)
-
-    })
-
-    it('test after 86400 #2', async () =>{
-        await time.increase(150);
-
-        let x = await RewardsContract.getStakeRewards(accountOne)
-        console.log('винагорода кінець першого дня', Number(x.toLocaleString()) / 10**18)
         let y = await RewardsContract.getStakeRewards(accountTwo)
-        console.log('винагорода кінець першого дня', Number(y.toLocaleString()) / 10**18)
+        console.log('reward at the end day accountTwo', Number(y.toLocaleString()) / 10**18)
+
+
+        // console.log('робимо unStake на eth5')
+        // await RewardsContract.unStake(eth5, {from: accountOne}) //цей момент потрібно десь збергігати прибуток (на бек)
+        console.log('=================================================')
     })
 
-    it('new setPOOl №1', async () =>{
-
-
+    it('setPoolState 2th (100eth)', async () => {
         await rewardToken.approve(RewardsContractAddress, eth100);
         await RewardsContract.setPoolState(eth100);
-        await time.increase(300);
-
-        let x = await RewardsContract.getStakeRewards(accountOne)
-        let y = await RewardsContract.getStakeRewards(accountTwo)
-        console.log('винагорода кінец 2', Number(x.toLocaleString()))
-        console.log('винагорода кінец 2 акк2', Number(y.toLocaleString()))
-
     })
 
-    it('new setPOOl №2', async () =>{
-
-
-        await rewardToken.approve(RewardsContractAddress, eth100);
-        await RewardsContract.setPoolState(eth100);
+    it('day #2', async () =>{
+        console.log('=================================================')
+        // await RewardsContract.doStake(eth10, {from: accountOne})
         await time.increase(300);
 
-        let x = await RewardsContract.getStakeRewards(accountOne)
-        let y = await RewardsContract.getStakeRewards(accountTwo)
-        console.log('винагорода кінец 3', Number(x.toLocaleString()) / 10**18)
-        console.log('винагорода кінец 2 акк2', Number(y.toLocaleString()) / 10**18)
 
+        let x = await RewardsContract.getStakeRewards(accountOne)
+        console.log('reward at the end day accountOne 2', Number(x.toLocaleString()) / 10**18)
+
+        let y = await RewardsContract.getStakeRewards(accountTwo)
+        console.log('reward at the end day accountTwo 2', Number(y.toLocaleString()) / 10**18)
+        // await time.increase(1000);
+        //
+        // let x = await RewardsContract.getStakeRewards(accountOne)
+        // console.log('винагорода кінець першого дня 1', Number(x.toLocaleString()) / 10**18)
+        // let y = await RewardsContract.getStakeRewards(accountTwo)
+        // console.log('винагорода кінець першого дня 2', Number(y.toLocaleString()) / 10**18)
+        console.log('=================================================')
     })
+    //
+    // it('new setPOOl №1', async () =>{
+    //
+    //
+    //     await rewardToken.approve(RewardsContractAddress, eth100);
+    //     await RewardsContract.setPoolState(eth100);
+    //     await time.increase(300);
+    //
+    //     let x = await RewardsContract.getStakeRewards(accountOne)
+    //     let y = await RewardsContract.getStakeRewards(accountTwo)
+    //     console.log('винагорода кінец 2', Number(x.toLocaleString()))
+    //     console.log('винагорода кінец 2 акк2', Number(y.toLocaleString()))
+    //
+    // })
+    //
+    // it('new setPOOl №2', async () =>{
+    //
+    //
+    //     await rewardToken.approve(RewardsContractAddress, eth100);
+    //     await RewardsContract.setPoolState(eth100);
+    //     await time.increase(300);
+    //
+    //     let x = await RewardsContract.getStakeRewards(accountOne)
+    //     let y = await RewardsContract.getStakeRewards(accountTwo)
+    //     console.log('винагорода кінец 3', Number(x.toLocaleString()) / 10**18)
+    //     console.log('винагорода кінец 2 акк2', Number(y.toLocaleString()) / 10**18)
+    //
+    // })
 
 })
