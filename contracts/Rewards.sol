@@ -153,6 +153,7 @@ contract Rewards is Ownable {
 
     function setPoolState(uint256 _amount) external onlyRewardAdmin {
         require(_amount > 0, "Invalid stake amount value");
+        require(pool.rewardEnd < block.timestamp, "the previous period has not yet ended");
 
         IERC20(rewardToken).safeTransferFrom(msg.sender, address(this), _amount);
 
@@ -170,6 +171,7 @@ contract Rewards is Ownable {
 //            //! for testing
 //    function setPoolState(uint256 _amount) external onlyRewardAdmin {
 //        require(_amount > 0, "Invalid stake amount value");
+//        require(pool.rewardEnd < block.timestamp, "the previous period has not yet ended");
 //
 //        IERC20(rewardToken).safeTransferFrom(msg.sender, address(this), _amount);
 //
