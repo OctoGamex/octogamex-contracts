@@ -70,10 +70,6 @@ contract Rewards is Ownable {
         uint256 period
     );
 
-    event setVestingEvent(
-        address newVestingContract
-    );
-
     event setStakingEvent(
         address newStakingContract
     );
@@ -83,7 +79,7 @@ contract Rewards is Ownable {
 
         OTGToken = IERC20(_OTGToken);
         rewardToken = IERC20(_rewardToken);
-        setVestingContract(_vestingContract);
+        vestingContract = Vesting(_vestingContract);
         oracle = _oracle;
     }
 
@@ -235,13 +231,6 @@ contract Rewards is Ownable {
         require(_amount > 0, "Invalid amount value");
 
         IERC20(rewardToken).safeTransfer(_recipient, _amount);
-    }
-
-    function setVestingContract(address _vestingContract) public onlyOwner isZeroAddress(_vestingContract) checkContract(_vestingContract) {
-        require(address(_vestingContract) != address(vestingContract), "the address is already set");
-        vestingContract = Vesting(_vestingContract);
-
-        emit setVestingEvent(_vestingContract);
     }
 
     function setStakingContract(address _stakingContract) external onlyOwner isZeroAddress(_stakingContract) checkContract(_stakingContract) {
