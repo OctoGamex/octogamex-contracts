@@ -92,6 +92,11 @@ contract Rewards is Ownable {
         _;
     }
 
+    modifier checkContract(address contractAddress) {
+        require(Address.isContract(contractAddress), "It's not contract");
+        _;
+    }
+
     modifier onlyRewardAdmin() {
         require(rewardAdmins[msg.sender] || msg.sender == owner(), "Caller is not the owner or admin");
         _;
@@ -232,14 +237,14 @@ contract Rewards is Ownable {
         IERC20(rewardToken).safeTransfer(_recipient, _amount);
     }
 
-    function setVestingContract(address _vestingContract) public onlyOwner isZeroAddress(_vestingContract) {
+    function setVestingContract(address _vestingContract) public onlyOwner isZeroAddress(_vestingContract) checkContract(_vestingContract) {
         require(address(_vestingContract) != address(vestingContract), "the address is already set");
         vestingContract = Vesting(_vestingContract);
 
         emit setVestingEvent(_vestingContract);
     }
 
-    function setStakingContract(address _stakingContract) external onlyOwner isZeroAddress(_stakingContract) {
+    function setStakingContract(address _stakingContract) external onlyOwner isZeroAddress(_stakingContract) checkContract(_stakingContract) {
         require(address(_stakingContract) != address(stakingContract), "the address is already set");
         stakingContract = _stakingContract;
 
