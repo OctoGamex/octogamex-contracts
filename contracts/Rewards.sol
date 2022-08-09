@@ -26,7 +26,7 @@ contract Rewards is Ownable {
         uint256 rewardStart;
     }
     struct StakeData {
-        bool active;
+        bool active;  //used to check the availability of a staker's reward
         uint256 amount;
         uint256 stakeAcc;
         uint256 rewardPeriod;
@@ -78,14 +78,11 @@ contract Rewards is Ownable {
         address newStakingContract
     );
 
-    event setRewardTokenEvent(
-        address newRewardToken
-    );
-
-    constructor(address _OTGToken, address _vestingContract, address _oracle){
+    constructor(address _OTGToken, address _rewardToken, address _vestingContract, address _oracle){
         require(_oracle != address(0x0), "Invalid oracle address");
 
         OTGToken = IERC20(_OTGToken);
+        rewardToken = IERC20(_rewardToken);
         setVestingContract(_vestingContract);
         oracle = _oracle;
     }
@@ -250,12 +247,6 @@ contract Rewards is Ownable {
     function updateOTGToken(address _newOTGToken) external onlyOwner isZeroAddress(_newOTGToken) {
         require(address(_newOTGToken) != address(OTGToken), "the address is already set");
         OTGToken = IERC20(_newOTGToken);
-    }
-
-    function setRewardToken(address _rewardToken) external onlyOwner isZeroAddress(_rewardToken) {
-        rewardToken = IERC20(_rewardToken);
-
-        emit setRewardTokenEvent(_rewardToken);
     }
 
     function setRewardAdmin(address _address, bool _isAdmin) external onlyOwner isZeroAddress(_address) {
