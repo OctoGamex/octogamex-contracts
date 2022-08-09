@@ -30,6 +30,7 @@ contract Rewards is Ownable {
         uint256 amount;
         uint256 stakeAcc;
         uint256 rewardPeriod;
+        uint256 lastActivePeriod;
     }
 
     Pool public pool;
@@ -109,25 +110,25 @@ contract Rewards is Ownable {
         IERC20(OTGToken).safeTransferFrom(msg.sender, address(this), _amount);
 
         uint256 currentReward = getStakeRewards(msg.sender);
+        StakeData memory _stake;
 
         if (stakes[msg.sender].amount == 0) {
-            StakeData memory _stake;
             _stake.amount = _amount;
 
             // Update pool data
             pool.rewardAccPerShare = getRewardAccumulatedPerShare();
             _stake.stakeAcc = pool.rewardAccPerShare;
-
-            stakes[msg.sender] = _stake;
         } else {
             pool.rewardAccPerShare = getRewardAccumulatedPerShare();
-            stakes[msg.sender].stakeAcc = pool.rewardAccPerShare;
-            stakes[msg.sender].amount+= _amount;
+            _stake.stakeAcc = pool.rewardAccPerShare;
+            _stake.amount+= _amount;
         }
         pool.totalStaked+= _amount;
         pool.lastOperationTime = block.timestamp;
 
-        stakes[msg.sender].active = true;
+        _stake.active = true;
+        _stake.lastActivePeriod = period;
+        stakes[msg.sender] = _stake;
 
         emit stakeEvent(msg.sender, _amount, block.timestamp, currentReward, period);
     }
@@ -135,19 +136,20 @@ contract Rewards is Ownable {
 
     function unStake(uint256 _amount) external {
         require(stakes[msg.sender].amount >= _amount, "You have no stake with such amount");
-
         StakeData storage _stake = stakes[msg.sender];
 
         uint256 currentReward = getStakeRewards(msg.sender);
+        pool.rewardAccPerShare = getRewardAccumulatedPerShare(); //!=
 
         _stake.amount-= _amount;
 
         IERC20(OTGToken).safeTransfer(msg.sender, _amount);
         pool.totalStaked-= _amount;
         pool.lastOperationTime = block.timestamp;
-        stakes[msg.sender].stakeAcc = pool.rewardAccPerShare;//!=
 
-        pool.rewardAccPerShare = getRewardAccumulatedPerShare(); //!=
+        _stake.stakeAcc = pool.rewardAccPerShare;//!=
+        _stake.lastActivePeriod = period;
+        stakes[msg.sender] = _stake;
 
         emit unStakeEvent(msg.sender, _amount, block.timestamp, currentReward, period);
     }
@@ -165,6 +167,7 @@ contract Rewards is Ownable {
 
         period = ++period;
 
+        pool.rewardAccPerShare = 0;
         emit setPoolEvent(period, block.timestamp, pool.totalStaked, vestingContract.totalPassiveStake(), _amount, pool.rewardEnd);
     }
 //            //! for testing
@@ -173,11 +176,10 @@ contract Rewards is Ownable {
 //
 //        IERC20(rewardToken).safeTransferFrom(msg.sender, address(this), _amount);
 //
-//        pool.rewardEnd =  block.timestamp + 300;
-//
 //        pool.rewardEnd = block.timestamp + 300;
 //
 //        pool.rewardRate = _amount / 300; //300
+//
 //        pool.lastOperationTime = block.timestamp;
 //        period = ++period;
 //
@@ -203,6 +205,10 @@ contract Rewards is Ownable {
 
         if ( getTotalStakes() == 0) {
             return reward;
+        }
+
+        if(_stake.lastActivePeriod < period){
+            _stake.stakeAcc = 0;
         }
 
         if(vestingContract.stakers(_userAddress)){
