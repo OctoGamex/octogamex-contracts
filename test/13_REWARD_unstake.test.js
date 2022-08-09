@@ -13,6 +13,7 @@ const {
     constants
 } = require('@openzeppelin/test-helpers');
 
+
 contract('staking functionality', async accounts => {
     const [
         deployer,
@@ -29,7 +30,7 @@ contract('staking functionality', async accounts => {
 
     let OTGToken, rewardToken, VestingContract, RewardsContract;
     let OTGTokenAddress, rewardTokenAddress, VestingContractAddress, RewardsContractAddress;
-    let eth5, eth10, eth100,eth500, eth100000;
+    let eth1, eth5, eth10, eth100,eth500, eth100000;
 
     let signMessage;
 
@@ -43,18 +44,18 @@ contract('staking functionality', async accounts => {
         VestingContract = await Vesting.new({from: deployer});
         VestingContractAddress = VestingContract.address;
 
-        RewardsContract = await Rewards.new(OTGTokenAddress, VestingContractAddress, '0x598511d4087b3F48B270De0FEC4bb930faB0A98c', {from: deployer});
+        RewardsContract = await Rewards.new(OTGTokenAddress, rewardTokenAddress, VestingContractAddress, '0x598511d4087b3F48B270De0FEC4bb930faB0A98c', {from: deployer});
         RewardsContractAddress = RewardsContract.address;
 
-        RewardsContract.setRewardToken(rewardTokenAddress);
+        // RewardsContract.setRewardToken(rewardTokenAddress);
 
         const tokenbits = (new BN(10)).pow(new BN(18));
+        eth1 = new BN(1).mul(tokenbits);
         eth5 = new BN(5).mul(tokenbits);
         eth10 = new BN(10).mul(tokenbits);
         eth100 = new BN(100).mul(tokenbits);
         eth500 = new BN(500).mul(tokenbits);
         eth100000 = new BN(100000).mul(tokenbits);
-
     })
 
     it("mint & approve tokens for users", async () => {
@@ -94,30 +95,35 @@ contract('staking functionality', async accounts => {
     // });
 
     it('setPoolState 1th (100eth)', async () => {
-        await rewardToken.approve(RewardsContractAddress, eth100);
-        await RewardsContract.setPoolState(eth100);
+        await rewardToken.approve(RewardsContractAddress, eth500);
+        await RewardsContract.setPoolState(eth500);
     })
 
     it('doStake', async () => {
         console.log('=================================================')
 
-        console.log('make stake from accountOne (10 eth)')
         await RewardsContract.doStake(eth10, {from: accountOne})
 
-        console.log('make stake from accountTwo (10 eth)')
         await time.increase(150);
+        let x = await RewardsContract.getStakeRewards(accountOne)
+        console.log('before unstake', Number(x.toLocaleString()) / 10**18)
+        await RewardsContract.unStake(eth5, {from: accountOne});
         await RewardsContract.doStake(eth10, {from: accountTwo})
 
         let d = await RewardsContract.pool()
-        console.log("totalStaked pool", d.totalStaked.toLocaleString())
-
+        console.log("totalStaked pool 0.5 day", d.totalStaked.toLocaleString())
         console.log('=================================================')
     })
 
     it('reward check at the end of the day', async () =>{
+        // let yw = await RewardsContract.getStakeRewards(accountOne)
+        // console.log('111', Number(yw.toLocaleString()) / 10**18)
+        // await RewardsContract.unStake(eth5, {from: accountOne});
+        // let e = await RewardsContract.getStakeRewards(accountOne)
+        // console.log('2222', Number(e.toLocaleString()) / 10**18)
+
         console.log('=================================================')
         await time.increase(150);
-        console.log('missed time 230')
 
         let x = await RewardsContract.getStakeRewards(accountOne)
         console.log('reward at the end day accountOne', Number(x.toLocaleString()) / 10**18)
@@ -125,63 +131,76 @@ contract('staking functionality', async accounts => {
         let y = await RewardsContract.getStakeRewards(accountTwo)
         console.log('reward at the end day accountTwo', Number(y.toLocaleString()) / 10**18)
 
-
-        // console.log('робимо unStake на eth5')
-        // await RewardsContract.unStake(eth5, {from: accountOne}) //цей момент потрібно десь збергігати прибуток (на бек)
         console.log('=================================================')
     })
 
-    it('setPoolState 2th (100eth)', async () => {
-        await rewardToken.approve(RewardsContractAddress, eth100);
-        await RewardsContract.setPoolState(eth100);
-    })
-
-    it('day #2', async () =>{
-        console.log('=================================================')
-        // await RewardsContract.doStake(eth10, {from: accountOne})
-        await time.increase(300);
-
-
-        let x = await RewardsContract.getStakeRewards(accountOne)
-        console.log('reward at the end day accountOne 2', Number(x.toLocaleString()) / 10**18)
-
-        let y = await RewardsContract.getStakeRewards(accountTwo)
-        console.log('reward at the end day accountTwo 2', Number(y.toLocaleString()) / 10**18)
-        // await time.increase(1000);
-        //
-        // let x = await RewardsContract.getStakeRewards(accountOne)
-        // console.log('винагорода кінець першого дня 1', Number(x.toLocaleString()) / 10**18)
-        // let y = await RewardsContract.getStakeRewards(accountTwo)
-        // console.log('винагорода кінець першого дня 2', Number(y.toLocaleString()) / 10**18)
-        console.log('=================================================')
-    })
-    //
-    // it('new setPOOl №1', async () =>{
-    //
-    //
+    // it('setPoolState 2th (100eth)', async () => {
     //     await rewardToken.approve(RewardsContractAddress, eth100);
     //     await RewardsContract.setPoolState(eth100);
+    // })
+    //
+    // it('day #2', async () =>{
+    //     // console.log('=================================================')
+    //     // // await RewardsContract.doStake(eth10, {from: accountOne})
+    //     await time.increase(300);
+    //     // //
+    //     // //
+    //     // //
+    //     // let xx = await RewardsContract.getStakeRewards(accountOne)
+    //     // console.log('before unstake 2', Number(xx.toLocaleString()) / 10**18)
+    //     // await RewardsContract.unStake(eth1, {from: accountOne})
+    //     // await time.increase(150);
+    //     let x = await RewardsContract.getStakeRewards(accountOne)
+    //     console.log('reward at the end day accountOne 2', Number(x.toLocaleString()) / 10**18)
+    //     // await time.increase(1);
+    //     //
+    //     let y = await RewardsContract.getStakeRewards(accountTwo)
+    //     console.log('reward at the end day accountTwo 2', Number(y.toLocaleString()) / 10**18)
+    //
+    //
+    //
+    //     console.log('=================================================')
+    // })
+    //
+    //
+    // it('test oracle function', async () => {
+    //     const dateNow = await time.latest(time.latest());
+    //     signMessage = await oracleSign.sign(accountOne, BigInt(dateNow), BigInt(eth1));
+    //
+    //
+    //     console.log('======================')
+    //     const balanceAccountOneBefore = await rewardToken.balanceOf(accountOne);
+    //     console.log(balanceAccountOneBefore.toLocaleString(), 'before balance')
+    //
+    //     let addressOracle = await RewardsContract.claimReward(accountOne, BigInt(dateNow), BigInt(eth1), signMessage, {from: accountOne})
+    //     // await RewardsContract.unStake(eth5, {from: accountOne})
+    //
+    //     const balanceAccountOneAfter = await rewardToken.balanceOf(accountOne);
+    //     console.log(balanceAccountOneAfter.toLocaleString(),  'before After')
+    //
+    //     // console.log(addressOracle)
+    // })
+
+    // it('setPoolState 3th (100eth)', async () => {
+    //     await rewardToken.approve(RewardsContractAddress, eth100);
+    //     await RewardsContract.setPoolState(eth100);
+    // })
+    //
+    // it('day #3', async () =>{
+    //     console.log('=================================================')
     //     await time.increase(300);
     //
     //     let x = await RewardsContract.getStakeRewards(accountOne)
+    //     console.log('reward at the end day accountOne 3', Number(x.toLocaleString()) / 10**18)
+    //     // await time.increase(1);
+    //     //
     //     let y = await RewardsContract.getStakeRewards(accountTwo)
-    //     console.log('винагорода кінец 2', Number(x.toLocaleString()))
-    //     console.log('винагорода кінец 2 акк2', Number(y.toLocaleString()))
+    //     console.log('reward at the end day accountTwo 3', Number(y.toLocaleString()) / 10**18)
     //
+    //
+    //
+    //     console.log('=================================================')
     // })
-    //
-    // it('new setPOOl №2', async () =>{
-    //
-    //
-    //     await rewardToken.approve(RewardsContractAddress, eth100);
-    //     await RewardsContract.setPoolState(eth100);
-    //     await time.increase(300);
-    //
-    //     let x = await RewardsContract.getStakeRewards(accountOne)
-    //     let y = await RewardsContract.getStakeRewards(accountTwo)
-    //     console.log('винагорода кінец 3', Number(x.toLocaleString()) / 10**18)
-    //     console.log('винагорода кінец 2 акк2', Number(y.toLocaleString()) / 10**18)
-    //
-    // })
+
 
 })
