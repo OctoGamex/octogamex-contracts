@@ -3,9 +3,10 @@ pragma solidity >=0.8.9;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 import "./Vesting.sol";
 
-contract Rewards is Ownable {
+contract Rewards is Ownable, Pausable {
     using SafeERC20 for IERC20;
     uint256 private constant ACC_PRECISION = 1e24;
 
@@ -16,6 +17,13 @@ contract Rewards is Ownable {
     IERC20 public OTGToken;
     address public stakingContract;
     Vesting public vestingContract;
+
+    struct Pausables {
+        bool PauseSetPoolStake;
+        bool PauseClaimReward;
+        bool PauseDoStake;
+        bool PauseUnStake;
+    }
 
     struct Pool {
         uint256 rewardRate;
@@ -34,6 +42,7 @@ contract Rewards is Ownable {
     }
 
     Pool public pool;
+    Pausables public pausables;
 
     mapping(address => StakeData) public stakes;
     mapping(address => bool) public rewardAdmins;
@@ -102,7 +111,8 @@ contract Rewards is Ownable {
         return pool.totalStaked + vestingContract.totalPassiveStake();
     }
 
-    function doStake(uint256 _amount) external {
+    function doStake(uint256 _amount) external whenNotPaused {
+        require(pausables.PauseDoStake != true, "doStake: paused");
         require(_amount > 0, "Invalid stake amount value");
 
         IERC20(OTGToken).safeTransferFrom(msg.sender, address(this), _amount);
@@ -132,8 +142,10 @@ contract Rewards is Ownable {
     }
 
 
-    function unStake(uint256 _amount) external {
+    function unStake(uint256 _amount) external whenNotPaused {
+        require(pausables.PauseUnStake != true, "unStake: paused");
         require(stakes[msg.sender].amount >= _amount, "You have no stake with such amount");
+
         StakeData storage _stake = stakes[msg.sender];
 
         uint256 currentReward = getStakeRewards(msg.sender);
@@ -152,7 +164,8 @@ contract Rewards is Ownable {
         emit unStakeEvent(msg.sender, _amount, block.timestamp, currentReward, period);
     }
 
-    function setPoolState(uint256 _amount) external onlyRewardAdmin {
+    function setPoolState(uint256 _amount) external onlyRewardAdmin whenNotPaused {
+        require(pausables.PauseSetPoolStake != true, "setPoolState: paused");
         require(_amount > 0, "Invalid stake amount value");
         require(pool.rewardEnd < block.timestamp, "the previous period has not yet ended");
 
@@ -171,6 +184,7 @@ contract Rewards is Ownable {
     }
 //            //! for testing
 //    function setPoolState(uint256 _amount) external onlyRewardAdmin {
+//        require(pausables.PauseSetPoolStake != true, "setPoolState: paused");
 //        require(_amount > 0, "Invalid stake amount value");
 //        require(pool.rewardEnd < block.timestamp, "the previous period has not yet ended");
 //
@@ -192,7 +206,7 @@ contract Rewards is Ownable {
     function getRewardAccumulatedPerShare() internal view returns (uint256) {
         uint256 actualTime = block.timestamp < pool.rewardEnd ? block.timestamp : pool.rewardEnd;
 
-        if (actualTime <= pool.lastOperationTime || pool.totalStaked == 0) {
+        if (actualTime <= pool.lastOperationTime || getTotalStakes() == 0) {
             return pool.rewardAccPerShare;
         }
 
@@ -245,11 +259,42 @@ contract Rewards is Ownable {
         rewardAdmins[_address] = _isAdmin;
     }
 
+    function setPause() public onlyOwner{
+        _pause();
+    }
+
+    function unPause() public onlyOwner{
+        _unpause();
+    }
+
+    function setPauseSetPoolStake(bool _isPause) public onlyOwner whenNotPaused{
+        require(pausables.PauseSetPoolStake != _isPause, "invalid _isPause");
+
+        pausables.PauseSetPoolStake = _isPause;
+    }
+    function setPauseClaimReward(bool _isPause) public onlyOwner whenNotPaused{
+        require(pausables.PauseClaimReward != _isPause, "invalid _isPause");
+
+        pausables.PauseClaimReward = _isPause;
+    }
+    function setPauseDoStake(bool _isPause) public onlyOwner whenNotPaused{
+        require(pausables.PauseDoStake != _isPause, "invalid _isPause");
+
+        pausables.PauseDoStake = _isPause;
+    }
+    function setPauseUnStake(bool _isPause) public onlyOwner whenNotPaused{
+        require(pausables.PauseUnStake != _isPause, "invalid _isPause");
+
+        pausables.PauseUnStake = _isPause;
+    }
+
 //    !======== Admin setting END ============
 
 //    !======= oracle changes START =========
 
-    function claimReward(address _recipient, uint256 _date, uint256 _amount, bytes calldata signature) external {
+    function claimReward(address _recipient, uint256 _date, uint256 _amount, bytes calldata signature) external whenNotPaused {
+        require(pausables.PauseClaimReward != true, "claimReward: paused");
+
         bytes32 hash = keccak256(abi.encodePacked(_recipient, _date, _amount)); //??? something more
         require(signerAddress(prefixed(hash), signature) == oracle, "Invalid signature");
 
