@@ -33,6 +33,7 @@ contract Rewards is Ownable, Pausable {
         uint256 rewardEnd;
         uint256 rewardStart;
     }
+
     struct StakeData {
         bool active;  //used to check the availability of a staker's reward
         uint256 amount;
@@ -107,7 +108,7 @@ contract Rewards is Ownable, Pausable {
         _;
     }
 
-    function getTotalStakes() public view returns(uint256) {
+    function getTotalStakes() public view returns (uint256) {
         return pool.totalStaked + vestingContract.totalPassiveStake();
     }
 
@@ -129,9 +130,9 @@ contract Rewards is Ownable, Pausable {
         } else {
             pool.rewardAccPerShare = getRewardAccumulatedPerShare();
             _stake.stakeAcc = pool.rewardAccPerShare;
-            _stake.amount+= _amount;
+            _stake.amount += _amount;
         }
-        pool.totalStaked+= _amount;
+        pool.totalStaked += _amount;
         pool.lastOperationTime = block.timestamp;
 
         _stake.active = true;
@@ -149,15 +150,17 @@ contract Rewards is Ownable, Pausable {
         StakeData storage _stake = stakes[msg.sender];
 
         uint256 currentReward = getStakeRewards(msg.sender);
-        pool.rewardAccPerShare = getRewardAccumulatedPerShare(); //!=
+        pool.rewardAccPerShare = getRewardAccumulatedPerShare();
+        //!=
 
-        _stake.amount-= _amount;
+        _stake.amount -= _amount;
 
         IERC20(OTGToken).safeTransfer(msg.sender, _amount);
-        pool.totalStaked-= _amount;
+        pool.totalStaked -= _amount;
         pool.lastOperationTime = block.timestamp;
 
-        _stake.stakeAcc = pool.rewardAccPerShare;//!=
+        _stake.stakeAcc = pool.rewardAccPerShare;
+        //!=
         _stake.lastActivePeriod = period;
         stakes[msg.sender] = _stake;
 
@@ -172,9 +175,10 @@ contract Rewards is Ownable, Pausable {
         IERC20(rewardToken).safeTransferFrom(msg.sender, address(this), _amount);
 
         pool.rewardStart = block.timestamp - (block.timestamp % 86400);
-        pool.rewardEnd =  pool.rewardStart + 86400;
+        pool.rewardEnd = pool.rewardStart + 86400;
 
-        pool.rewardRate = _amount / 1 days; //86400
+        pool.rewardRate = _amount / 1 days;
+        //86400
         pool.lastOperationTime = block.timestamp - (block.timestamp - pool.rewardStart);
 
         period = ++period;
@@ -182,26 +186,26 @@ contract Rewards is Ownable, Pausable {
         pool.rewardAccPerShare = 0;
         emit setPoolEvent(period, block.timestamp, pool.totalStaked, vestingContract.totalPassiveStake(), _amount, pool.rewardEnd);
     }
-//            //! for testing
-//    function setPoolState(uint256 _amount) external onlyRewardAdmin {
-//        require(pausables.PauseSetPoolStake != true, "setPoolState: paused");
-//        require(_amount > 0, "Invalid stake amount value");
-//        require(pool.rewardEnd < block.timestamp, "the previous period has not yet ended");
-//
-//        IERC20(rewardToken).safeTransferFrom(msg.sender, address(this), _amount);
-//
-//        pool.rewardEnd = block.timestamp + 300;
-//
-//        pool.rewardRate = _amount / 300; //300
-//
-//        pool.lastOperationTime = block.timestamp;
-//        period = ++period;
-//
-//        pool.rewardAccPerShare = 0;
-//
-//        emit setPoolEvent(period, block.timestamp, pool.totalStaked, vestingContract.totalPassiveStake(), _amount, pool.rewardEnd);
-//    }
-//            //! for testing end
+    //            //! for testing
+    //    function setPoolState(uint256 _amount) external onlyRewardAdmin {
+    //        require(pausables.PauseSetPoolStake != true, "setPoolState: paused");
+    //        require(_amount > 0, "Invalid stake amount value");
+    //        require(pool.rewardEnd < block.timestamp, "the previous period has not yet ended");
+    //
+    //        IERC20(rewardToken).safeTransferFrom(msg.sender, address(this), _amount);
+    //
+    //        pool.rewardEnd = block.timestamp + 300;
+    //
+    //        pool.rewardRate = _amount / 300; //300
+    //
+    //        pool.lastOperationTime = block.timestamp;
+    //        period = ++period;
+    //
+    //        pool.rewardAccPerShare = 0;
+    //
+    //        emit setPoolEvent(period, block.timestamp, pool.totalStaked, vestingContract.totalPassiveStake(), _amount, pool.rewardEnd);
+    //    }
+    //            //! for testing end
 
     function getRewardAccumulatedPerShare() internal view returns (uint256) {
         uint256 actualTime = block.timestamp < pool.rewardEnd ? block.timestamp : pool.rewardEnd;
@@ -217,15 +221,15 @@ contract Rewards is Ownable, Pausable {
     function getStakeRewards(address _userAddress) public view returns (uint256 reward) {
         StakeData memory _stake = stakes[_userAddress];
 
-        if ( getTotalStakes() == 0) {
+        if (getTotalStakes() == 0) {
             return reward;
         }
 
-        if(_stake.lastActivePeriod < period){
+        if (_stake.lastActivePeriod < period) {
             _stake.stakeAcc = 0;
         }
 
-        if(vestingContract.stakers(_userAddress)){
+        if (vestingContract.stakers(_userAddress)) {
             reward = (_stake.amount + vestingContract.stakerBalance(_userAddress))
             * (getRewardAccumulatedPerShare() - _stake.stakeAcc)
             * pool.rewardRate
@@ -240,7 +244,7 @@ contract Rewards is Ownable, Pausable {
 
     }
 
-//    !======== Admin setting START ==========
+    //    !======== Admin setting START ==========
     function withdrawalForOwner(address _recipient, uint256 _amount) public onlyOwner {
         require(_amount > 0, "Invalid amount value");
 
@@ -259,43 +263,62 @@ contract Rewards is Ownable, Pausable {
         rewardAdmins[_address] = _isAdmin;
     }
 
-    function setPause() public onlyOwner{
+    function setPause() public onlyRewardAdmin {
         _pause();
     }
 
-    function unPause() public onlyOwner{
+    function unPause() public onlyRewardAdmin {
+        if (pausables.PauseSetPoolStake == true) {
+            pausables.PauseSetPoolStake = false;
+        }
+
+        if (pausables.PauseClaimReward == true) {
+            pausables.PauseClaimReward = false;
+        }
+
+        if (pausables.PauseUnStake == true) {
+            pausables.PauseUnStake = false;
+        }
+
+        if (pausables.PauseDoStake == true) {
+            pausables.PauseDoStake = false;
+        }
         _unpause();
     }
 
-    function setPauseSetPoolStake(bool _isPause) public onlyOwner whenNotPaused{
+    function setPauseSetPoolStake(bool _isPause) public onlyOwner whenNotPaused {
         require(pausables.PauseSetPoolStake != _isPause, "invalid _isPause");
 
         pausables.PauseSetPoolStake = _isPause;
     }
-    function setPauseClaimReward(bool _isPause) public onlyOwner whenNotPaused{
+
+    function setPauseClaimReward(bool _isPause) public onlyOwner whenNotPaused {
         require(pausables.PauseClaimReward != _isPause, "invalid _isPause");
 
         pausables.PauseClaimReward = _isPause;
     }
-    function setPauseDoStake(bool _isPause) public onlyOwner whenNotPaused{
+
+    function setPauseDoStake(bool _isPause) public onlyOwner whenNotPaused {
         require(pausables.PauseDoStake != _isPause, "invalid _isPause");
 
         pausables.PauseDoStake = _isPause;
     }
-    function setPauseUnStake(bool _isPause) public onlyOwner whenNotPaused{
+
+    function setPauseUnStake(bool _isPause) public onlyOwner whenNotPaused {
         require(pausables.PauseUnStake != _isPause, "invalid _isPause");
 
         pausables.PauseUnStake = _isPause;
     }
 
-//    !======== Admin setting END ============
+    //    !======== Admin setting END ============
 
-//    !======= oracle changes START =========
+    //    !======= oracle changes START =========
 
     function claimReward(address _recipient, uint256 _date, uint256 _amount, bytes calldata signature) external whenNotPaused {
         require(pausables.PauseClaimReward != true, "claimReward: paused");
 
-        bytes32 hash = keccak256(abi.encodePacked(_recipient, _date, _amount)); //??? something more
+        bytes32 hash = keccak256(abi.encodePacked(_recipient, _date, _amount));
+        //??? something more
         require(signerAddress(prefixed(hash), signature) == oracle, "Invalid signature");
 
         require(vestingContract.stakers(_recipient) || stakes[_recipient].active, 'recipient is not a staker');
@@ -303,19 +326,18 @@ contract Rewards is Ownable, Pausable {
         require(stakes[_recipient].rewardPeriod < period, 'reward already been received today');
         stakes[_recipient].rewardPeriod = period;
 
-//        IERC20(rewardToken).safeTransfer(_recipient, _amount);
+        //        IERC20(rewardToken).safeTransfer(_recipient, _amount);
 
         uint256 currentAmount = getStakeRewards(_recipient);
 
         IERC20(rewardToken).safeTransfer(_recipient, currentAmount + _amount);
 
-        if(stakes[_recipient].amount == 0){
+        if (stakes[_recipient].amount == 0) {
             stakes[_recipient].active = false;
         }
 
         emit claimEvent(_recipient, currentAmount, block.timestamp, period);
     }
-
 
 
     function splitSign(bytes memory sig) internal pure returns (uint8 v, bytes32 r, bytes32 s) {
@@ -355,12 +377,12 @@ contract Rewards is Ownable, Pausable {
         oracle = _oracle;
     }
     //    !======= oracle changes END =========
-//        function claimReward(address _recipient, uint256 _date, uint256 _amount, bytes calldata signature) external view returns(address) {
-//        require(_amount > 0, "Invalid amount value");
-//        bytes32 hash = keccak256(abi.encodePacked(_recipient, _date, _amount));
-//
-//        //==todo emit
-//            return signerAddress(prefixed(hash), signature);
-//
-//    }
+    //        function claimReward(address _recipient, uint256 _date, uint256 _amount, bytes calldata signature) external view returns(address) {
+    //        require(_amount > 0, "Invalid amount value");
+    //        bytes32 hash = keccak256(abi.encodePacked(_recipient, _date, _amount));
+    //
+    //        //==todo emit
+    //            return signerAddress(prefixed(hash), signature);
+    //
+    //    }
 }
