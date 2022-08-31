@@ -327,7 +327,7 @@ contract RewardsUpgradeable is Initializable, OwnableUpgradeable, PausableUpgrad
     function claimReward(address _recipient, uint256 _date, uint256 _amount, bytes calldata signature) external whenNotPaused {
         require(pausables.PauseClaimReward != true, "claimReward: paused");
 
-        bytes32 hash = keccak256(abi.encodePacked(_recipient, _date, _amount));
+        bytes32 hash = keccak256(abi.encodePacked(_recipient, '-', _date,'-', _amount));
         //??? something more
         require(signerAddress(prefixed(hash), signature) == oracle, "Invalid signature");
 
@@ -340,6 +340,7 @@ contract RewardsUpgradeable is Initializable, OwnableUpgradeable, PausableUpgrad
 
         IERC20Upgradeable(rewardToken).safeTransfer(_recipient, currentAmount + _amount);
         stakes[_recipient].stakeAcc = getRewardAccumulatedPerShare();
+        stakes[_recipient].lastActivePeriod = period;
 
         if (stakes[_recipient].amount == 0) {
             stakes[_recipient].active = false;
