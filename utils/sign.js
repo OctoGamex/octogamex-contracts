@@ -11,8 +11,8 @@ let ORACLE_PRIVATE = 'leopard despair pencil vacant matter mercy life news spend
 async function sign(_recipient, _date, _amount) {
     const signer = new ethers.Wallet.fromMnemonic(ORACLE_PRIVATE);
     let hash = ethers.utils.solidityKeccak256(
-        ['address', 'uint256', 'uint256'],
-        [_recipient, _date, _amount]
+        ['address', 'string', 'uint256', 'string', 'uint256'],
+        [_recipient, '-', _date, '-', _amount]
     );
     // address _recipient, uint256 _amount, bytes calldata signature
     return await signer.signMessage(ethers.utils.arrayify(hash));
