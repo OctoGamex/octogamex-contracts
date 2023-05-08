@@ -7,15 +7,17 @@
     "test": "test"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^4.3.2",
+    "@openzeppelin/contracts": "^4.8.3",
     "@openzeppelin/contracts-upgradeable": "^4.7.3",
-    "ethers": "^5.6.9"
+    "solidity-coverage": "^0.8.2"
   },
   "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^2.0.2",
     "@openzeppelin/test-helpers": "^0.5.15",
     "@openzeppelin/truffle-upgrades": "^1.16.0",
+    "hardhat": "^2.14.0",
     "sol-merger": "^3.1.0",
-    "solidity-coverage": "^0.7.21"
+    "typescript": "^5.0.4"
   },
   "scripts": {
     "compile": "truffle compile --all",
